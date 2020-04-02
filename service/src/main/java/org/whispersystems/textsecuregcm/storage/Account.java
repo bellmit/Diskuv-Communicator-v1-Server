@@ -23,18 +23,17 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
 import org.whispersystems.textsecuregcm.auth.StoredRegistrationLock;
-import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount;
-import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice;
 
 import javax.security.auth.Subject;
 import java.security.Principal;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-public class Account implements Principal, PossiblySyntheticAccount {
+public class Account implements Principal, org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount {
 
   @JsonIgnore
   private UUID uuid;
@@ -58,10 +57,10 @@ public class Account implements Principal, PossiblySyntheticAccount {
   private String avatar;
 
   @JsonProperty
-  private String avatarDigest;
+  private String pin;
 
   @JsonProperty
-  private String pin;
+  private List<PaymentAddress> payments;
 
   @JsonProperty
   private String registrationLock;
@@ -254,14 +253,6 @@ public class Account implements Principal, PossiblySyntheticAccount {
     this.avatar = avatar;
   }
 
-  public String getAvatarDigest() {
-    return avatarDigest;
-  }
-
-  public void setAvatarDigest(String avatarDigest) {
-    this.avatarDigest = avatarDigest;
-  }
-
   public String getPin() {
     return pin;
   }
@@ -293,6 +284,14 @@ public class Account implements Principal, PossiblySyntheticAccount {
 
   public void setUnrestrictedUnidentifiedAccess(boolean unrestrictedUnidentifiedAccess) {
     this.unrestrictedUnidentifiedAccess = unrestrictedUnidentifiedAccess;
+  }
+
+  public List<PaymentAddress> getPayments() {
+    return payments;
+  }
+
+  public void setPayments(List<PaymentAddress> payments) {
+    this.payments = payments;
   }
 
   public boolean isFor(AmbiguousIdentifier identifier) {

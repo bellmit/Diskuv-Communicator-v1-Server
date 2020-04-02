@@ -65,7 +65,7 @@ public class SyntheticAccountTest {
     assertThat(account.getProfileEmailAddress()).isEqualTo(EMAIL1);
     assertThat(account.getAvatar()).isEqualTo(AVATAR1);
     assertThat(account.isEnabled()).isTrue();
-    assertThat(account.isGroupsV2Supported()).isFalse();
+    assertThat(account.isGroupsV2Supported()).isTrue();
     assertThat(account.isUnrestrictedUnidentifiedAccess()).isFalse();
     assertThat(account.getIdentityKey()).isEqualTo("BQcixKf7KQvA5DZ4szVqiy9cP41U5MTboJFv0l51mL0T");
 
@@ -104,7 +104,7 @@ public class SyntheticAccountTest {
             "vyWaMrB1TW+l96D9AEYKE4iyhPq7YZKMoO6XLWdZwHPiXpwB8zNOgjTa0aTDjmUbussfPV9Xzp6b2utVMA5M1Ep+tTogLv4+qSEXsxWkKKgteOj3+gHl1KWeU0GIfRV8KqFM8IRSoW6Yv0o0Fq5X2JV4gDnDUkINlYYAkJtzrG68fxkqMW/5xKdxDwHCZkFdSbMewwIkPPr1KMx1AJC/mWHHrR6an+1ScmexRcFt3Bsh67ufF4Ve31k4EZKHrR7OPbeGrOem6wIMfijBIfGSW0s2Xw64R0qfu2hmP1Fd3zMqXj6bzX2616cwQtxytv/nlzCymwI29pTlcJ49qBlS6OBhdlUfyCSS0Ootanb3AsGoBEMMMOi1qh92zVmvpv7dExhia4KNdhg8i4U49CXI1xpcZfOk0nyV6BEAzngGW6bFpG2JPnwM6cZHysjLhxWNIhqyW+3nMzGh9opn");
     assertThat(account.getAvatar()).isNull();
     assertThat(account.isEnabled()).isTrue();
-    assertThat(account.isGroupsV2Supported()).isFalse();
+    assertThat(account.isGroupsV2Supported()).isTrue();
     assertThat(account.isUnrestrictedUnidentifiedAccess()).isFalse();
     assertThat(account.getIdentityKey()).isEqualTo("BQt+VoFFW2txhdJ0PkVqGD/RALynEamUv6+sxhJ2m5Vz");
 

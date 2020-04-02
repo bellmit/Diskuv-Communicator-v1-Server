@@ -43,6 +43,8 @@ import org.whispersystems.textsecuregcm.storage.AbusiveHostRules;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
+import org.whispersystems.textsecuregcm.storage.PaymentAddress;
+import org.whispersystems.textsecuregcm.storage.PaymentAddressList;
 import org.whispersystems.textsecuregcm.storage.PendingAccountsManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
@@ -61,6 +63,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +79,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.*;
 
 public class AccountControllerTest {
 
@@ -196,7 +198,7 @@ public class AccountControllerTest {
     when(recaptchaClient.verify(eq(INVALID_CAPTCHA_TOKEN), anyString())).thenReturn(false);
     when(recaptchaClient.verify(eq(VALID_CAPTCHA_TOKEN), anyString())).thenReturn(true);
 
-    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN)).thenReturn(VALID_EMAIL);
+    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(AuthHelper.VALID_BEARER_TOKEN)).thenReturn(AuthHelper.VALID_EMAIL);
 
     doThrow(new RateLimitExceededException(SENDER_OVER_PIN)).when(pinLimiter).validate(eq(SENDER_OVER_PIN));
 
@@ -211,9 +213,9 @@ public class AccountControllerTest {
   @Test
   public void testGetFcmPrereg() throws Exception {
     Response response = resources.getJerseyTest()
-                                 .target("/v1/accounts/fcm/prereg/" + VALID_UUID + "/mytoken")
+                                 .target("/v1/accounts/fcm/prereg/" + org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_UUID + "/mytoken")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                                  .get();
 
     assertThat(response.getStatus()).isEqualTo(200);
@@ -233,9 +235,9 @@ public class AccountControllerTest {
   @Test
   public void testGetApnPrereg() throws Exception {
     Response response = resources.getJerseyTest()
-                                 .target("/v1/accounts/apn/prereg/"+VALID_UUID+"/mytoken")
+                                 .target("/v1/accounts/apn/prereg/"+org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_UUID+"/mytoken")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                                  .get();
 
     assertThat(response.getStatus()).isEqualTo(200);
@@ -605,7 +607,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "666666"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_REG_LOCK, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null, null, Hex.toStringCondensed(registration_lock_key)),
+                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null, null, Hex.toStringCondensed(registration_lock_key), null),
                                     MediaType.APPLICATION_JSON_TYPE), AccountCreationResult.class);
 
     assertThat(result.getUuid()).isNotNull();
@@ -622,7 +624,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "666666"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_REG_LOCK, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null, null, Hex.toStringCondensed(registration_lock_key)),
+                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null, null, Hex.toStringCondensed(registration_lock_key), null),
                                     MediaType.APPLICATION_JSON_TYPE), AccountCreationResult.class);
 
     assertThat(result.getUuid()).isNotNull();
@@ -657,7 +659,7 @@ public class AccountControllerTest {
                    .target(String.format("/v1/accounts/code/%s", "666666"))
                    .request()
                    .header("Authorization", AuthHelper.getAuthHeader(SENDER_REG_LOCK, "bar"))
-                   .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null, null, null),
+                   .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null, null, null, null),
                                       MediaType.APPLICATION_JSON_TYPE), AccountCreationResult.class);
 
       assertThat(result.getUuid()).isNotNull();
@@ -787,7 +789,7 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/pin/")
                  .request()
-                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.json(new DeprecatedPin("31337")));
 
@@ -803,7 +805,7 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/registration_lock/")
                  .request()
-                 .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.json(new RegistrationLock("1234567890123456789012345678901234567890123456789012345678901234")));
 
@@ -819,6 +821,82 @@ public class AccountControllerTest {
     assertThat(pinSaltCapture.getValue()).isNotEmpty();
 
     assertThat(pinCapture.getValue().length()).isEqualTo(40);
+  }
+
+  @Test
+  public void testSetPayments() {
+    PaymentAddress paymentAddress = new PaymentAddress("some address", "V15Pf5JsFcQF6AtlM3vo3OhGEgFwTh8G3iDDvShpr8QzoJmFQ+a2xb3PoXRmGF60DLq1RR2o8Fgw+f953mKvNA==");
+
+    Response response =
+        resources.getJerseyTest()
+                 .target("/v1/accounts/payments/")
+                 .request()
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .put(Entity.json(new PaymentAddressList(List.of(paymentAddress))));
+
+    assertThat(response.getStatus()).isEqualTo(204);
+
+    verify(AuthHelper.VALID_ACCOUNT, times(1)).setPayments(eq(List.of(paymentAddress)));
+  }
+
+  @Test
+  public void testSetPaymentsUnauthorized() {
+    PaymentAddress paymentAddress = new PaymentAddress("an address", "V15Pf5JsFcQF6AtlM3vo3OhGEgFwTh8G3iDDvShpr8QzoJmFQ+a2xb3PoXRmGF60DLq1RR2o8Fgw+f953mKvNA==");
+
+    Response response =
+        resources.getJerseyTest()
+                 .target("/v1/accounts/payments/")
+                 .request()
+                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.INVALID_UUID.toString(), AuthHelper.INVALID_PASSWORD))
+                 .put(Entity.json(new PaymentAddressList(List.of(paymentAddress))));
+
+    assertThat(response.getStatus()).isEqualTo(401);
+  }
+
+  @Test
+  public void testSetPaymentsInvalidSignature() {
+    PaymentAddress paymentAddress = new PaymentAddress("some address", "123456789012345678901234567890123");
+
+    Response response =
+        resources.getJerseyTest()
+                 .target("/v1/accounts/payments/")
+                 .request()
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .put(Entity.json(new PaymentAddressList(List.of(paymentAddress))));
+
+    assertThat(response.getStatus()).isEqualTo(422);
+  }
+
+  @Test
+  public void testSetPaymentsEmptyAddress() {
+    PaymentAddress paymentAddress = new PaymentAddress(null, "V15Pf5JsFcQF6AtlM3vo3OhGEgFwTh8G3iDDvShpr8QzoJmFQ+a2xb3PoXRmGF60DLq1RR2o8Fgw+f953mKvNA==");
+
+    Response response =
+        resources.getJerseyTest()
+                 .target("/v1/accounts/payments/")
+                 .request()
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .put(Entity.json(new PaymentAddressList(List.of(paymentAddress))));
+
+    assertThat(response.getStatus()).isEqualTo(422);
+  }
+
+  @Test
+  public void testSetPaymentsEmptySignature() {
+    PaymentAddress paymentAddress = new PaymentAddress("some address", null);
+
+    Response response =
+        resources.getJerseyTest()
+                 .target("/v1/accounts/payments/")
+                 .request()
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .put(Entity.json(new PaymentAddressList(List.of(paymentAddress))));
+
+    assertThat(response.getStatus()).isEqualTo(422);
   }
 
 
@@ -839,7 +917,7 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/pin/")
                  .request()
-                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.json(new DeprecatedPin("313")));
 
@@ -852,7 +930,7 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/registration_lock/")
                  .request()
-                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.json(new RegistrationLock("313")));
 
@@ -956,7 +1034,7 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/whoami/")
                  .request()
-                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .get(AccountCreationResult.class);
 
@@ -969,7 +1047,7 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/n00bkiller")
                  .request()
-                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.text(""));
 
@@ -982,7 +1060,7 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/takenusername")
                  .request()
-                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.text(""));
 
@@ -995,7 +1073,7 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/pаypal")
                  .request()
-                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.text(""));
 
@@ -1008,7 +1086,7 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/0n00bkiller")
                  .request()
-                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.text(""));
 
@@ -1034,7 +1112,7 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/")
                  .request()
-                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .delete();
 

@@ -48,6 +48,7 @@ import javax.ws.rs.core.Response;
 import java.security.SecureRandom;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -213,16 +214,53 @@ public class ProfileController {
                                      username.orElse(null),
                                      null,
                                      emailAddress,
-                                     credential.orElse(null)));
+                                     credential.orElse(null),
+                                     java.util.List.of()));
     } catch (InvalidInputException e) {
       logger.info("Bad profile request", e);
       throw new WebApplicationException(Response.Status.BAD_REQUEST);
     }
   }
 
-  private Optional<ProfileKeyCredentialResponse> getProfileCredential(Optional<String>                                      encodedProfileCredentialRequest,
+  // Diskuv Change: Do not allow profile retrieval by username, since no access control on profile retrieval
+  /*
+  @Timed
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/username/{username}")
+  public Profile getProfileByUsername(@Auth Account account, @PathParam("username") String username) throws RateLimitExceededException {
+    rateLimiters.getUsernameLookupLimiter().validate(account.getUuid().toString());
+
+    username = username.toLowerCase();
+
+    Optional<UUID> uuid = usernamesManager.get(username);
+
+    if (!uuid.isPresent()) {
+      throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build());
+    }
+
+    Optional<Account> accountProfile = accountsManager.get(uuid.get());
+
+    if (!accountProfile.isPresent()) {
+      throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build());
+    }
+
+    return new Profile(accountProfile.get().getProfileName(),
+                       accountProfile.get().getAvatar(),
+                       accountProfile.get().getIdentityKey(),
+                       UnidentifiedAccessChecksum.generateFor(accountProfile.get().getUnidentifiedAccessKey()),
+                       accountProfile.get().isUnrestrictedUnidentifiedAccess(),
+                       new UserCapabilities(accountProfile.get().isUuidAddressingSupported(), accountProfile.get().isGroupsV2Supported()),
+                       username,
+                       accountProfile.get().getUuid(),
+                       null,
+                       accountProfile.get().getPayments());
+  }
+  */
+
+  private Optional<ProfileKeyCredentialResponse> getProfileCredential(Optional<String>           encodedProfileCredentialRequest,
                                                                       Optional<? extends PossiblySyntheticVersionedProfile> profile,
-                                                                      UUID                                                  uuid)
+                                                                      UUID                       uuid)
       throws InvalidInputException
   {
     if (!encodedProfileCredentialRequest.isPresent()) return Optional.empty();
@@ -269,7 +307,7 @@ public class ProfileController {
     }
 
     if (requestAccount.isPresent()) {
-      rateLimiters.getProfileLimiter().validate(requestAccount.get().getNumber());
+      rateLimiters.getProfileLimiter().validate(requestAccount.get().getUuid().toString());
     }
 
     PossiblySyntheticAccount accountProfile = accountsManager.get(identifier.getUuid());
@@ -286,7 +324,29 @@ public class ProfileController {
                        username.orElse(null),
                        null,
                        accountProfile.getProfileEmailAddress(),
-                       null);
+                       null,
+                       java.util.List.of());
+  }
+
+
+  @Deprecated
+  @Timed
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/form/avatar")
+  public ProfileAvatarUploadAttributes getAvatarUploadForm(@Auth Account account) {
+    String                        previousAvatar                = account.getAvatar();
+    String                        objectName                    = generateAvatarObjectName();
+    ProfileAvatarUploadAttributes profileAvatarUploadAttributes = generateAvatarUploadForm(objectName);
+
+    if (previousAvatar != null && previousAvatar.startsWith("profiles/")) {
+      s3client.deleteObject(bucket, previousAvatar);
+    }
+
+    account.setAvatar(objectName);
+    accountsManager.update(account);
+
+    return profileAvatarUploadAttributes;
   }
 
   private ProfileAvatarUploadAttributes generateAvatarUploadForm(String objectName) {

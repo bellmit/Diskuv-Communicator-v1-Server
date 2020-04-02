@@ -25,11 +25,13 @@ import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.s3.PolicySigner;
 import org.whispersystems.textsecuregcm.s3.PostPolicyGenerator;
 import org.whispersystems.textsecuregcm.storage.Account;
+import org.whispersystems.textsecuregcm.storage.AccountsManager;
+import org.whispersystems.textsecuregcm.storage.PaymentAddress;
+import org.whispersystems.textsecuregcm.storage.ProfilesManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.storage.VersionedProfile;
 import org.whispersystems.textsecuregcm.synthetic.HmacDrbg;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
-import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager;
 import org.whispersystems.textsecuregcm.synthetic.SyntheticVersionedProfile;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
 import org.whispersystems.textsecuregcm.util.SystemMapper;
@@ -37,6 +39,7 @@ import org.whispersystems.textsecuregcm.util.SystemMapper;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.List;
 import java.util.Optional;
 
 import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
@@ -47,8 +50,9 @@ import static org.mockito.Mockito.*;
 
 public class ProfileControllerTest {
 
-  private static PossiblySyntheticAccountsManager  accountsManager     = mock(PossiblySyntheticAccountsManager.class );
-  private static PossiblySyntheticProfilesManager  profilesManager     = mock(PossiblySyntheticProfilesManager.class);
+  private static AccountsManager  accountsManager     = mock(AccountsManager.class );
+  private static PossiblySyntheticAccountsManager  possiblySyntheticAccountsManager     = new PossiblySyntheticAccountsManager(accountsManager, new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES]);
+  private static org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager  profilesManager     = mock(org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager.class);
   private static UsernamesManager usernamesManager    = mock(UsernamesManager.class);
   private static RateLimiters     rateLimiters        = mock(RateLimiters.class    );
   private static RateLimiter      rateLimiter         = mock(RateLimiter.class     );
@@ -68,7 +72,7 @@ public class ProfileControllerTest {
                                                                    .setMapper(SystemMapper.getMapper())
                                                                    .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
                                                                    .addResource(new ProfileController(rateLimiters,
-                                                                                                      accountsManager,
+                                                                                                      possiblySyntheticAccountsManager,
                                                                                                       profilesManager,
                                                                                                       usernamesManager,
                                                                                                       s3client,
@@ -89,21 +93,20 @@ public class ProfileControllerTest {
     when(profileAccount.getIdentityKey()).thenReturn("bar");
     when(profileAccount.getProfileName()).thenReturn("baz");
     when(profileAccount.getAvatar()).thenReturn("profiles/bang");
-    when(profileAccount.getAvatarDigest()).thenReturn("buh");
     when(profileAccount.getUuid()).thenReturn(AuthHelper.VALID_UUID_TWO);
     when(profileAccount.isEnabled()).thenReturn(true);
     when(profileAccount.isUuidAddressingSupported()).thenReturn(false);
+    when(profileAccount.getPayments()).thenReturn(List.of(new PaymentAddress("mc", "12345678901234567890123456789012")));
 
     Account capabilitiesAccount = mock(Account.class);
 
     when(capabilitiesAccount.getIdentityKey()).thenReturn("barz");
     when(capabilitiesAccount.getProfileName()).thenReturn("bazz");
     when(capabilitiesAccount.getAvatar()).thenReturn("profiles/bangz");
-    when(capabilitiesAccount.getAvatarDigest()).thenReturn("buz");
     when(capabilitiesAccount.isEnabled()).thenReturn(true);
     when(capabilitiesAccount.isUuidAddressingSupported()).thenReturn(true);
 
-    when(accountsManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(profileAccount);
+    when(accountsManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of(profileAccount));
     when(usernamesManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of("n00bkiller"));
     when(usernamesManager.get("n00bkiller")).thenReturn(Optional.of(AuthHelper.VALID_UUID_TWO));
 
@@ -122,29 +125,38 @@ public class ProfileControllerTest {
     Profile profile= resources.getJerseyTest()
                               .target("/v1/profile/" + AuthHelper.VALID_UUID_TWO)
                               .request()
-            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
                               .get(Profile.class);
 
     assertThat(profile.getIdentityKey()).isEqualTo("bar");
     assertThat(profile.getName()).isEqualTo("baz");
     assertThat(profile.getAvatar()).isEqualTo("profiles/bang");
     assertThat(profile.getUsername()).isEqualTo("n00bkiller");
+    assertThat(profile.getPayments()).isEqualTo(List.of());
+    // WAS: assertThat(profile.getPayments()).isEqualTo(List.of(new PaymentAddress("mc", "12345678901234567890123456789012")));
 
     verify(usernamesManager, times(1)).get(eq(AuthHelper.VALID_UUID_TWO));
-    verify(rateLimiter, times(1)).validate(eq(AuthHelper.VALID_NUMBER));
+    verify(rateLimiter, times(1)).validate(eq(AuthHelper.VALID_UUID_TWO.toString()));
   }
 
+  @Ignore("Diskuv does not support profile lookups by phone number")
   @Test
   public void testProfileGetByNumberBadRequest() throws RateLimitExceededException {
-    Response response = resources.getJerseyTest()
+    Profile profile = resources.getJerseyTest()
                               .target("/v1/profile/" + AuthHelper.VALID_NUMBER_TWO)
                               .request()
                               .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                               .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
-                              .get();
+                              .get(Profile.class);
 
-    assertThat(response.getStatus()).isEqualTo(Response.Status.BAD_REQUEST.getStatusCode());
+    assertThat(profile.getIdentityKey()).isEqualTo("bar");
+    assertThat(profile.getName()).isEqualTo("baz");
+    assertThat(profile.getAvatar()).isEqualTo("profiles/bang");
+    assertThat(profile.getPayments()).isEqualTo(List.of(new PaymentAddress("mc", "12345678901234567890123456789012")));
+    assertThat(profile.getCapabilities().isUuid()).isFalse();
+    assertThat(profile.getUsername()).isNull();
+    assertThat(profile.getUuid()).isNull();
   }
 
   @Test
@@ -212,7 +224,7 @@ public class ProfileControllerTest {
   @Ignore("Deleted deprecated non-versioned REST endpoints in ProfileController")
   public void testProfileCapabilities() throws Exception {
     Profile profile= resources.getJerseyTest()
-                              .target("/v1/profile/" + AuthHelper.VALID_NUMBER)
+                              .target("/v1/profile/" + AuthHelper.VALID_UUID)
                               .request()
             .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
             .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
@@ -227,8 +239,8 @@ public class ProfileControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/profile/name/123456789012345678901234567890123456789012345678901234567890123456789012")
                                  .request()
-            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
                                  .put(Entity.text(""));
 
     assertThat(response.getStatus()).isEqualTo(204);

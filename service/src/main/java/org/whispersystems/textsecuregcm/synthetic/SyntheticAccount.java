@@ -167,12 +167,12 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
 
   @Override
   public boolean isUuidAddressingSupported() {
-    return false;
+    return true;
   }
 
   @Override
   public boolean isGroupsV2Supported() {
-    return false;
+    return true;
   }
 
   private List<PossiblySyntheticDevice> makeDevices() {

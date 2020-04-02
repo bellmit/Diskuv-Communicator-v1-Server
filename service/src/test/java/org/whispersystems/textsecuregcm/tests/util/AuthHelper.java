@@ -124,6 +124,10 @@ public class AuthHelper {
     when(VALID_ACCOUNT_TWO.isEnabled()).thenReturn(true);
     when(DISABLED_ACCOUNT.isEnabled()).thenReturn(false);
 
+    when(VALID_ACCOUNT.getRealAccount()).thenReturn(Optional.of(VALID_ACCOUNT));
+    when(VALID_ACCOUNT_TWO.getRealAccount()).thenReturn(Optional.of(VALID_ACCOUNT_TWO));
+    when(DISABLED_ACCOUNT.getRealAccount()).thenReturn(Optional.of(DISABLED_ACCOUNT));
+
     when(VALID_ACCOUNT.getIdentityKey()).thenReturn(VALID_IDENTITY);
 
     when(ACCOUNTS_MANAGER.get(VALID_NUMBER)).thenReturn(Optional.of(VALID_ACCOUNT));
