@@ -228,8 +228,6 @@ public class MessageController {
                                   message.get().getSourceUuid().toString(),
                                   message.get().getTimestamp());
       }
-    } catch (NotPushRegisteredException e) {
-      logger.info("User no longer push registered for delivery receipt: " + e.getMessage());
     } catch (NoSuchUserException e) {
       logger.warn("Sending delivery receipt", e);
     }
@@ -251,8 +249,6 @@ public class MessageController {
       }
     } catch (NoSuchUserException e) {
       logger.warn("Sending delivery receipt", e);
-    } catch (NotPushRegisteredException e) {
-      logger.info("User no longer push registered for delivery receipt: " + e.getMessage());
     }
   }
 

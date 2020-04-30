@@ -1,6 +1,8 @@
 package org.whispersystems.textsecuregcm.push;
 
 import com.google.common.base.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.controllers.NoSuchUserException;
 import org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 import org.whispersystems.textsecuregcm.storage.Account;
@@ -10,13 +12,14 @@ import org.whispersystems.textsecuregcm.util.DiskuvUuidType;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 public class ReceiptSender {
 
-  private final PushSender      pushSender;
-  private final AccountsManager accountManager;
+  private final        PushSender      pushSender;
+  private final        AccountsManager accountManager;
+
+  private static final Logger          logger = LoggerFactory.getLogger(ReceiptSender.class);
 
   public ReceiptSender(AccountsManager accountManager,
                        PushSender      pushSender)
@@ -26,7 +29,7 @@ public class ReceiptSender {
   }
 
   public void sendReceipt(Account source, String destination, long messageId)
-      throws NoSuchUserException, NotPushRegisteredException
+      throws NoSuchUserException
   {
     DiskuvUuidType sourceType = DiskuvUuidUtil.verifyDiskuvUuid(source.getUuid().toString());
     DiskuvUuidType destType   = DiskuvUuidUtil.verifyDiskuvUuid(destination);
@@ -38,7 +41,6 @@ public class ReceiptSender {
     }
 
     Account          destinationAccount = getDestinationAccount(destination);
-    Set<Device>      destinationDevices = destinationAccount.getDevices();
     // Contact by email address. Not phone number.
     Envelope.Builder message            = Envelope.newBuilder()
                                                   .setSource("") // WAS: .setSource(source.getNumber())
@@ -51,8 +53,12 @@ public class ReceiptSender {
       message.setRelay(source.getRelay().get());
     }
 
-    for (Device destinationDevice : destinationDevices) {
-      pushSender.sendMessage(destinationAccount, destinationDevice, message.build(), false);
+    for (final Device destinationDevice : destinationAccount.getDevices()) {
+      try {
+        pushSender.sendMessage(destinationAccount, destinationDevice, message.build(), false);
+      } catch (NotPushRegisteredException e) {
+        logger.info("User no longer push registered for delivery receipt: " + e.getMessage());
+      }
     }
   }
 
