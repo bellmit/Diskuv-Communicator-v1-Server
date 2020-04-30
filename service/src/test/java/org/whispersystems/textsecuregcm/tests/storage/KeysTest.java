@@ -3,8 +3,10 @@ package org.whispersystems.textsecuregcm.tests.storage;
 import com.opentable.db.postgres.embedded.LiquibasePreparer;
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
 import com.opentable.db.postgres.junit.PreparedDbRule;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
 import org.jdbi.v3.core.HandleConsumer;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.jdbi.v3.core.transaction.SerializableTransactionRunner;
 import org.jdbi.v3.core.transaction.TransactionException;
 import org.jdbi.v3.core.transaction.TransactionIsolationLevel;
@@ -23,7 +25,6 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
-import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -246,7 +247,18 @@ public class KeysTest {
 
     for (int i=0;i<20;i++) {
       Thread thread = new Thread(() -> {
-        List<KeyRecord> results = keys.get(UUID_ALICE_STRING);
+        List<KeyRecord> results = null;
+        final int MAX_RETRIES = 5;
+        for (int retryAttempt = 0; results == null && retryAttempt < MAX_RETRIES; ++retryAttempt) {
+          try {
+            results = keys.get(UUID_ALICE_STRING);
+          } catch (UnableToExecuteStatementException e) {
+            if (retryAttempt == MAX_RETRIES - 1) {
+              throw e;
+            }
+          }
+        }
+        assertThat(results).isNotNull();
         assertThat(results.size()).isEqualTo(2);
       });
       thread.start();
