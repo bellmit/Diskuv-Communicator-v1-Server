@@ -119,6 +119,7 @@ import org.whispersystems.textsecuregcm.metrics.FreeMemoryGauge;
 import org.whispersystems.textsecuregcm.metrics.MetricsApplicationEventListener;
 import org.whispersystems.textsecuregcm.metrics.NetworkReceivedGauge;
 import org.whispersystems.textsecuregcm.metrics.NetworkSentGauge;
+import org.whispersystems.textsecuregcm.metrics.PushLatencyManager;
 import org.whispersystems.textsecuregcm.metrics.TrafficSource;
 import org.whispersystems.textsecuregcm.providers.RedisClientFactory;
 import org.whispersystems.textsecuregcm.providers.RedisClusterHealthCheck;
@@ -335,10 +336,12 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     RedisClientFactory pubSubClientFactory        = new RedisClientFactory("pubsub_cache", config.getPubsubCacheConfiguration().getReadTimeoutMs(), config.getPubsubCacheConfiguration().getUrl(), config.getPubsubCacheConfiguration().getReplicaUrls(), config.getPubsubCacheConfiguration().getCircuitBreakerConfiguration());
     RedisClientFactory messagesClientFactory      = new RedisClientFactory("message_cache", config.getMessageCacheConfiguration().getRedisConfiguration().getReadTimeoutMs(), config.getMessageCacheConfiguration().getRedisConfiguration().getUrl(), config.getMessageCacheConfiguration().getRedisConfiguration().getReplicaUrls(), config.getMessageCacheConfiguration().getRedisConfiguration().getCircuitBreakerConfiguration());
     RedisClientFactory pushSchedulerClientFactory = new RedisClientFactory("push_scheduler_cache", config.getPushScheduler().getReadTimeoutMs(), config.getPushScheduler().getUrl(), config.getPushScheduler().getReplicaUrls(), config.getPushScheduler().getCircuitBreakerConfiguration());
+    RedisClientFactory metricsCacheClientFactory  = new RedisClientFactory("metrics_cache", config.getMetricsCacheConfiguration().getReadTimeoutMs(), config.getMetricsCacheConfiguration().getUrl(), config.getMetricsCacheConfiguration().getReplicaUrls(), config.getMetricsCacheConfiguration().getCircuitBreakerConfiguration());
 
     ReplicatedJedisPool pubsubClient        = pubSubClientFactory.getRedisClientPool();
     ReplicatedJedisPool messagesClient      = messagesClientFactory.getRedisClientPool();
     ReplicatedJedisPool pushSchedulerClient = pushSchedulerClientFactory.getRedisClientPool();
+    ReplicatedJedisPool metricsCacheClient  = metricsCacheClientFactory.getRedisClientPool();
 
     RedisClusterClient cacheClusterClient = RedisClusterClient.create(config.getCacheClusterConfiguration().getUrls().stream().map(RedisURI::create).collect(Collectors.toList()));
     cacheClusterClient.setDefaultTimeout(config.getCacheClusterConfiguration().getTimeout());
@@ -355,7 +358,8 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager syntheticProfilesManager = new org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager(profilesManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
     RedisClusterMessagesCache  clusterMessagesCache       = new RedisClusterMessagesCache(messagesCacheCluster);
     MessagesCache              messagesCache              = new MessagesCache(messagesClient, messages, accountsManager, config.getMessageCacheConfiguration().getPersistDelayMinutes(), clusterMessagesCache);
-    MessagesManager            messagesManager            = new MessagesManager(messages, messagesCache);
+    PushLatencyManager         pushLatencyManager         = new PushLatencyManager(metricsCacheClient);
+    MessagesManager            messagesManager            = new MessagesManager(messages, messagesCache, pushLatencyManager);
     RemoteConfigsManager       remoteConfigsManager       = new RemoteConfigsManager(remoteConfigs);
     DeadLetterHandler          deadLetterHandler          = new DeadLetterHandler(accountsManager, messagesManager);
     DispatchManager            dispatchManager            = new DispatchManager(pubSubClientFactory, Optional.of(deadLetterHandler));
@@ -375,7 +379,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     ApnFallbackManager       apnFallbackManager  = new ApnFallbackManager(pushSchedulerClient, apnSender, accountsManager);
     TwilioSmsSender          twilioSmsSender     = new TwilioSmsSender(config.getTwilioConfiguration());
     SmsSender                smsSender           = new SmsSender(twilioSmsSender);
-    PushSender               pushSender          = new PushSender(apnFallbackManager, gcmSender, apnSender, websocketSender, config.getPushConfiguration().getQueueSize());
+    PushSender               pushSender          = new PushSender(apnFallbackManager, gcmSender, apnSender, websocketSender, config.getPushConfiguration().getQueueSize(), pushLatencyManager);
     ReceiptSender            receiptSender       = new ReceiptSender(accountsManager, pushSender);
     TurnTokenGenerator       turnTokenGenerator  = new TurnTokenGenerator(config.getTurnConfiguration());
     RecaptchaClient          recaptchaClient     = new RecaptchaClient(config.getRecaptchaConfiguration().getSecret());

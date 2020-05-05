@@ -20,7 +20,31 @@ import com.diskuv.communicatorservice.storage.configuration.DiskuvGroupsConfigur
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.JerseyClientConfiguration;
-import org.whispersystems.textsecuregcm.configuration.*;
+import org.whispersystems.textsecuregcm.configuration.AccountDatabaseCrawlerConfiguration;
+import org.whispersystems.textsecuregcm.configuration.ApnConfiguration;
+import org.whispersystems.textsecuregcm.configuration.AwsAttachmentsConfiguration;
+import org.whispersystems.textsecuregcm.configuration.CdnConfiguration;
+import org.whispersystems.textsecuregcm.configuration.DatabaseConfiguration;
+import org.whispersystems.textsecuregcm.configuration.GcmConfiguration;
+import org.whispersystems.textsecuregcm.configuration.GcpAttachmentsConfiguration;
+import org.whispersystems.textsecuregcm.configuration.JwtKeysConfiguration;
+import org.whispersystems.textsecuregcm.configuration.MaxDeviceConfiguration;
+import org.whispersystems.textsecuregcm.configuration.MessageCacheConfiguration;
+import org.whispersystems.textsecuregcm.configuration.MicrometerConfiguration;
+import org.whispersystems.textsecuregcm.configuration.PushConfiguration;
+import org.whispersystems.textsecuregcm.configuration.RateLimitsConfiguration;
+import org.whispersystems.textsecuregcm.configuration.RecaptchaConfiguration;
+import org.whispersystems.textsecuregcm.configuration.RedisClusterConfiguration;
+import org.whispersystems.textsecuregcm.configuration.RedisConfiguration;
+import org.whispersystems.textsecuregcm.configuration.RemoteConfigConfiguration;
+import org.whispersystems.textsecuregcm.configuration.SecureBackupServiceConfiguration;
+import org.whispersystems.textsecuregcm.configuration.SecureStorageServiceConfiguration;
+import org.whispersystems.textsecuregcm.configuration.TestDeviceConfiguration;
+import org.whispersystems.textsecuregcm.configuration.TurnConfiguration;
+import org.whispersystems.textsecuregcm.configuration.TwilioConfiguration;
+import org.whispersystems.textsecuregcm.configuration.UnidentifiedDeliveryConfiguration;
+import org.whispersystems.textsecuregcm.configuration.VoiceVerificationConfiguration;
+import org.whispersystems.textsecuregcm.configuration.ZkConfig;
 import org.whispersystems.websocket.configuration.WebSocketConfiguration;
 
 import javax.validation.Valid;
@@ -72,6 +96,11 @@ public class WhisperServerConfiguration extends Configuration {
   @Valid
   @JsonProperty
   private RedisConfiguration pubsub;
+
+  @NotNull
+  @Valid
+  @JsonProperty
+  private RedisConfiguration metricsCache;
 
   @NotNull
   @Valid
@@ -228,6 +257,10 @@ public class WhisperServerConfiguration extends Configuration {
 
   public RedisConfiguration getPubsubCacheConfiguration() {
     return pubsub;
+  }
+
+  public RedisConfiguration getMetricsCacheConfiguration() {
+    return metricsCache;
   }
 
   public SecureStorageServiceConfiguration getSecureStorageServiceConfiguration() {
