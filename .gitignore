@@ -16,3 +16,5 @@ service/config/testing.yml
 .opsmanage
 put.sh
 service/native-libs/
+deployer.properties
+deployer.log
