@@ -17,4 +17,6 @@ service/config/testing.yml
 put.sh
 service/native-libs/
 deployer.properties
+deployer-staging.properties
+deployer-production.properties
 deployer.log
