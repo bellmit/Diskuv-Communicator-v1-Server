@@ -276,6 +276,74 @@ public class AccountController {
     return new AccountCreationResult(account.getUuid(), existingAccount.map(Account::isStorageSupported).orElse(false));
   }
 
+  /*
+  @Timed
+  @PUT
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/code/{verification_code}")
+  public AccountCreationResult verifyAccount(@PathParam("verification_code") String verificationCode,
+                                             @HeaderParam("Authorization")   String authorizationHeader,
+                                             @HeaderParam("X-Signal-Agent")  String userAgent,
+                                             @QueryParam("transfer")         Optional<Boolean> availableForTransfer,
+                                             @Valid                          AccountAttributes accountAttributes)
+      throws RateLimitExceededException
+  {
+    try {
+      AuthorizationHeader header = AuthorizationHeader.fromFullHeader(authorizationHeader);
+      String number              = header.getIdentifier().getNumber();
+      String password            = header.getPassword();
+
+      if (number == null) {
+        throw new WebApplicationException(400);
+      }
+
+      rateLimiters.getVerifyLimiter().validate(number);
+
+      Optional<StoredVerificationCode> storedVerificationCode = pendingAccounts.getCodeForNumber(number);
+
+      if (storedVerificationCode.isEmpty() || !storedVerificationCode.get().isValid(verificationCode)) {
+        throw new WebApplicationException(Response.status(403).build());
+      }
+
+      Optional<Account>                    existingAccount           = accounts.get(number);
+      Optional<StoredRegistrationLock>     existingRegistrationLock  = existingAccount.map(Account::getRegistrationLock);
+      Optional<ExternalServiceCredentials> existingBackupCredentials = existingAccount.map(Account::getUuid)
+                                                                                      .map(uuid -> backupServiceCredentialGenerator.generateFor(uuid.toString()));
+
+      if (existingRegistrationLock.isPresent() && existingRegistrationLock.get().requiresClientRegistrationLock()) {
+        rateLimiters.getVerifyLimiter().clear(number);
+
+        if (!Util.isEmpty(accountAttributes.getRegistrationLock()) || !Util.isEmpty(accountAttributes.getPin())) {
+          rateLimiters.getPinLimiter().validate(number);
+        }
+
+        if (!existingRegistrationLock.get().verify(accountAttributes.getRegistrationLock(), accountAttributes.getPin())) {
+          throw new WebApplicationException(Response.status(423)
+                                                    .entity(new RegistrationLockFailure(existingRegistrationLock.get().getTimeRemaining(),
+                                                                                        existingRegistrationLock.get().needsFailureCredentials() ? existingBackupCredentials.orElseThrow() : null))
+                                                    .build());
+        }
+
+        rateLimiters.getPinLimiter().clear(number);
+      }
+
+      if (availableForTransfer.orElse(false) && existingAccount.map(Account::isTransferSupported).orElse(false)) {
+        throw new WebApplicationException(Response.status(409).build());
+      }
+
+      Account account = createAccount(number, password, userAgent, accountAttributes);
+
+      metricRegistry.meter(name(AccountController.class, "verify", Util.getCountryCode(number))).mark();
+
+      return new AccountCreationResult(account.getUuid(), existingAccount.map(Account::isStorageSupported).orElse(false));
+    } catch (InvalidAuthorizationHeaderException e) {
+      logger.info("Bad Authorization Header", e);
+      throw new WebApplicationException(Response.status(401).build());
+    }
+  }
+  */
+
   @Timed
   @GET
   @Path("/turn/")

@@ -170,6 +170,10 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
     return false;
   }
 
+  public boolean isTransferSupported() {
+    return getMasterDevice().map(Device::getCapabilities).map(Device.DeviceCapabilities::isTransfer).orElse(false);
+  }
+
   public boolean isEnabled() {
     return
         getMasterDevice().isPresent()       &&
