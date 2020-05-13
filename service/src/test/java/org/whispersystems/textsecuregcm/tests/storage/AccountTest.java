@@ -143,20 +143,20 @@ public class AccountTest {
 
     {
       final Account transferableMasterAccount =
-              new Account("+14152222222", UUID.randomUUID(), Collections.singleton(transferCapableMasterDevice), "1234".getBytes());
+              new Account(UUID.randomUUID(), Collections.singleton(transferCapableMasterDevice), "1234".getBytes());
 
       assertTrue(transferableMasterAccount.isTransferSupported());
     }
 
     {
       final Account nonTransferableMasterAccount =
-              new Account("+14152222222", UUID.randomUUID(), Collections.singleton(nonTransferCapableMasterDevice), "1234".getBytes());
+              new Account(UUID.randomUUID(), Collections.singleton(nonTransferCapableMasterDevice), "1234".getBytes());
 
       assertFalse(nonTransferableMasterAccount.isTransferSupported());
     }
 
     {
-      final Account transferableLinkedAccount = new Account("+14152222222", UUID.randomUUID(), new HashSet<>() {{
+      final Account transferableLinkedAccount = new Account(UUID.randomUUID(), new HashSet<>() {{
         add(nonTransferCapableMasterDevice);
         add(transferCapableLinkedDevice);
       }}, "1234".getBytes());

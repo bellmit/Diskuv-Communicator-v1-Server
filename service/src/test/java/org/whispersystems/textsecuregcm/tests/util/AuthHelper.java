@@ -1,6 +1,9 @@
 package org.whispersystems.textsecuregcm.tests.util;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.hash.Hashing;
+import io.dropwizard.auth.AuthFilter;
+import io.dropwizard.auth.PolymorphicAuthDynamicFeature;
 import org.mockito.ArgumentMatcher;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
 import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
@@ -16,11 +19,11 @@ import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.util.Base64;
 
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 
-import io.dropwizard.auth.AuthFilter;
-import io.dropwizard.auth.PolymorphicAuthDynamicFeature;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import static org.mockito.ArgumentMatchers.argThat;
@@ -41,6 +44,11 @@ public class AuthHelper {
   public static final String VALID_EMAIL_TWO            = "email2@test.com";
   public static final long   VALID_DEVICE_ID_TWO        = 1L;
   public static final String VALID_DEVICE_ID_STRING_TWO = Long.toString(VALID_DEVICE_ID_TWO);
+  // Static seed to ensure reproducible tests.
+  private static final Random random = new Random(0xf744df3b43a3339cL);
+
+  public static final TestAccount[] TEST_ACCOUNTS = generateTestAccounts();
+
   public static final String VALID_NUMBER_TWO = "+201511111110";
   public static final UUID   VALID_UUID_TWO    = DiskuvUuidUtil.uuidForOutdoorEmailAddress(VALID_EMAIL_TWO);
   public static final String VALID_PASSWORD_TWO = "baz";
@@ -75,7 +83,7 @@ public class AuthHelper {
   private static AuthenticationCredentials VALID_CREDENTIALS_TWO = mock(AuthenticationCredentials.class);
   private static AuthenticationCredentials DISABLED_CREDENTIALS  = mock(AuthenticationCredentials.class);
 
-  public static PolymorphicAuthDynamicFeature getAuthFilter() {
+  public static PolymorphicAuthDynamicFeature<? extends Principal> getAuthFilter() {
     when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN)).thenReturn(VALID_EMAIL);
     when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN_TWO)).thenReturn(VALID_EMAIL_TWO);
     when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(DISABLED_BEARER_TOKEN)).thenReturn(DISABLED_EMAIL);
@@ -145,6 +153,10 @@ public class AuthHelper {
     when(ACCOUNTS_MANAGER.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasNumber() && identifier.getNumber().equals(DISABLED_NUMBER)))).thenReturn(Optional.of(DISABLED_ACCOUNT));
     when(ACCOUNTS_MANAGER.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasUuid() && identifier.getUuid().equals(DISABLED_UUID)))).thenReturn(Optional.of(DISABLED_ACCOUNT));
 
+    for (TestAccount testAccount : TEST_ACCOUNTS) {
+      testAccount.setup(ACCOUNTS_MANAGER);
+    }
+
     AuthFilter<DiskuvDeviceCredentials, Account>                  accountAuthFilter                  = new DiskuvDeviceCredentialAuthFilter.Builder<Account>().setAuthenticator(new DiskuvAccountAuthenticator(ACCOUNTS_MANAGER, JWT_AUTHENTICATION)).buildAuthFilter();
     AuthFilter<DiskuvDeviceCredentials, DisabledPermittedAccount> disabledPermittedAccountAuthFilter = new DiskuvDeviceCredentialAuthFilter.Builder<DisabledPermittedAccount>().setAuthenticator(new DisabledPermittedDiskuvAccountAuthenticator(ACCOUNTS_MANAGER, JWT_AUTHENTICATION)).buildAuthFilter();
 
@@ -167,5 +179,66 @@ public class AuthHelper {
 
   public static String getUnidentifiedAccessHeader(byte[] key) {
     return Base64.encodeBytes(key);
+  }
+
+  public static UUID getRandomUUID(Random random) {
+    long mostSignificantBits  = random.nextLong();
+    long leastSignificantBits = random.nextLong();
+    mostSignificantBits  &= 0xffffffffffff0fffL;
+    mostSignificantBits  |= 0x0000000000004000L;
+    leastSignificantBits &= 0x3fffffffffffffffL;
+    leastSignificantBits |= 0x8000000000000000L;
+    return new UUID(mostSignificantBits, leastSignificantBits);
+  }
+
+  public static final class TestAccount {
+    public final String email;
+    public final UUID   uuid;
+    public final String                    password;
+    public final Account                   account                   = mock(Account.class);
+    public final Device                    device                    = mock(Device.class);
+    public final AuthenticationCredentials authenticationCredentials = mock(AuthenticationCredentials.class);
+    public final String                    bearerToken;
+
+    public TestAccount(String email, UUID uuid, String password) {
+      this.email    = email;
+      this.uuid     = uuid;
+      this.password = password;
+      this.bearerToken = Hashing.sha256().hashString(email, StandardCharsets.UTF_8).toString();
+    }
+
+    public String getAuthHeader() {
+      return AuthHelper.getAccountAuthHeader(bearerToken);
+    }
+
+    private void setup(final AccountsManager accountsManager) {
+      when(authenticationCredentials.verify(password)).thenReturn(true);
+      when(device.getAuthenticationCredentials()).thenReturn(authenticationCredentials);
+      when(device.isMaster()).thenReturn(true);
+      when(device.getId()).thenReturn(1L);
+      when(device.isEnabled()).thenReturn(true);
+      when(account.getDevice(1L)).thenReturn(Optional.of(device));
+      when(account.getNumber()).thenReturn(uuid.toString());
+      when(account.getUuid()).thenReturn(uuid);
+      when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
+      when(account.getRelay()).thenReturn(Optional.empty());
+      when(account.isEnabled()).thenReturn(true);
+      when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(bearerToken)).thenReturn(email);
+      when(accountsManager.get(email)).thenReturn(Optional.of(account));
+      when(accountsManager.get(uuid)).thenReturn(Optional.of(account));
+      when(accountsManager.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasNumber() && identifier.getNumber().equals(email)))).thenReturn(Optional.of(account));
+      when(accountsManager.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasUuid() && identifier.getUuid().equals(uuid)))).thenReturn(Optional.of(account));
+    }
+  }
+
+  private static TestAccount[] generateTestAccounts() {
+    final TestAccount[] testAccounts = new TestAccount[20];
+    final long numberBase = 1_409_000_0000L;
+    for (int i = 0; i < testAccounts.length; i++) {
+      long currentNumber = numberBase + i;
+      String email = currentNumber + "@example.com";
+      testAccounts[i] = new TestAccount(email, DiskuvUuidUtil.uuidForEmailAddress(email), "TestAccountPassword-" + currentNumber);
+    }
+    return testAccounts;
   }
 }

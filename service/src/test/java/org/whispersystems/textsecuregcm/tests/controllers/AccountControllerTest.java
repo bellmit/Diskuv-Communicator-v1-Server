@@ -801,6 +801,7 @@ public class AccountControllerTest {
     }
   }
 
+  @Ignore("Diskuv does not support payments")
   @Test
   public void testVerifyTransferSupported() {
     when(senderTransfer.isTransferSupported()).thenReturn(true);
@@ -817,6 +818,7 @@ public class AccountControllerTest {
     assertThat(response.getStatus()).isEqualTo(409);
   }
 
+  @Ignore("Diskuv does not support payments")
   @Test
   public void testVerifyTransferNotSupported() {
     when(senderTransfer.isTransferSupported()).thenReturn(false);
@@ -833,6 +835,7 @@ public class AccountControllerTest {
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
+  @Ignore("Diskuv does not support payments")
   @Test
   public void testVerifyTransferSupportedNotRequested() {
     when(senderTransfer.isTransferSupported()).thenReturn(true);
