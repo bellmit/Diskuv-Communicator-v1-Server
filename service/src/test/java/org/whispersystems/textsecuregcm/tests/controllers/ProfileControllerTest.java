@@ -126,7 +126,7 @@ public class ProfileControllerTest {
                               .target("/v1/profile/" + AuthHelper.VALID_UUID_TWO)
                               .request()
             .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
-            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
                               .get(Profile.class);
 
     assertThat(profile.getIdentityKey()).isEqualTo("bar");

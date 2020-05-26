@@ -87,6 +87,14 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
     this.unidentifiedAccessKey = unidentifiedAccessKey;
   }
 
+  @VisibleForTesting
+  public Account(String number, UUID uuid, Set<Device> devices, byte[] unidentifiedAccessKey) {
+    this.number                = number;
+    this.uuid                  = uuid;
+    this.devices               = devices;
+    this.unidentifiedAccessKey = unidentifiedAccessKey;
+  }
+
   @Override
   public Optional<Account> getRealAccount() {
     return Optional.of(this);

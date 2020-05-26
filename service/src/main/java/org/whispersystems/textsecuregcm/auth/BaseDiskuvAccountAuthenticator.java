@@ -5,6 +5,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
 import com.diskuv.communicatorservice.auth.JwtAuthentication;
+import com.google.common.annotations.VisibleForTesting;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
@@ -13,8 +14,10 @@ import org.whispersystems.textsecuregcm.util.DiskuvUuidType;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Util;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import java.util.UUID;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -46,16 +49,22 @@ public class BaseDiskuvAccountAuthenticator {
 
   private final AccountsManager accountsManager;
   private final JwtAuthentication jwtAuthentication;
+  private final Clock           clock;
 
   public BaseDiskuvAccountAuthenticator(
       AccountsManager accountsManager, JwtAuthentication jwtAuthentication) {
+    this(accountsManager, jwtAuthentication, Clock.systemUTC());
+  }
+
+  @VisibleForTesting
+  public BaseDiskuvAccountAuthenticator(AccountsManager accountsManager, JwtAuthentication jwtAuthentication, Clock clock) {
     this.accountsManager = accountsManager;
+    this.clock           = clock;
     this.jwtAuthentication = jwtAuthentication;
   }
 
-  public Optional<Account> authenticate(
-      DiskuvDeviceCredentials credentials, boolean enabledRequired) {
-    UUID outdoorsUUID;
+  public Optional<Account> authenticate(DiskuvDeviceCredentials credentials, boolean enabledRequired) {
+    final java.util.UUID outdoorsUUID;
     try {
       String emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(credentials.getBearerToken());
       outdoorsUUID = DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress);
@@ -64,7 +73,7 @@ public class BaseDiskuvAccountAuthenticator {
       return Optional.empty();
     }
 
-    final UUID accountUuid = credentials.getAccountUuid();
+    final java.util.UUID accountUuid = credentials.getAccountUuid();
     final DiskuvUuidType diskuvUuidType;
     try {
       diskuvUuidType = DiskuvUuidUtil.verifyDiskuvUuid(accountUuid.toString());
@@ -129,9 +138,13 @@ public class BaseDiskuvAccountAuthenticator {
     }
   }
 
-  private void updateLastSeen(Account account, Device device) {
-    if (device.getLastSeen() != Util.todayInMillis()) {
-      device.setLastSeen(Util.todayInMillis());
+  @VisibleForTesting
+  public void updateLastSeen(Account account, Device device) {
+    final long lastSeenOffsetSeconds   = Math.abs(account.getUuid().getLeastSignificantBits()) % ChronoUnit.DAYS.getDuration().toSeconds();
+    final long todayInMillisWithOffset = Util.todayInMillisGivenOffsetFromNow(clock, Duration.ofSeconds(lastSeenOffsetSeconds).negated());
+
+    if (device.getLastSeen() < todayInMillisWithOffset) {
+      device.setLastSeen(Util.todayInMillis(clock));
       accountsManager.update(account);
     }
   }

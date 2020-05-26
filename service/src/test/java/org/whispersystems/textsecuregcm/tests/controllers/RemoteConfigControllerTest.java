@@ -145,7 +145,7 @@ public class RemoteConfigControllerTest {
     for (AuthHelper.TestAccount testAccount : AuthHelper.TEST_ACCOUNTS) {
       UserRemoteConfigList configuration = resources.getJerseyTest().target("/v1/config/").request()
                                                     .header("Authorization", testAccount.getAuthHeader())
-                                                    .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, testAccount.password))
+                                                    .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(testAccount.uuid, AuthHelper.VALID_DEVICE_ID_STRING, testAccount.password))
                                                     .get(UserRemoteConfigList.class);
       assertThat(configuration.getConfig()).hasSize(10);
 
