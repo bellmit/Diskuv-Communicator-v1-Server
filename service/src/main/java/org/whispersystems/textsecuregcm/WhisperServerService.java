@@ -104,6 +104,7 @@ import org.whispersystems.textsecuregcm.metrics.FreeMemoryGauge;
 import org.whispersystems.textsecuregcm.metrics.MetricsApplicationEventListener;
 import org.whispersystems.textsecuregcm.metrics.NetworkReceivedGauge;
 import org.whispersystems.textsecuregcm.metrics.NetworkSentGauge;
+import org.whispersystems.textsecuregcm.metrics.TrafficSource;
 import org.whispersystems.textsecuregcm.providers.RedisClientFactory;
 import org.whispersystems.textsecuregcm.providers.RedisHealthCheck;
 import org.whispersystems.textsecuregcm.push.APNSender;
@@ -320,7 +321,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     // [Diskuv Change] END: Import of groups from storage-service
 
-    environment.jersey().register(new MetricsApplicationEventListener());
+    environment.jersey().register(new MetricsApplicationEventListener(TrafficSource.HTTP));
 
     environment.jersey().register(new PolymorphicAuthDynamicFeature<>(ImmutableMap.of(Account.class, accountAuthFilter,
                                                                                       DisabledPermittedAccount.class, disabledPermittedAccountAuthFilter,
@@ -353,7 +354,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     WebSocketEnvironment<Account> webSocketEnvironment = new WebSocketEnvironment<>(environment, config.getWebSocketConfiguration(), 90000);
     webSocketEnvironment.setAuthenticator(new WebSocketAccountAuthenticator(accountAuthenticator));
     webSocketEnvironment.setConnectListener(new AuthenticatedConnectListener(pushSender, receiptSender, messagesManager, pubSubManager, apnFallbackManager));
-    webSocketEnvironment.jersey().register(new MetricsApplicationEventListener());
+    webSocketEnvironment.jersey().register(new MetricsApplicationEventListener(TrafficSource.WEBSOCKET));
     webSocketEnvironment.jersey().register(new KeepAliveController(pubSubManager));
     webSocketEnvironment.jersey().register(messageController);
     webSocketEnvironment.jersey().register(profileController);
@@ -364,7 +365,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     WebSocketEnvironment<Account> provisioningEnvironment = new WebSocketEnvironment<>(environment, webSocketEnvironment.getRequestLog(), 60000);
     provisioningEnvironment.setConnectListener(new ProvisioningConnectListener(pubSubManager));
-    provisioningEnvironment.jersey().register(new MetricsApplicationEventListener());
+    provisioningEnvironment.jersey().register(new MetricsApplicationEventListener(TrafficSource.WEBSOCKET));
     provisioningEnvironment.jersey().register(new KeepAliveController(pubSubManager));
 
     registerCorsFilter(environment);
