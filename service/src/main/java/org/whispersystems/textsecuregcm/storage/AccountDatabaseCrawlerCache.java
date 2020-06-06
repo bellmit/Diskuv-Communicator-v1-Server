@@ -18,6 +18,8 @@ package org.whispersystems.textsecuregcm.storage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.lettuce.core.SetArgs;
+import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
 import org.whispersystems.textsecuregcm.redis.LuaScript;
 import org.whispersystems.textsecuregcm.redis.ReplicatedJedisPool;
 
@@ -39,11 +41,13 @@ public class AccountDatabaseCrawlerCache {
 
   private static final long LAST_NUMBER_TTL_MS  = 86400_000L;
 
-  private final ReplicatedJedisPool jedisPool;
-  private final LuaScript           luaScript;
+  private final ReplicatedJedisPool       jedisPool;
+  private final FaultTolerantRedisCluster cacheCluster;
+  private final LuaScript                 luaScript;
 
-  public AccountDatabaseCrawlerCache(ReplicatedJedisPool jedisPool) throws IOException {
+  public AccountDatabaseCrawlerCache(ReplicatedJedisPool jedisPool, FaultTolerantRedisCluster cacheCluster) throws IOException {
     this.jedisPool = jedisPool;
+    this.cacheCluster = cacheCluster;
     String resource = "lua/account_database_crawler/unlock.lua";
     try {
       logger.info("Getting " + resource + " script from redis");
@@ -58,6 +62,7 @@ public class AccountDatabaseCrawlerCache {
   public void clearAccelerate() {
     try (Jedis jedis = jedisPool.getWriteResource()) {
       jedis.del(ACCELERATE_KEY);
+      cacheCluster.useWriteCluster(connection -> connection.async().del(ACCELERATE_KEY));
     }
   }
 
@@ -69,7 +74,14 @@ public class AccountDatabaseCrawlerCache {
 
   public boolean claimActiveWork(String workerId, long ttlMs) {
     try (Jedis jedis = jedisPool.getWriteResource()) {
-      return "OK".equals(jedis.set(ACTIVE_WORKER_KEY, workerId, "NX", "PX", ttlMs));
+      final boolean claimed = "OK".equals(jedis.set(ACTIVE_WORKER_KEY, workerId, "NX", "PX", ttlMs));
+
+      if (claimed) {
+        // TODO Restore the NX flag when making the cluster the primary data store
+        cacheCluster.useWriteCluster(connection -> connection.async().set(ACCELERATE_KEY, workerId, SetArgs.Builder.px(ttlMs)));
+      }
+
+      return claimed;
     }
   }
 
@@ -92,8 +104,10 @@ public class AccountDatabaseCrawlerCache {
     try (Jedis jedis = jedisPool.getWriteResource()) {
       if (lastUuid.isPresent()) {
         jedis.psetex(LAST_UUID_KEY, LAST_NUMBER_TTL_MS, lastUuid.get().toString());
+        cacheCluster.useWriteCluster(connection -> connection.async().psetex(LAST_UUID_KEY, LAST_NUMBER_TTL_MS, lastUuid.get().toString()));
       } else {
         jedis.del(LAST_UUID_KEY);
+        cacheCluster.useWriteCluster(connection -> connection.async().del(LAST_UUID_KEY));
       }
     }
   }

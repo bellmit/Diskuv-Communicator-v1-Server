@@ -22,14 +22,14 @@ import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.lettuce.core.cluster.api.async.RedisAdvancedClusterAsyncCommands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
-import org.whispersystems.textsecuregcm.entities.ClientContact;
+import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
 import org.whispersystems.textsecuregcm.redis.ReplicatedJedisPool;
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.SystemMapper;
-import org.whispersystems.textsecuregcm.util.Util;
 
 import java.io.IOException;
 import java.util.List;
@@ -54,14 +54,16 @@ public class AccountsManager {
 
   private final Logger logger = LoggerFactory.getLogger(AccountsManager.class);
 
-  private final Accounts            accounts;
-  private final ReplicatedJedisPool cacheClient;
-  private final ObjectMapper        mapper;
+  private final Accounts                  accounts;
+  private final ReplicatedJedisPool       cacheClient;
+  private final FaultTolerantRedisCluster cacheCluster;
+  private final ObjectMapper              mapper;
 
-  public AccountsManager(Accounts accounts, ReplicatedJedisPool cacheClient) {
-    this.accounts    = accounts;
-    this.cacheClient = cacheClient;
-    this.mapper      = SystemMapper.getMapper();
+  public AccountsManager(Accounts accounts, ReplicatedJedisPool cacheClient, FaultTolerantRedisCluster cacheCluster) {
+    this.accounts     = accounts;
+    this.cacheClient  = cacheClient;
+    this.cacheCluster = cacheCluster;
+    this.mapper       = SystemMapper.getMapper();
   }
 
   public boolean create(Account account) {
@@ -131,8 +133,19 @@ public class AccountsManager {
     try (Jedis         jedis   = cacheClient.getWriteResource();
          Timer.Context ignored = redisSetTimer.time())
     {
-      jedis.set(getAccountMapKey(account.getNumber()), account.getUuid().toString());
-      jedis.set(getAccountEntityKey(account.getUuid()), mapper.writeValueAsString(account));
+      final String accountMapKey    = getAccountMapKey(account.getNumber());
+      final String accountEntityKey = getAccountEntityKey(account.getUuid());
+      final String accountJson      = mapper.writeValueAsString(account);
+
+      jedis.set(accountMapKey, account.getUuid().toString());
+      jedis.set(accountEntityKey, accountJson);
+
+      cacheCluster.useWriteCluster(connection -> {
+        RedisAdvancedClusterAsyncCommands<String, String> asyncCommands = connection.async();
+
+        asyncCommands.set(accountMapKey, account.getUuid().toString());
+        asyncCommands.set(accountEntityKey, accountJson);
+      });
     } catch (JsonProcessingException e) {
       throw new IllegalStateException(e);
     }
