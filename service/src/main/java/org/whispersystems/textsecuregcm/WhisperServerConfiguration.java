@@ -74,6 +74,11 @@ public class WhisperServerConfiguration extends Configuration {
   @NotNull
   @Valid
   @JsonProperty
+  private RedisClusterConfiguration cacheCluster;
+
+  @NotNull
+  @Valid
+  @JsonProperty
   private RedisConfiguration pubsub;
 
   @NotNull
@@ -227,6 +232,10 @@ public class WhisperServerConfiguration extends Configuration {
 
   public RedisConfiguration getCacheConfiguration() {
     return cache;
+  }
+
+  public RedisClusterConfiguration getCacheClusterConfiguration() {
+    return cacheCluster;
   }
 
   public RedisConfiguration getPubsubCacheConfiguration() {
