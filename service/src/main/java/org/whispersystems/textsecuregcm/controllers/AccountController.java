@@ -187,6 +187,21 @@ public class AccountController {
     return Response.ok().build();
   }
 
+  /*
+  @GET
+  @Path("/{transport}/code/{number}")
+  public Response createAccount(@PathParam("transport")         String transport,
+                                @PathParam("number")            String number,
+                                @HeaderParam("X-Forwarded-For") String forwardedFor,
+                                @HeaderParam("User-Agent")      List<String> userAgent,
+                                @HeaderParam("Accept-Language") Optional<String> locale,
+                                @QueryParam("client")           Optional<String> client,
+                                @QueryParam("captcha")          Optional<String> captcha,
+                                @QueryParam("challenge")        Optional<String> pushChallenge)
+      throws RateLimitExceededException
+   {
+   }
+   */
   @Timed
   @PUT
   @Consumes(MediaType.APPLICATION_JSON)
