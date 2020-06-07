@@ -2,6 +2,7 @@ package org.whispersystems.textsecuregcm.tests.storage;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.whispersystems.textsecuregcm.experiment.Experiment;
 import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
 import org.whispersystems.textsecuregcm.redis.ReplicatedJedisPool;
 import org.whispersystems.textsecuregcm.storage.Account;
@@ -40,7 +41,7 @@ public class AccountsManagerTest {
     when(jedis.get(eq("AccountMap::+14152222222"))).thenReturn(uuid.toString());
     when(jedis.get(eq("Account3::" + uuid.toString()))).thenReturn("{\"number\": \"+14152222222\", \"name\": \"test\"}");
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster, mock(Experiment.class));
     Optional<Account> account         = accountsManager.get("+14152222222");
 
     assertTrue(account.isPresent());
@@ -64,7 +65,7 @@ public class AccountsManagerTest {
     when(cacheClient.getReadResource()).thenReturn(jedis);
     when(jedis.get(eq(ACCOUNT_ENTITY_ALICE))).thenReturn("{\"number\": \""+ UUID_ALICE_STRING +"\", \"name\": \"test\"}");
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster, mock(Experiment.class));
     Optional<Account> account         = accountsManager.get(UUID_ALICE);
 
     assertTrue(account.isPresent());
@@ -93,7 +94,7 @@ public class AccountsManagerTest {
     when(jedis.get(eq("AccountMap::+14152222222"))).thenReturn(null);
     when(accounts.get(eq("+14152222222"))).thenReturn(Optional.of(account));
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster, mock(Experiment.class));
     Optional<Account> retrieved       = accountsManager.get("+14152222222");
 
     assertTrue(retrieved.isPresent());
@@ -123,7 +124,7 @@ public class AccountsManagerTest {
     when(jedis.get(eq("Account3::" + uuid))).thenReturn(null);
     when(accounts.get(eq(uuid))).thenReturn(Optional.of(account));
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster, mock(Experiment.class));
     Optional<Account> retrieved       = accountsManager.get(uuid);
 
     assertTrue(retrieved.isPresent());
@@ -153,7 +154,7 @@ public class AccountsManagerTest {
     when(jedis.get(eq(ACCOUNT_ENTITY_ALICE))).thenReturn(null);
     when(accounts.get(eq(UUID_ALICE))).thenReturn(Optional.of(account));
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster, mock(Experiment.class));
     Optional<Account> retrieved       = accountsManager.get(UUID_ALICE);
 
     assertTrue(retrieved.isPresent());
@@ -183,7 +184,7 @@ public class AccountsManagerTest {
     when(jedis.get(eq(ACCOUNT_ENTITY_ALICE))).thenThrow(new JedisException("Connection lost!"));
     when(accounts.get(eq(UUID_ALICE))).thenReturn(Optional.of(account));
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheClient, cacheCluster, mock(Experiment.class));
     Optional<Account> retrieved       = accountsManager.get(UUID_ALICE);
 
     assertTrue(retrieved.isPresent());

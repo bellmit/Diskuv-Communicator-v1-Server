@@ -19,6 +19,7 @@ package org.whispersystems.textsecuregcm.storage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.lettuce.core.SetArgs;
+import org.whispersystems.textsecuregcm.experiment.Experiment;
 import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
 import org.whispersystems.textsecuregcm.redis.LuaScript;
 import org.whispersystems.textsecuregcm.redis.ReplicatedJedisPool;
@@ -44,6 +45,7 @@ public class AccountDatabaseCrawlerCache {
   private final ReplicatedJedisPool       jedisPool;
   private final FaultTolerantRedisCluster cacheCluster;
   private final LuaScript                 luaScript;
+  private final Experiment                redisClusterExperiment = new Experiment("RedisCluster", "AccountDatabaseCrawlerCache");
 
   public AccountDatabaseCrawlerCache(ReplicatedJedisPool jedisPool, FaultTolerantRedisCluster cacheCluster) throws IOException {
     this.jedisPool = jedisPool;
@@ -68,7 +70,10 @@ public class AccountDatabaseCrawlerCache {
 
   public boolean isAccelerated() {
     try (Jedis jedis = jedisPool.getWriteResource()) {
-      return "1".equals(jedis.get(ACCELERATE_KEY));
+      final String accelerated = jedis.get(ACCELERATE_KEY);
+      redisClusterExperiment.compareResult(accelerated, cacheCluster.withReadCluster(connection -> connection.async().get(ACCELERATE_KEY)));
+
+      return "1".equals(accelerated);
     }
   }
 
@@ -94,6 +99,7 @@ public class AccountDatabaseCrawlerCache {
   public Optional<UUID> getLastUuid() {
     try (Jedis jedis = jedisPool.getWriteResource()) {
       String lastUuidString = jedis.get(LAST_UUID_KEY);
+      redisClusterExperiment.compareResult(lastUuidString, cacheCluster.withWriteCluster(connection -> connection.async().get(LAST_UUID_KEY)));
 
       if (lastUuidString == null) return Optional.empty();
       else                        return Optional.of(UUID.fromString(lastUuidString));
