@@ -170,7 +170,7 @@ public class ActiveUserCounter extends AccountDatabaseCrawlerListener {
   private void incrementTallies(UUID fromUuid, Map<String, long[]> platformIncrements, Map<String, long[]> countryIncrements) {
     try (Jedis jedis = jedisPool.getWriteResource()) {
       String tallyValue = jedis.get(TALLY_KEY);
-      redisClusterExperiment.compareResult(tallyValue, cacheCluster.withReadCluster(connection -> connection.async().get(TALLY_KEY)));
+      redisClusterExperiment.compareFutureResult(tallyValue, cacheCluster.withReadCluster(connection -> connection.async().get(TALLY_KEY)));
 
       ActiveUserTally activeUserTally;
 
@@ -218,7 +218,7 @@ public class ActiveUserCounter extends AccountDatabaseCrawlerListener {
       if (tallyJson == null) {
         return null;
       }
-      redisClusterExperiment.compareResult(tallyJson, cacheCluster.withReadCluster(connection -> connection.async().get(TALLY_KEY)));
+      redisClusterExperiment.compareFutureResult(tallyJson, cacheCluster.withReadCluster(connection -> connection.async().get(TALLY_KEY)));
 
       return mapper.readValue(tallyJson, ActiveUserTally.class);
     } catch (IOException e) {
