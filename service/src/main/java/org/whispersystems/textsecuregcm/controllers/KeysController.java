@@ -17,6 +17,7 @@
 package org.whispersystems.textsecuregcm.controllers;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dropwizard.auth.Auth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
@@ -50,11 +51,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import io.dropwizard.auth.Auth;
-import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount;
-import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
-import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice;
-
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/v2/keys")
 public class KeysController {
@@ -63,9 +59,9 @@ public class KeysController {
 
   private final RateLimiters    rateLimiters;
   private final Keys            keys;
-  private final PossiblySyntheticAccountsManager accounts;
+  private final org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager accounts;
 
-  public KeysController(RateLimiters rateLimiters, Keys keys, PossiblySyntheticAccountsManager accounts) {
+  public KeysController(RateLimiters rateLimiters, Keys keys, org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager accounts) {
     this.rateLimiters   = rateLimiters;
     this.keys           = keys;
     this.accounts       = accounts;
@@ -131,7 +127,7 @@ public class KeysController {
       throw new WebApplicationException(Response.Status.BAD_REQUEST);
     }
 
-    PossiblySyntheticAccount target = accounts.get(targetName.getUuid());
+    org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount target = accounts.get(targetName.getUuid());
 
     OptionalAccess.verify(account, accessKey, target, deviceId);
 
@@ -144,7 +140,7 @@ public class KeysController {
     List<KeyRecord>          targetKeys = getLocalKeys(target, deviceId);
     List<PreKeyResponseItem> devices    = new LinkedList<>();
 
-    for (PossiblySyntheticDevice device : target.getDevices()) {
+    for (org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice device : target.getDevices()) {
       if (device.isEnabled() && (deviceId.equals("*") || device.getId() == Long.parseLong(deviceId))) {
         SignedPreKey signedPreKey = device.getSignedPreKey();
         PreKey preKey       = null;
@@ -193,7 +189,7 @@ public class KeysController {
     else                      return Optional.empty();
   }
 
-  private List<KeyRecord> getLocalKeys(PossiblySyntheticAccount destination, String deviceIdSelector) {
+  private List<KeyRecord> getLocalKeys(org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount destination, String deviceIdSelector) {
     try {
       if (deviceIdSelector.equals("*")) {
         return keys.get(destination.getUuid().toString());
