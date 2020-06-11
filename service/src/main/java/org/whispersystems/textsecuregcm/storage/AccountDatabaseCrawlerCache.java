@@ -18,8 +18,10 @@ package org.whispersystems.textsecuregcm.storage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.SetArgs;
 import org.whispersystems.textsecuregcm.experiment.Experiment;
+import org.whispersystems.textsecuregcm.redis.ClusterLuaScript;
 import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
 import org.whispersystems.textsecuregcm.redis.LuaScript;
 import org.whispersystems.textsecuregcm.redis.ReplicatedJedisPool;
@@ -44,7 +46,8 @@ public class AccountDatabaseCrawlerCache {
 
   private final ReplicatedJedisPool       jedisPool;
   private final FaultTolerantRedisCluster cacheCluster;
-  private final LuaScript                 luaScript;
+  private final LuaScript                 unlockScript;
+  private final ClusterLuaScript          unlockClusterScript;
   private final Experiment                redisClusterExperiment = new Experiment("RedisCluster", "AccountDatabaseCrawlerCache");
 
   public AccountDatabaseCrawlerCache(ReplicatedJedisPool jedisPool, FaultTolerantRedisCluster cacheCluster) throws IOException {
@@ -53,10 +56,18 @@ public class AccountDatabaseCrawlerCache {
     String resource = "lua/account_database_crawler/unlock.lua";
     try {
       logger.info("Getting " + resource + " script from redis");
-      this.luaScript = LuaScript.fromResource(jedisPool, resource);
+      this.unlockScript = LuaScript.fromResource(jedisPool, resource);
       logger.info("Got " + resource + " script from redis");
     } catch (IOException | JedisException e) {
       logger.error("Could not get the "+resource+" script from redis. You might need to increase the redis timeout in org.whispersystems.textsecuregcm.WhisperServerConfiguration.getCacheConfiguration()", e);
+      throw e;
+    }
+    try {
+      logger.info("Getting " + resource + " script from redis cluster");
+      this.unlockClusterScript = ClusterLuaScript.fromResource(cacheCluster, resource, ScriptOutputType.INTEGER);
+      logger.info("Got " + resource + " script from redis cluster");
+    } catch (IOException | JedisException e) {
+      logger.error("Could not get the "+resource+" script from redis cluster. You might need to increase the redis timeout in org.whispersystems.textsecuregcm.WhisperServerConfiguration.getCacheConfiguration()", e);
       throw e;
     }
   }
@@ -93,7 +104,8 @@ public class AccountDatabaseCrawlerCache {
   public void releaseActiveWork(String workerId) {
     List<byte[]> keys = Arrays.asList(ACTIVE_WORKER_KEY.getBytes());
     List<byte[]> args = Arrays.asList(workerId.getBytes());
-    luaScript.execute(keys, args);
+    unlockScript.execute(keys, args);
+    unlockClusterScript.execute(List.of(ACTIVE_WORKER_KEY), List.of(workerId));
   }
 
   public Optional<UUID> getLastUuid() {
