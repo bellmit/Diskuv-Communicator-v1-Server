@@ -16,6 +16,7 @@
  */
 package org.whispersystems.textsecuregcm.controllers;
 
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
@@ -81,11 +82,12 @@ import io.dropwizard.auth.Auth;
 @Path("/v1/messages")
 public class MessageController {
 
-  private final Logger         logger                   = LoggerFactory.getLogger(MessageController.class);
-  private final MetricRegistry metricRegistry           = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
-  private final Meter          unidentifiedMeter        = metricRegistry.meter(name(getClass(), "delivery", "unidentified"));
-  private final Meter          identifiedMeter          = metricRegistry.meter(name(getClass(), "delivery", "identified"  ));
-  private final Timer          sendMessageInternalTimer = metricRegistry.timer(name(getClass(), "sendMessageInternal"));
+  private final Logger         logger                       = LoggerFactory.getLogger(MessageController.class);
+  private final MetricRegistry metricRegistry               = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
+  private final Meter          unidentifiedMeter            = metricRegistry.meter(name(getClass(), "delivery", "unidentified"));
+  private final Meter          identifiedMeter              = metricRegistry.meter(name(getClass(), "delivery", "identified"  ));
+  private final Timer          sendMessageInternalTimer     = metricRegistry.timer(name(getClass(), "sendMessageInternal"));
+  private final Histogram      incomingMessageSizeHistogram = metricRegistry.histogram(name(getClass(), "incomingMessageListSize"));
 
   private final JwtAuthentication      jwtAuthentication;
   private final RateLimiters           rateLimiters;
@@ -129,7 +131,8 @@ public class MessageController {
     // However, it is fine if the effective source ... the source seen by a
     // recipient in the Envelope after we send a message ... is not present as long as the sender shows a valid
     // anonymous key.
-    final Optional<Account> source = accessKey.isPresent() ? Optional.empty() : Optional.of(realSource);
+    Optional<Account>   source = accessKey.isPresent() ? Optional.empty() : Optional.of(realSource);
+    incomingMessageSizeHistogram.update(messages.getMessages().size());
 
     // account authentication (@Auth does it, but we want the outdoors UUID)
     UUID outdoorsUUID = AuthHeaderSupport.validateJwtAndGetOutdoorsUUID(jwtAuthentication, authorizationHeader);
