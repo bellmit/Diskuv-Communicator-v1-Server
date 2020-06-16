@@ -23,7 +23,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import static com.diskuv.communicator.configurator.dropwizard.ConfigurationUtils.*;
@@ -144,7 +146,7 @@ public class ModifyConfiguration implements Callable<Integer> {
     messageStore(config);
     abuseDatabase(config);
     accountsDatabase(config);
-    cache(config);
+    cacheCluster(config);
     pubsub(config);
     pushScheduler(config);
     messageCache(config);
@@ -206,51 +208,62 @@ public class ModifyConfiguration implements Callable<Integer> {
     setDatabaseUrl(value, "signal_account");
   }
 
-  public void cache(WhisperServerConfiguration config) throws IllegalAccessException {
-    RedisConfiguration value = config.getCacheConfiguration();
-    setRedisUrls(value, 1);
+  public void cacheCluster(WhisperServerConfiguration config) throws IllegalAccessException {
+    RedisClusterConfiguration value = config.getCacheClusterConfiguration();
+    setRedisUrls(value);
   }
 
   public void pubsub(WhisperServerConfiguration config) throws IllegalAccessException {
     RedisConfiguration value = config.getPubsubCacheConfiguration();
-    setRedisUrls(value, 2);
+    setRedisUrlAndReplicas(value);
   }
 
   public void pushScheduler(WhisperServerConfiguration config) throws IllegalAccessException {
     RedisConfiguration value = config.getPushScheduler();
-    setRedisUrls(value, 3);
+    setRedisUrlAndReplicas(value);
   }
 
   public void messageCache(WhisperServerConfiguration config) throws IllegalAccessException {
     MessageCacheConfiguration value = config.getMessageCacheConfiguration();
     RedisConfiguration redis = value.getRedisConfiguration();
-    setRedisUrls(redis, 4);
+    setRedisUrlAndReplicas(redis);
   }
 
-  private void setRedisUrls(RedisConfiguration value, int database) throws IllegalAccessException {
-    String urlSuffix = redisDistinctDatabases ? "#" + database : "";
+  private void setRedisUrls(RedisClusterConfiguration value) throws IllegalAccessException {
+    List<String> urls = new ArrayList<>();
     if (redisPrimaryUrl != null) {
-      setField(value, "url", redisPrimaryUrl + urlSuffix);
+      urls.add(redisPrimaryUrl);
     } else if (redisPrimaryHost != null) {
-      setField(value, "url", "redis://" + redisPrimaryHost + ":6379" + urlSuffix);
+      urls.add("redis://" + redisPrimaryHost + ":6379");
     }
     if (redisReplicaUrls != null && redisReplicaUrls.length > 0) {
-      setField(
-          value,
-          "replicaUrls",
-          Arrays.stream(redisReplicaUrls)
-              .map(url -> url + urlSuffix)
-              .collect(ImmutableList.toImmutableList()));
+      urls.addAll(ImmutableList.copyOf(redisReplicaUrls));
     } else if (redisReplicaHosts != null && redisReplicaHosts.length > 0) {
-      setField(
-          value,
-          "replicaUrls",
+      urls.addAll(
           Arrays.stream(redisReplicaHosts)
-              .map(hostname -> "redis://" + hostname + ":6379" + urlSuffix)
+              .map(hostname -> "redis://" + hostname + ":6379")
               .collect(ImmutableList.toImmutableList()));
     }
+    setField(value, "urls", ImmutableList.copyOf(urls));
   }
 
+  private void setRedisUrlAndReplicas(RedisConfiguration value) throws IllegalAccessException {
+    if (redisPrimaryUrl != null) {
+      setField(value, "url", redisPrimaryUrl);
+    } else if (redisPrimaryHost != null) {
+      setField(value, "url", "redis://" + redisPrimaryHost + ":6379");
+    }
+    if (redisReplicaUrls != null && redisReplicaUrls.length > 0) {
+      setField(value, "replicaUrls", ImmutableList.copyOf(redisReplicaUrls));
+    } else if (redisReplicaHosts != null && redisReplicaHosts.length > 0) {
+      setField(
+              value,
+              "replicaUrls",
+              Arrays.stream(redisReplicaHosts)
+                    .map(hostname -> "redis://" + hostname + ":6379")
+                    .collect(ImmutableList.toImmutableList()));
+    }
+  }
   private void setDatabaseUrl(DatabaseConfiguration value, String database)
       throws IllegalAccessException {
     if (databaseHostAndPerhapsPort != null) {

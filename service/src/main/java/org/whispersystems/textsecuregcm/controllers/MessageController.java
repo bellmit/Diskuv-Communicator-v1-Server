@@ -16,14 +16,14 @@
  */
 package org.whispersystems.textsecuregcm.controllers;
 
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.annotation.Timed;
-import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import com.google.protobuf.ByteString;
+import io.dropwizard.auth.Auth;
+import io.micrometer.core.instrument.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
@@ -38,6 +38,7 @@ import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntityList;
 import org.whispersystems.textsecuregcm.entities.SendMessageResponse;
 import org.whispersystems.textsecuregcm.entities.StaleDevices;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
+import org.whispersystems.textsecuregcm.metrics.UserAgentTagUtil;
 import org.whispersystems.textsecuregcm.push.ApnFallbackManager;
 import org.whispersystems.textsecuregcm.push.NotPushRegisteredException;
 import org.whispersystems.textsecuregcm.push.PushSender;
@@ -76,7 +77,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import io.dropwizard.auth.Auth;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/v1/messages")
@@ -87,9 +87,8 @@ public class MessageController {
   private final Meter          unidentifiedMeter            = metricRegistry.meter(name(getClass(), "delivery", "unidentified"));
   private final Meter          identifiedMeter              = metricRegistry.meter(name(getClass(), "delivery", "identified"  ));
   private final Timer          sendMessageInternalTimer     = metricRegistry.timer(name(getClass(), "sendMessageInternal"));
-  private final Histogram      incomingMessageSizeHistogram = metricRegistry.histogram(name(getClass(), "incomingMessageListSize"));
 
-  private final JwtAuthentication      jwtAuthentication;
+  private final com.diskuv.communicatorservice.auth.JwtAuthentication      jwtAuthentication;
   private final RateLimiters           rateLimiters;
   private final PushSender             pushSender;
   private final ReceiptSender          receiptSender;
@@ -97,7 +96,9 @@ public class MessageController {
   private final MessagesManager        messagesManager;
   private final ApnFallbackManager     apnFallbackManager;
 
-  public MessageController(JwtAuthentication jwtAuthentication,
+  private static final String CONTENT_SIZE_DISTRIBUTION_NAME = name(MessageController.class, "messageContentSize");
+
+  public MessageController(com.diskuv.communicatorservice.auth.JwtAuthentication jwtAuthentication,
                            RateLimiters rateLimiters,
                            PushSender pushSender,
                            ReceiptSender receiptSender,
@@ -122,6 +123,7 @@ public class MessageController {
   public SendMessageResponse sendMessage(@Auth                                     Account             realSource,
                                          @HeaderParam("Authorization")             String              authorizationHeader,
                                          @HeaderParam(OptionalAccess.UNIDENTIFIED) Optional<Anonymous> accessKey,
+                                         @HeaderParam("User-Agent")                String userAgent,
                                          @PathParam("destination")                 AmbiguousIdentifier destinationName,
                                          @Valid                                    IncomingMessageList messages)
       throws RateLimitExceededException
@@ -132,7 +134,6 @@ public class MessageController {
     // recipient in the Envelope after we send a message ... is not present as long as the sender shows a valid
     // anonymous key.
     Optional<Account>   source = accessKey.isPresent() ? Optional.empty() : Optional.of(realSource);
-    incomingMessageSizeHistogram.update(messages.getMessages().size());
 
     // account authentication (@Auth does it, but we want the outdoors UUID)
     UUID outdoorsUUID = AuthHeaderSupport.validateJwtAndGetOutdoorsUUID(jwtAuthentication, authorizationHeader);
@@ -173,6 +174,10 @@ public class MessageController {
           Optional<? extends PossiblySyntheticDevice> destinationDevice = destination.getDevice(incomingMessage.getDestinationDeviceId());
 
           if (destinationDevice.isPresent() && destinationDevice.get().getRealDevice().isPresent()) {
+            if (!Util.isEmpty(incomingMessage.getContent())) {
+              Metrics.summary(CONTENT_SIZE_DISTRIBUTION_NAME, UserAgentTagUtil.getUserAgentTags(userAgent)).record(incomingMessage.getContent().length());
+            }
+
             sendMessage(source, outdoorsUUID, destination.getRealAccount().get(), destinationDevice.get().getRealDevice().get(), messages.getTimestamp(), messages.isOnline(), incomingMessage);
           }
         }
