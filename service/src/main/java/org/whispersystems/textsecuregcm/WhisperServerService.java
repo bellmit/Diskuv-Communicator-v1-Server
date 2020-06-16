@@ -99,7 +99,6 @@ import org.whispersystems.textsecuregcm.controllers.SecureBackupController;
 import org.whispersystems.textsecuregcm.controllers.SecureStorageController;
 import org.whispersystems.textsecuregcm.controllers.StickerController;
 import org.whispersystems.textsecuregcm.controllers.VoiceVerificationController;
-import org.whispersystems.textsecuregcm.experiment.Experiment;
 import org.whispersystems.textsecuregcm.filters.TimestampResponseFilter;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.liquibase.NameableMigrationsBundle;
@@ -289,10 +288,10 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     PendingAccountsManager     pendingAccountsManager     = new PendingAccountsManager(pendingAccounts, cacheClient, cacheCluster);
     PendingDevicesManager      pendingDevicesManager      = new PendingDevicesManager(pendingDevices, cacheClient, cacheCluster);
-    AccountsManager            accountsManager            = new AccountsManager(accounts, cacheClient, cacheCluster, new Experiment("RedisCluster", "AccountsManager"));
+    AccountsManager            accountsManager            = new AccountsManager(accounts, cacheClient, cacheCluster);
     PossiblySyntheticAccountsManager syntheticAccountsManager = new PossiblySyntheticAccountsManager(accountsManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
-    UsernamesManager           usernamesManager           = new UsernamesManager(usernames, reservedUsernames, cacheClient, cacheCluster, new Experiment("RedisCluster", "UsernamesManager"));
-    ProfilesManager            profilesManager            = new ProfilesManager(profiles, cacheClient, cacheCluster, new Experiment("RedisCluster", "ProfilesManager"));
+    UsernamesManager           usernamesManager           = new UsernamesManager(usernames, reservedUsernames, cacheClient, cacheCluster);
+    ProfilesManager            profilesManager            = new ProfilesManager(profiles, cacheClient, cacheCluster);
     PossiblySyntheticProfilesManager syntheticProfilesManager = new PossiblySyntheticProfilesManager(profilesManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
     MessagesCache              messagesCache              = new MessagesCache(messagesClient, messages, accountsManager, config.getMessageCacheConfiguration().getPersistDelayMinutes());
     MessagesManager            messagesManager            = new MessagesManager(messages, messagesCache);
@@ -321,7 +320,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     RecaptchaClient          recaptchaClient     = new RecaptchaClient(config.getRecaptchaConfiguration().getSecret());
 
 
-    ActiveUserCounter                    activeUserCounter               = new ActiveUserCounter(config.getMetricsFactory(), cacheClient, cacheCluster, new Experiment("RedisCluster", "ActiveUserCounter"));
+    ActiveUserCounter                    activeUserCounter               = new ActiveUserCounter(config.getMetricsFactory(), cacheClient, cacheCluster);
     AccountCleaner                       accountCleaner                  = new AccountCleaner(accountsManager);
     PushFeedbackProcessor                pushFeedbackProcessor           = new PushFeedbackProcessor(accountsManager);
     List<AccountDatabaseCrawlerListener> accountDatabaseCrawlerListeners = List.of(pushFeedbackProcessor, activeUserCounter, accountCleaner);
