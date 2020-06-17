@@ -80,7 +80,7 @@ public class AccountDatabaseCrawlerCache {
   public void clearAccelerate() {
     try (Jedis jedis = jedisPool.getWriteResource()) {
       jedis.del(ACCELERATE_KEY);
-      cacheCluster.useWriteCluster(connection -> connection.async().del(ACCELERATE_KEY));
+      cacheCluster.useWriteCluster(connection -> connection.sync().del(ACCELERATE_KEY));
     }
   }
 
@@ -99,7 +99,7 @@ public class AccountDatabaseCrawlerCache {
 
       if (claimed) {
         // TODO Restore the NX flag when making the cluster the primary data store
-        cacheCluster.useWriteCluster(connection -> connection.async().set(ACCELERATE_KEY, workerId, SetArgs.Builder.px(ttlMs)));
+        cacheCluster.useWriteCluster(connection -> connection.sync().set(ACCELERATE_KEY, workerId, SetArgs.Builder.px(ttlMs)));
       }
 
       return claimed;
@@ -132,10 +132,10 @@ public class AccountDatabaseCrawlerCache {
     try (Jedis jedis = jedisPool.getWriteResource()) {
       if (lastUuid.isPresent()) {
         jedis.psetex(LAST_UUID_KEY, LAST_NUMBER_TTL_MS, lastUuid.get().toString());
-        cacheCluster.useWriteCluster(connection -> connection.async().psetex(LAST_UUID_KEY, LAST_NUMBER_TTL_MS, lastUuid.get().toString()));
+        cacheCluster.useWriteCluster(connection -> connection.sync().psetex(LAST_UUID_KEY, LAST_NUMBER_TTL_MS, lastUuid.get().toString()));
       } else {
         jedis.del(LAST_UUID_KEY);
-        cacheCluster.useWriteCluster(connection -> connection.async().del(LAST_UUID_KEY));
+        cacheCluster.useWriteCluster(connection -> connection.sync().del(LAST_UUID_KEY));
       }
     }
   }
