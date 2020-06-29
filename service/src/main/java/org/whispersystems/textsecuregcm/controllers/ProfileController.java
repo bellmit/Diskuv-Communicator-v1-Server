@@ -2,6 +2,7 @@ package org.whispersystems.textsecuregcm.controllers;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.codahale.metrics.annotation.Timed;
+import io.dropwizard.auth.Auth;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
@@ -52,8 +53,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
-
-import io.dropwizard.auth.Auth;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/v1/profile")
@@ -128,7 +127,7 @@ public class ProfileController {
 
     account.setProfileName(request.getName());
     account.setProfileEmailAddress(request.getEmailAddress());
-    if (avatar != null) account.setAvatar(avatar);
+    account.setAvatar(avatar);
     accountsManager.update(account);
 
     if (response.isPresent()) return Response.ok(response).build();
