@@ -116,7 +116,7 @@ public class DeviceController {
     account.removeDevice(deviceId);
     accounts.update(account);
 
-    messages.clear(account.getNumber(), deviceId);
+    messages.clear(account.getNumber(), account.getUuid(), deviceId);
   }
 
   @Timed
@@ -188,11 +188,12 @@ public class DeviceController {
       throw new WebApplicationException(Response.Status.FORBIDDEN);
     }
 
-    Optional<Account> account = accounts.get(accountUuid);
+    Optional<Account> accountOpt = accounts.get(accountUuid);
 
-    if (!account.isPresent()) {
+    if (!accountOpt.isPresent()) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
+    Account account = accountOpt.get();
 
     int maxDeviceLimit = MAX_DEVICES;
 
@@ -200,8 +201,8 @@ public class DeviceController {
       maxDeviceLimit = maxDeviceConfiguration.get(accountId);
     }
 
-    if (account.get().getEnabledDeviceCount() >= maxDeviceLimit) {
-      throw new DeviceLimitExceededException(account.get().getDevices().size(), MAX_DEVICES);
+    if (account.getEnabledDeviceCount() >= maxDeviceLimit) {
+      throw new DeviceLimitExceededException(account.getDevices().size(), MAX_DEVICES);
     }
 
     Device device = new Device();
@@ -209,14 +210,14 @@ public class DeviceController {
     device.setAuthenticationCredentials(new AuthenticationCredentials(devicePassword));
     device.setSignalingKey(accountAttributes.getSignalingKey());
     device.setFetchesMessages(accountAttributes.getFetchesMessages());
-    device.setId(account.get().getNextDeviceId());
+    device.setId(account.getNextDeviceId());
     device.setRegistrationId(accountAttributes.getRegistrationId());
     device.setLastSeen(Util.todayInMillis());
     device.setCreated(System.currentTimeMillis());
 
-    account.get().addDevice(device);
-    messages.clear(accountId, device.getId());
-    accounts.update(account.get());
+    account.addDevice(device);
+    messages.clear(accountId, account.getUuid(), device.getId());
+    accounts.update(account);
 
     pendingDevices.remove(accountUuid);
 

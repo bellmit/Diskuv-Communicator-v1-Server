@@ -265,7 +265,7 @@ public class MessageControllerTest {
 
     OutgoingMessageEntityList messagesList = new OutgoingMessageEntityList(messages, false);
 
-    when(messagesManager.getMessagesForDevice(eq(AuthHelper.VALID_NUMBER), eq(1L))).thenReturn(messagesList);
+    when(messagesManager.getMessagesForDevice(eq(AuthHelper.VALID_NUMBER), eq(AuthHelper.VALID_UUID), eq(1L))).thenReturn(messagesList);
 
     OutgoingMessageEntityList response =
         resources.getJerseyTest().target("/v1/messages/")
@@ -303,7 +303,7 @@ public class MessageControllerTest {
 
     OutgoingMessageEntityList messagesList = new OutgoingMessageEntityList(messages, false);
 
-    when(messagesManager.getMessagesForDevice(eq(AuthHelper.VALID_NUMBER), eq(1L))).thenReturn(messagesList);
+    when(messagesManager.getMessagesForDevice(eq(AuthHelper.VALID_NUMBER), eq(AuthHelper.VALID_UUID), eq(1L))).thenReturn(messagesList);
 
     Response response =
         resources.getJerseyTest().target("/v1/messages/")
@@ -321,20 +321,20 @@ public class MessageControllerTest {
 
     UUID sourceUuid = UUID.randomUUID();
 
-    when(messagesManager.delete(AuthHelper.VALID_NUMBER, 1, UUID_ALICE_STRING, 31337))
+    when(messagesManager.delete(AuthHelper.VALID_NUMBER, AuthHelper.VALID_UUID, 1, UUID_ALICE_STRING, 31337))
         .thenReturn(Optional.of(new OutgoingMessageEntity(31337L, true, null,
                                                           Envelope.Type.CIPHERTEXT_VALUE,
                                                           null, timestamp,
                                                           EMPTY_SOURCE, UUID_ALICE, 1, "hi".getBytes(), null, 0, null)));
 
-    when(messagesManager.delete(AuthHelper.VALID_NUMBER, 1, UUID_ALICE_STRING, 31338))
+    when(messagesManager.delete(AuthHelper.VALID_NUMBER, AuthHelper.VALID_UUID, 1, UUID_ALICE_STRING, 31338))
         .thenReturn(Optional.of(new OutgoingMessageEntity(31337L, true, null,
                                                           Envelope.Type.RECEIPT_VALUE,
                                                           null, System.currentTimeMillis(),
                                                           EMPTY_SOURCE, UUID_ALICE, 1, null, null, 0, null)));
 
 
-    when(messagesManager.delete(AuthHelper.VALID_NUMBER, 1, UUID_ALICE_STRING, 31339))
+    when(messagesManager.delete(AuthHelper.VALID_NUMBER, AuthHelper.VALID_UUID, 1, UUID_ALICE_STRING, 31339))
         .thenReturn(Optional.empty());
 
     Response response = resources.getJerseyTest()

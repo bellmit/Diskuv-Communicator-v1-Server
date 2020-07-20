@@ -162,6 +162,7 @@ public class WebSocketConnectionTest {
   public void testOpen() throws Exception {
     MessagesManager storedMessages = mock(MessagesManager.class);
 
+    UUID accountUuid   = UUID.randomUUID();
     UUID senderOneUuid = UUID.randomUUID();
     UUID senderTwoUuid = UUID.randomUUID();
 
@@ -177,8 +178,8 @@ public class WebSocketConnectionTest {
     when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
-    when(account.getUuid()).thenReturn(UUID_ALICE);
     when(account.getNumber()).thenReturn(UUID_ALICE_STRING);
+    when(account.getUuid()).thenReturn(accountUuid);
 
     final Device sender1device = mock(Device.class);
 
@@ -192,7 +193,7 @@ public class WebSocketConnectionTest {
     when(accountsManager.get(senderOneUuid)).thenReturn(Optional.of(sender1));
     when(accountsManager.get(senderTwoUuid)).thenReturn(Optional.empty());
 
-    when(storedMessages.getMessagesForDevice(account.getNumber(), device.getId()))
+    when(storedMessages.getMessagesForDevice(account.getNumber(), account.getUuid(), device.getId()))
         .thenReturn(outgoingMessagesList);
 
     final List<CompletableFuture<WebSocketResponseMessage>> futures = new LinkedList<>();
@@ -224,7 +225,7 @@ public class WebSocketConnectionTest {
     futures.get(0).completeExceptionally(new IOException());
     futures.get(2).completeExceptionally(new IOException());
 
-    verify(storedMessages, times(1)).delete(eq(account.getNumber()), eq(2L), eq(2L), eq(false));
+    verify(storedMessages, times(1)).delete(eq(account.getNumber()), eq(accountUuid), eq(2L), eq(2L), eq(false));
     verify(receiptSender, times(1)).sendReceipt(eq(account), eq(senderOneUuid.toString()), eq(2222L));
 
     connection.onDispatchUnsubscribed(websocketAddress.serialize());
@@ -263,6 +264,7 @@ public class WebSocketConnectionTest {
     when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
+    when(account.getNumber()).thenReturn(UUID_ALICE_STRING);
     when(account.getUuid()).thenReturn(UUID_ALICE);
 
     final Device sender1device = mock(Device.class);
@@ -277,7 +279,7 @@ public class WebSocketConnectionTest {
     when(accountsManager.get(UUID_ALICE)).thenReturn(Optional.of(sender1));
     when(accountsManager.get(UUID_BOB)).thenReturn(Optional.<Account>empty());
 
-    when(storedMessages.getMessagesForDevice(account.getNumber(), device.getId()))
+    when(storedMessages.getMessagesForDevice(account.getNumber(), account.getUuid(), device.getId()))
         .thenReturn(pendingMessagesList);
 
     final List<CompletableFuture<WebSocketResponseMessage>> futures = new LinkedList<>();
@@ -370,6 +372,7 @@ public class WebSocketConnectionTest {
     when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
+    when(account.getNumber()).thenReturn(UUID_ALICE_STRING);
     when(account.getUuid()).thenReturn(UUID_ALICE);
 
     final Device sender1device = mock(Device.class);
@@ -384,7 +387,7 @@ public class WebSocketConnectionTest {
     when(accountsManager.get(UUID_ALICE)).thenReturn(Optional.of(sender1));
     when(accountsManager.get(UUID_BOB)).thenReturn(Optional.<Account>empty());
 
-    when(storedMessages.getMessagesForDevice(account.getNumber(), device.getId()))
+    when(storedMessages.getMessagesForDevice(account.getNumber(), account.getUuid(), device.getId()))
         .thenReturn(pendingMessagesList);
 
     final List<CompletableFuture<WebSocketResponseMessage>> futures = new LinkedList<>();

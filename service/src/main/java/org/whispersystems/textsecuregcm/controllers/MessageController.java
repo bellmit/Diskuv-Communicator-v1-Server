@@ -211,6 +211,7 @@ public class MessageController {
     }
 
     return messagesManager.getMessagesForDevice(account.getNumber(),
+                                                account.getUuid(),
                                                 account.getAuthenticatedDevice().get().getId());
   }
 
@@ -230,6 +231,7 @@ public class MessageController {
       WebSocketConnection.messageTime.update(System.currentTimeMillis() - timestamp);
 
       Optional<OutgoingMessageEntity> message = messagesManager.delete(account.getNumber(),
+                                                                       account.getUuid(),
                                                                        account.getAuthenticatedDevice().get().getId(),
                                                                        source, timestamp);
 
@@ -249,6 +251,7 @@ public class MessageController {
   public void removePendingMessage(@Auth Account account, @PathParam("uuid") UUID uuid) {
     try {
       Optional<OutgoingMessageEntity> message = messagesManager.delete(account.getNumber(),
+                                                                       account.getUuid(),
                                                                        account.getAuthenticatedDevice().get().getId(),
                                                                        uuid);
 

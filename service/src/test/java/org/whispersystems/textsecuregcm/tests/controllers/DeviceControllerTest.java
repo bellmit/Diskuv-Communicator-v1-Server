@@ -119,6 +119,7 @@ public class DeviceControllerTest {
 
     when(account.getNextDeviceId()).thenReturn(42L);
     when(account.getNumber()).thenReturn(AuthHelper.VALID_NUMBER);
+    when(account.getUuid()).thenReturn(AuthHelper.VALID_UUID);
 //    when(maxedAccount.getActiveDeviceCount()).thenReturn(6);
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(masterDevice));
     when(account.isEnabled()).thenReturn(false);
@@ -155,7 +156,7 @@ public class DeviceControllerTest {
     assertThat(response.getDeviceId()).isEqualTo(42L);
 
     verify(pendingDevicesManager).remove(AuthHelper.VALID_UUID);
-    verify(messagesManager).clear(eq(AuthHelper.VALID_UUID.toString()), eq(42L));
+    verify(messagesManager).clear(eq(AuthHelper.VALID_UUID.toString()), eq(AuthHelper.VALID_UUID), eq(42L));
   }
 
   @Test

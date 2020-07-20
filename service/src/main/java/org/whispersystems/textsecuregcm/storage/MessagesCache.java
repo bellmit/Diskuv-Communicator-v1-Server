@@ -16,7 +16,6 @@ import org.whispersystems.textsecuregcm.push.PushSender;
 import org.whispersystems.textsecuregcm.redis.LuaScript;
 import org.whispersystems.textsecuregcm.redis.ReplicatedJedisPool;
 import org.whispersystems.textsecuregcm.util.Constants;
-import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Pair;
 import org.whispersystems.textsecuregcm.util.Util;
 import org.whispersystems.textsecuregcm.websocket.WebsocketAddress;
@@ -90,15 +89,14 @@ public class MessagesCache implements Managed, UserMessagesCache {
   }
 
   @Override
-  public long insert(UUID guid, String destination, long destinationDevice, Envelope message) {
-      DiskuvUuidUtil.verifyDiskuvUuid(destination);
+  public long insert(UUID guid, String destination, final UUID destinationUuid, long destinationDevice, Envelope message) {
     final Envelope messageWithGuid = message.toBuilder().setServerGuid(guid.toString()).build();
 
     Timer.Context timer = insertTimer.time();
 
     try {
       final long messageId = insertOperation.insert(guid, destination, destinationDevice, System.currentTimeMillis(), messageWithGuid);
-      insertExperiment.compareSupplierResultAsync(messageId, () -> clusterMessagesCache.insert(guid, destination, destinationDevice, message, messageId), experimentExecutor);
+      insertExperiment.compareSupplierResultAsync(messageId, () -> clusterMessagesCache.insert(guid, destination, destinationUuid, destinationDevice, message, messageId), experimentExecutor);
 
       return messageId;
     } finally {
@@ -107,8 +105,7 @@ public class MessagesCache implements Managed, UserMessagesCache {
   }
 
   @Override
-  public Optional<OutgoingMessageEntity> remove(String destination, long destinationDevice, long id) {
-      DiskuvUuidUtil.verifyDiskuvUuid(destination);
+  public Optional<OutgoingMessageEntity> remove(String destination, final UUID destinationUuid, long destinationDevice, long id) {
     OutgoingMessageEntity removedMessageEntity = null;
 
     try (Jedis         jedis   = jedisPool.getWriteResource();
@@ -125,15 +122,13 @@ public class MessagesCache implements Managed, UserMessagesCache {
 
     final Optional<OutgoingMessageEntity> maybeRemovedMessage = Optional.ofNullable(removedMessageEntity);
 
-    removeByIdExperiment.compareSupplierResultAsync(maybeRemovedMessage, () -> clusterMessagesCache.remove(destination, destinationDevice, id), experimentExecutor);
+    removeByIdExperiment.compareSupplierResultAsync(maybeRemovedMessage, () -> clusterMessagesCache.remove(destination, destinationUuid, destinationDevice, id), experimentExecutor);
 
     return maybeRemovedMessage;
   }
 
   @Override
-  public Optional<OutgoingMessageEntity> remove(String destination, long destinationDevice, String sender, long timestamp) {
-    DiskuvUuidUtil.verifyDiskuvUuid(destination);
-    DiskuvUuidUtil.verifyDiskuvUuid(sender);
+  public Optional<OutgoingMessageEntity> remove(String destination, final UUID destinationUuid, long destinationDevice, String sender, long timestamp) {
     OutgoingMessageEntity removedMessageEntity = null;
     Timer.Context timer = removeByNameTimer.time();
 
@@ -151,14 +146,13 @@ public class MessagesCache implements Managed, UserMessagesCache {
 
     final Optional<OutgoingMessageEntity> maybeRemovedMessage = Optional.ofNullable(removedMessageEntity);
 
-    removeBySenderExperiment.compareSupplierResultAsync(maybeRemovedMessage, () -> clusterMessagesCache.remove(destination, destinationDevice, sender, timestamp), experimentExecutor);
+    removeBySenderExperiment.compareSupplierResultAsync(maybeRemovedMessage, () -> clusterMessagesCache.remove(destination, destinationUuid, destinationDevice, sender, timestamp), experimentExecutor);
 
     return maybeRemovedMessage;
   }
 
   @Override
-  public Optional<OutgoingMessageEntity> remove(String destination, long destinationDevice, UUID guid) {
-    DiskuvUuidUtil.verifyDiskuvUuid(destination);
+  public Optional<OutgoingMessageEntity> remove(String destination, final UUID destinationUuid, long destinationDevice, UUID guid) {
     OutgoingMessageEntity removedMessageEntity = null;
     Timer.Context timer = removeByGuidTimer.time();
 
@@ -176,14 +170,13 @@ public class MessagesCache implements Managed, UserMessagesCache {
 
     final Optional<OutgoingMessageEntity> maybeRemovedMessage = Optional.ofNullable(removedMessageEntity);
 
-    removeByUuidExperiment.compareSupplierResultAsync(maybeRemovedMessage, () -> clusterMessagesCache.remove(destination, destinationDevice, guid), experimentExecutor);
+    removeByUuidExperiment.compareSupplierResultAsync(maybeRemovedMessage, () -> clusterMessagesCache.remove(destination, destinationUuid, destinationDevice, guid), experimentExecutor);
 
     return maybeRemovedMessage;
   }
 
   @Override
-  public List<OutgoingMessageEntity> get(String destination, long destinationDevice, int limit) {
-    DiskuvUuidUtil.verifyDiskuvUuid(destination);
+  public List<OutgoingMessageEntity> get(String destination, final UUID destinationUuid, long destinationDevice, int limit) {
     Timer.Context timer = getTimer.time();
 
     try {
@@ -201,7 +194,7 @@ public class MessagesCache implements Managed, UserMessagesCache {
         }
       }
 
-      getMessagesExperiment.compareSupplierResultAsync(results, () -> clusterMessagesCache.get(destination, destinationDevice, limit), experimentExecutor);
+      getMessagesExperiment.compareSupplierResultAsync(results, () -> clusterMessagesCache.get(destination, destinationUuid, destinationDevice, limit), experimentExecutor);
 
       return results;
     } finally {
@@ -210,13 +203,12 @@ public class MessagesCache implements Managed, UserMessagesCache {
   }
 
   @Override
-  public void clear(String destination) {
-    DiskuvUuidUtil.verifyDiskuvUuid(destination);
+  public void clear(String destination, final UUID destinationUuid) {
     Timer.Context timer = clearAccountTimer.time();
 
     try {
       for (int i = 1; i < 255; i++) {
-        clear(destination, i);
+        clear(destination, destinationUuid, i);
       }
     } finally {
       timer.stop();
@@ -224,8 +216,7 @@ public class MessagesCache implements Managed, UserMessagesCache {
   }
 
   @Override
-  public void clear(String destination, long deviceId) {
-    DiskuvUuidUtil.verifyDiskuvUuid(destination);
+  public void clear(String destination, final UUID destinationUuid, long deviceId) {
     Timer.Context timer = clearDeviceTimer.time();
 
     try {

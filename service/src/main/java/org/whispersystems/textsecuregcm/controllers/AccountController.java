@@ -623,6 +623,8 @@ public class AccountController {
   }
 
   private Account createAccount(UUID accountUuid, byte[] devicePassword, String userAgent, AccountAttributes accountAttributes) {
+    Optional<Account> maybeExistingAccount = accounts.get(accountUuid);
+
     Device device = new Device();
     device.setId(Device.MASTER_ID);
     device.setAuthenticationCredentials(new AuthenticationCredentials(devicePassword));
@@ -649,7 +651,8 @@ public class AccountController {
       newUserMeter.mark();
     }
 
-    messagesManager.clear(accountUuid.toString());
+    messagesManager.clear(accountUuid.toString(), maybeExistingAccount.map(Account::getUuid).orElse(null));
+    pendingAccounts.remove(accountUuid);
 
     return account;
   }

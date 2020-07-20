@@ -23,7 +23,7 @@ public class MessagesCacheTest extends AbstractMessagesCacheTest {
         redisServer.start();
 
         final String              redisUrl      = String.format("redis://127.0.0.1:%d", redisServer.ports().get(0));
-        final RedisClientFactory  clientFactory = new RedisClientFactory("message-cache-test", redisUrl, List.of(redisUrl), new CircuitBreakerConfiguration());
+        final RedisClientFactory  clientFactory = new RedisClientFactory("message-cache-test", 15_000, redisUrl, List.of(redisUrl), new CircuitBreakerConfiguration());
         final ReplicatedJedisPool jedisPool     = clientFactory.getRedisClientPool();
 
         messagesCache = new MessagesCache(jedisPool, mock(Messages.class), mock(AccountsManager.class), 60, mock(RedisClusterMessagesCache.class));
