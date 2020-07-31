@@ -275,15 +275,18 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
                                                                     .flushIntervalSeconds((int)wavefrontConfig.step().toSeconds())
                                                                     .build();
 
+      if (micrometerWavefrontConfig != null) {
       Metrics.addRegistry(WavefrontMeterRegistry.builder(wavefrontConfig)
                                                 .wavefrontSender(wavefrontSender)
                                                 .build());
+      } // end if (micrometerWavefrontConfig != null)
     }
 
     {
       final MicrometerConfiguration micrometerDatadogConfig = micrometerConfigurationByName.get("datadog");
 
       final String instanceId = EC2MetadataUtils.getInstanceId();
+      if (micrometerDatadogConfig != null) {
       Metrics.addRegistry(new DatadogMeterRegistry(new DatadogConfig() {
         @Override
         public String get(final String key) {
@@ -307,6 +310,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
           return tags;
         }
       });
+      } // end if (micrometerDatadogConfig != null)
     }
 
     environment.getObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -336,18 +340,17 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     RedisClientFactory pubSubClientFactory        = new RedisClientFactory("pubsub_cache", config.getPubsubCacheConfiguration().getReadTimeoutMs(), config.getPubsubCacheConfiguration().getUrl(), config.getPubsubCacheConfiguration().getReplicaUrls(), config.getPubsubCacheConfiguration().getCircuitBreakerConfiguration());
     RedisClientFactory messagesClientFactory      = new RedisClientFactory("message_cache", config.getMessageCacheConfiguration().getRedisConfiguration().getReadTimeoutMs(), config.getMessageCacheConfiguration().getRedisConfiguration().getUrl(), config.getMessageCacheConfiguration().getRedisConfiguration().getReplicaUrls(), config.getMessageCacheConfiguration().getRedisConfiguration().getCircuitBreakerConfiguration());
     RedisClientFactory pushSchedulerClientFactory = new RedisClientFactory("push_scheduler_cache", config.getPushScheduler().getReadTimeoutMs(), config.getPushScheduler().getUrl(), config.getPushScheduler().getReplicaUrls(), config.getPushScheduler().getCircuitBreakerConfiguration());
-    RedisClientFactory metricsCacheClientFactory  = new RedisClientFactory("metrics_cache", config.getMetricsCacheConfiguration().getReadTimeoutMs(), config.getMetricsCacheConfiguration().getUrl(), config.getMetricsCacheConfiguration().getReplicaUrls(), config.getMetricsCacheConfiguration().getCircuitBreakerConfiguration());
 
     ReplicatedJedisPool pubsubClient        = pubSubClientFactory.getRedisClientPool();
     ReplicatedJedisPool messagesClient      = messagesClientFactory.getRedisClientPool();
     ReplicatedJedisPool pushSchedulerClient = pushSchedulerClientFactory.getRedisClientPool();
-    ReplicatedJedisPool metricsCacheClient  = metricsCacheClientFactory.getRedisClientPool();
 
     RedisClusterClient cacheClusterClient = RedisClusterClient.create(config.getCacheClusterConfiguration().getUrls().stream().map(RedisURI::create).collect(Collectors.toList()));
     cacheClusterClient.setDefaultTimeout(config.getCacheClusterConfiguration().getTimeout());
 
     FaultTolerantRedisCluster cacheCluster         = new FaultTolerantRedisCluster("main_cache_cluster", config.getCacheClusterConfiguration().getUrls(), config.getCacheClusterConfiguration().getTimeout(), config.getCacheClusterConfiguration().getCircuitBreakerConfiguration());
     FaultTolerantRedisCluster messagesCacheCluster = new FaultTolerantRedisCluster("messages_cluster", config.getMessageCacheConfiguration().getRedisClusterConfiguration().getUrls(), config.getMessageCacheConfiguration().getRedisClusterConfiguration().getTimeout(), config.getMessageCacheConfiguration().getRedisClusterConfiguration().getCircuitBreakerConfiguration());
+    FaultTolerantRedisCluster metricsCluster       = new FaultTolerantRedisCluster("metrics_cluster", config.getMetricsClusterConfiguration().getUrls(), config.getMetricsClusterConfiguration().getTimeout(), config.getMetricsClusterConfiguration().getCircuitBreakerConfiguration());
 
     PendingAccountsManager     pendingAccountsManager     = new PendingAccountsManager(pendingAccounts, cacheCluster);
     PendingDevicesManager      pendingDevicesManager      = new PendingDevicesManager(pendingDevices, cacheCluster);
@@ -358,7 +361,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager syntheticProfilesManager = new org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager(profilesManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
     RedisClusterMessagesCache  clusterMessagesCache       = new RedisClusterMessagesCache(messagesCacheCluster);
     MessagesCache              messagesCache              = new MessagesCache(messagesClient, messages, accountsManager, config.getMessageCacheConfiguration().getPersistDelayMinutes(), clusterMessagesCache);
-    PushLatencyManager         pushLatencyManager         = new PushLatencyManager(metricsCacheClient);
+    PushLatencyManager         pushLatencyManager         = new PushLatencyManager(metricsCluster);
     MessagesManager            messagesManager            = new MessagesManager(messages, messagesCache, pushLatencyManager);
     RemoteConfigsManager       remoteConfigsManager       = new RemoteConfigsManager(remoteConfigs);
     DeadLetterHandler          deadLetterHandler          = new DeadLetterHandler(accountsManager, messagesManager);
