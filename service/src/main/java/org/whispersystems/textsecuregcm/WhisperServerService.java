@@ -160,6 +160,7 @@ import org.whispersystems.textsecuregcm.storage.PubSubManager;
 import org.whispersystems.textsecuregcm.storage.PushFeedbackProcessor;
 import org.whispersystems.textsecuregcm.storage.RedisClusterMessagePersister;
 import org.whispersystems.textsecuregcm.storage.RedisClusterMessagesCache;
+import org.whispersystems.textsecuregcm.storage.RegistrationLockVersionCounter;
 import org.whispersystems.textsecuregcm.storage.RemoteConfigs;
 import org.whispersystems.textsecuregcm.storage.RemoteConfigsManager;
 import org.whispersystems.textsecuregcm.storage.ReservedUsernames;
@@ -392,7 +393,8 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     ActiveUserCounter                    activeUserCounter               = new ActiveUserCounter(config.getMetricsFactory(), cacheCluster);
     AccountCleaner                       accountCleaner                  = new AccountCleaner(accountsManager);
     PushFeedbackProcessor                pushFeedbackProcessor           = new PushFeedbackProcessor(accountsManager);
-    List<AccountDatabaseCrawlerListener> accountDatabaseCrawlerListeners = List.of(pushFeedbackProcessor, activeUserCounter, accountCleaner);
+    RegistrationLockVersionCounter       registrationLockVersionCounter  = new RegistrationLockVersionCounter(metricsCluster, config.getMetricsFactory());
+    List<AccountDatabaseCrawlerListener> accountDatabaseCrawlerListeners = List.of(pushFeedbackProcessor, activeUserCounter, accountCleaner, registrationLockVersionCounter);
 
     AccountDatabaseCrawlerCache accountDatabaseCrawlerCache = new AccountDatabaseCrawlerCache(cacheCluster);
     AccountDatabaseCrawler      accountDatabaseCrawler      = new AccountDatabaseCrawler(accountsManager, accountDatabaseCrawlerCache, accountDatabaseCrawlerListeners, config.getAccountDatabaseCrawlerConfiguration().getChunkSize(), config.getAccountDatabaseCrawlerConfiguration().getChunkIntervalMs());
