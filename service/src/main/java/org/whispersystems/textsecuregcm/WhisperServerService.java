@@ -62,6 +62,7 @@ import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import io.micrometer.datadog.DatadogConfig;
 import io.micrometer.datadog.DatadogMeterRegistry;
 import io.micrometer.wavefront.WavefrontConfig;
@@ -311,6 +312,14 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
           final List<Tag> tags = super.getConventionTags(id);
           tags.add(new ImmutableTag("environment", micrometerDatadogConfig.getEnvironment()));
           return tags;
+        }
+
+        @Override
+        protected DistributionStatisticConfig defaultHistogramConfig() {
+          return DistributionStatisticConfig.builder()
+                  .percentiles(.75, .95, .99, .999)
+                  .build()
+                  .merge(super.defaultHistogramConfig());
         }
       });
       } // end if (micrometerDatadogConfig != null)
