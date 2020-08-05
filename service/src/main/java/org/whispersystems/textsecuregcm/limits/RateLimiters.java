@@ -131,10 +131,11 @@ public class RateLimiters {
                                               config.getUsernameSet().getBucketSize(),
                                               config.getUsernameSet().getLeakRatePerMinute());
 
-    this.connectWebSocketLimiter = new RateLimiter(cacheClient, "connectWebSocket",
+    this.connectWebSocketLimiter = new RateLimiter(cacheCluster, "connectWebSocket",
                                                    config.getConnectWebSocket().getBucketSize(),
                                                    config.getConnectWebSocket().getLeakRatePerMinute());
-    this.sanctuaryLookupLimiter = new RateLimiter(cacheClient, "sanctuaryLookup",
+
+    this.sanctuaryLookupLimiter = new RateLimiter(cacheCluster, "sanctuaryLookup",
                                                    config.getSanctuaryLookup().getBucketSize(),
                                                    config.getSanctuaryLookup().getLeakRatePerMinute());
   }

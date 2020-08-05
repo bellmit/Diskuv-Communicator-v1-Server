@@ -530,7 +530,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     // [Diskuv Change] Groups setup custom to Diskuv
     DynamoDbAsyncClient dbAsyncClient    = new AwsClientFactory(config.getDiskuvGroupsConfiguration()).getDynamoDbAsyncClient();
-    GroupChangeCache    groupChangeCache = new RedisBackedGroupChangeCache(cacheClient, config.getDiskuvGroupsConfiguration().getNumberOfGroupCacheCheckingThreads());
+    GroupChangeCache    groupChangeCache = new org.whispersystems.textsecuregcm.storage.RedisBackedGroupChangeCache(cacheCluster, config.getDiskuvGroupsConfiguration().getNumberOfGroupCacheCheckingThreads());
     GroupsDao           groupsDao        = new GroupsDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupsTableName(), config.getDiskuvGroupsConfiguration().getChecksumSharedKey());
     GroupLogDao         groupLogDao      = new GroupLogDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupLogTableName(), Optional.of(groupChangeCache));
 

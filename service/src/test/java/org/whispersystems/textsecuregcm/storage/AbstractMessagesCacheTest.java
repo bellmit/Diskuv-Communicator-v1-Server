@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(JUnitParamsRunner.class)
 public abstract class AbstractMessagesCacheTest extends AbstractRedisClusterTest {
 
-    private static final UUID   DESTINATION_UUID      = DiskuvUuidUtil.uuidForEmailAddress(new Random().nextLong() + "@example.com");
+    private static final UUID   DESTINATION_UUID      = DiskuvUuidUtil.uuidForOutdoorEmailAddress(new Random().nextLong() + "@example.com");
     private static final String DESTINATION_ACCOUNT   = DESTINATION_UUID.toString();
     private static final int    DESTINATION_DEVICE_ID = 7;
 
@@ -151,7 +151,7 @@ public abstract class AbstractMessagesCacheTest extends AbstractRedisClusterTest
 
         if (!sealedSender) {
             envelopeBuilder.setSourceDevice(random.nextInt(256))
-                    .setSourceUuid(DiskuvUuidUtil.uuidForEmailAddress(RandomStringUtils.randomNumeric(10) + "@example.com").toString());
+                    .setSourceUuid(DiskuvUuidUtil.uuidForOutdoorEmailAddress(RandomStringUtils.randomNumeric(10) + "@example.com").toString());
         }
 
         return envelopeBuilder.build();

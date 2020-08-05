@@ -22,6 +22,7 @@ import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.annotation.Timed;
 import com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader;
 import com.diskuv.communicatorservice.auth.JwtAuthentication;
+import io.dropwizard.auth.Auth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.*;
@@ -73,8 +74,6 @@ import java.util.UUID;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER;
-
-import io.dropwizard.auth.Auth;
 
 /**
  * Unlike the original Signal REST endpoints, this controller drops the phone number parameters. It instead
