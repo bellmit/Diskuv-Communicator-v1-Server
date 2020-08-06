@@ -44,7 +44,6 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.wavefront.sdk.common.WavefrontSender;
 import io.dropwizard.Application;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.PolymorphicAuthDynamicFeature;
@@ -190,6 +189,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.codahale.metrics.MetricRegistry.name;
@@ -359,6 +360,8 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     FaultTolerantRedisCluster messagesCacheCluster = new FaultTolerantRedisCluster("messages_cluster", config.getMessageCacheConfiguration().getRedisClusterConfiguration().getUrls(), config.getMessageCacheConfiguration().getRedisClusterConfiguration().getTimeout(), config.getMessageCacheConfiguration().getRedisClusterConfiguration().getCircuitBreakerConfiguration());
     FaultTolerantRedisCluster metricsCluster       = new FaultTolerantRedisCluster("metrics_cluster", config.getMetricsClusterConfiguration().getUrls(), config.getMetricsClusterConfiguration().getTimeout(), config.getMetricsClusterConfiguration().getCircuitBreakerConfiguration());
 
+    final ExecutorService messageCacheClusterExperimentExecutor = environment.lifecycle().executorService("messages_cache_experiment").maxThreads(8).workQueue(new ArrayBlockingQueue<>(1_000)).build();
+
     PendingAccountsManager     pendingAccountsManager     = new PendingAccountsManager(pendingAccounts, cacheCluster);
     PendingDevicesManager      pendingDevicesManager      = new PendingDevicesManager(pendingDevices, cacheCluster);
     AccountsManager            accountsManager            = new AccountsManager(accounts, cacheCluster);
@@ -367,9 +370,9 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     ProfilesManager            profilesManager            = new ProfilesManager(profiles, cacheCluster);
     org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager syntheticProfilesManager = new org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager(profilesManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
     RedisClusterMessagesCache  clusterMessagesCache       = new RedisClusterMessagesCache(messagesCacheCluster);
-    MessagesCache              messagesCache              = new MessagesCache(messagesClient, messages, accountsManager, config.getMessageCacheConfiguration().getPersistDelayMinutes(), clusterMessagesCache);
+    MessagesCache              messagesCache              = new MessagesCache(messagesClient, messages, accountsManager, config.getMessageCacheConfiguration().getPersistDelayMinutes());
     PushLatencyManager         pushLatencyManager         = new PushLatencyManager(metricsCluster);
-    MessagesManager            messagesManager            = new MessagesManager(messages, messagesCache, pushLatencyManager);
+    MessagesManager            messagesManager            = new MessagesManager(messages, messagesCache, clusterMessagesCache, pushLatencyManager, messageCacheClusterExperimentExecutor);
     RemoteConfigsManager       remoteConfigsManager       = new RemoteConfigsManager(remoteConfigs);
     DeadLetterHandler          deadLetterHandler          = new DeadLetterHandler(accountsManager, messagesManager);
     DispatchManager            dispatchManager            = new DispatchManager(pubSubClientFactory, Optional.of(deadLetterHandler));
