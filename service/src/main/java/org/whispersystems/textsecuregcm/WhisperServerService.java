@@ -364,6 +364,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     FaultTolerantRedisCluster metricsCluster       = new FaultTolerantRedisCluster("metrics_cluster", config.getMetricsClusterConfiguration().getUrls(), config.getMetricsClusterConfiguration().getTimeout(), config.getMetricsClusterConfiguration().getCircuitBreakerConfiguration());
 
     ScheduledExecutorService clientPresenceExecutor                = environment.lifecycle().scheduledExecutorService("clientPresenceManager").threads(1).build();
+    ExecutorService          messageNotificationExecutor           = environment.lifecycle().executorService("messageCacheNotifications").maxThreads(8).build();
     ExecutorService          messageCacheClusterExperimentExecutor = environment.lifecycle().executorService("messages_cache_experiment").maxThreads(8).workQueue(new ArrayBlockingQueue<>(1_000)).build();
     ExecutorService          websocketExperimentExecutor           = environment.lifecycle().executorService("websocketPresenceExperiment").maxThreads(8).workQueue(new ArrayBlockingQueue<>(1_000)).build();
     ClientPresenceManager    clientPresenceManager                 = new ClientPresenceManager(messagesCacheCluster, clientPresenceExecutor);
@@ -375,7 +376,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     UsernamesManager           usernamesManager           = new UsernamesManager(usernames, reservedUsernames, cacheCluster);
     ProfilesManager            profilesManager            = new ProfilesManager(profiles, cacheCluster);
     org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager syntheticProfilesManager = new org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager(profilesManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
-    RedisClusterMessagesCache  clusterMessagesCache       = new RedisClusterMessagesCache(messagesCacheCluster);
+    RedisClusterMessagesCache  clusterMessagesCache       = new RedisClusterMessagesCache(messagesCacheCluster, messageNotificationExecutor);
     MessagesCache              messagesCache              = new MessagesCache(messagesClient);
     PushLatencyManager         pushLatencyManager         = new PushLatencyManager(metricsCluster);
     MessagesManager            messagesManager            = new MessagesManager(messages, messagesCache, clusterMessagesCache, pushLatencyManager, messageCacheClusterExperimentExecutor);
