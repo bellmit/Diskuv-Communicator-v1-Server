@@ -55,8 +55,6 @@ import io.dropwizard.db.PooledDataSourceFactory;
 import io.dropwizard.jdbi3.JdbiFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import io.lettuce.core.RedisURI;
-import io.lettuce.core.cluster.RedisClusterClient;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Meter;
@@ -65,6 +63,8 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import io.micrometer.datadog.DatadogConfig;
 import io.micrometer.datadog.DatadogMeterRegistry;
+import io.micrometer.signalfx.SignalFxConfig;
+import io.micrometer.signalfx.SignalFxMeterRegistry;
 import io.micrometer.wavefront.WavefrontConfig;
 import io.micrometer.wavefront.WavefrontMeterRegistry;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -192,8 +192,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -248,6 +246,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
   public void run(WhisperServerConfiguration config, Environment environment)
       throws Exception
   {
+    final String instanceId = EC2MetadataUtils.getInstanceId();
     SharedMetricRegistries.add(Constants.METRICS_NAME, environment.metrics());
 
     final Map<String, MicrometerConfiguration> micrometerConfigurationByName = config.getMicrometerConfiguration();
@@ -288,8 +287,6 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     {
       final MicrometerConfiguration micrometerDatadogConfig = micrometerConfigurationByName.get("datadog");
-
-      final String instanceId = EC2MetadataUtils.getInstanceId();
       if (micrometerDatadogConfig != null) {
       Metrics.addRegistry(new DatadogMeterRegistry(new DatadogConfig() {
         @Override
@@ -323,6 +320,43 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
         }
       });
       } // end if (micrometerDatadogConfig != null)
+    }
+
+    {
+      final MicrometerConfiguration micrometerSignalfxConfig = micrometerConfigurationByName.get("signalfx");
+      if (micrometerSignalfxConfig != null) {
+      Metrics.addRegistry(new SignalFxMeterRegistry(new SignalFxConfig() {
+        @Override
+        public String get(String key) {
+          return null;
+        }
+
+        @Override
+        public String accessToken() {
+          return micrometerSignalfxConfig.getApiKey();
+        }
+
+        @Override
+        public String source() {
+          return instanceId;
+        }
+      }, Clock.SYSTEM) {
+        @Override
+        protected List<Tag> getConventionTags(@Nonnull Meter.Id id) {
+          final List<Tag> tags = super.getConventionTags(id);
+          tags.add(new ImmutableTag("environment", micrometerSignalfxConfig.getEnvironment()));
+          return tags;
+        }
+
+        @Override
+        protected DistributionStatisticConfig defaultHistogramConfig() {
+          return DistributionStatisticConfig.builder()
+                                            .percentiles(.75, .95, .99, .999)
+                                            .build()
+                                            .merge(super.defaultHistogramConfig());
+        }
+      });
+      } // end if (micrometerSignalfxConfig != null)
     }
 
     environment.getObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
