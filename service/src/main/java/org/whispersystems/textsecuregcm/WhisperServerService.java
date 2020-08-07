@@ -340,6 +340,11 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
         public String source() {
           return instanceId;
         }
+
+        @Override
+        public String uri() {
+          return micrometerSignalfxConfig.getUri();
+        }
       }, Clock.SYSTEM) {
         @Override
         protected List<Tag> getConventionTags(@Nonnull Meter.Id id) {
