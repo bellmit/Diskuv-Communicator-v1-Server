@@ -437,7 +437,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     MessageController      messageController         = new MessageController(jwtAuthentication, rateLimiters, pushSender, receiptSender, syntheticAccountsManager, messagesManager, apnFallbackManager);
     ProfileController      profileController         = new ProfileController(rateLimiters, syntheticAccountsManager, syntheticProfilesManager, usernamesManager, cdnS3Client, profileCdnPolicyGenerator, profileCdnPolicySigner, config.getCdnConfiguration().getBucket(), zkProfileOperations, isZkEnabled);
     StickerController      stickerController         = new StickerController(rateLimiters, config.getCdnConfiguration().getAccessKey(), config.getCdnConfiguration().getAccessSecret(), config.getCdnConfiguration().getRegion(), config.getCdnConfiguration().getBucket());
-    RemoteConfigController remoteConfigController    = new RemoteConfigController(remoteConfigsManager, config.getRemoteConfigConfiguration().getAuthorizedTokens());
+    RemoteConfigController remoteConfigController    = new RemoteConfigController(remoteConfigsManager, config.getRemoteConfigConfiguration().getAuthorizedTokens(), config.getRemoteConfigConfiguration().getGlobalConfig());
 
     AuthFilter<DiskuvDeviceCredentials, Account>                  accountAuthFilter                  = new DiskuvDeviceCredentialAuthFilter.Builder<Account>().setAuthenticator(accountAuthenticator).buildAuthFilter();
     AuthFilter<DiskuvDeviceCredentials, DisabledPermittedAccount> disabledPermittedAccountAuthFilter = new DiskuvDeviceCredentialAuthFilter.Builder<DisabledPermittedAccount>().setAuthenticator(disabledPermittedAccountAuthenticator).buildAuthFilter();

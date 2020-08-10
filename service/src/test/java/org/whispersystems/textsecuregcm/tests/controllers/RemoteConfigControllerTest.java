@@ -51,7 +51,7 @@ public class RemoteConfigControllerTest {
                                                             .addProvider(new PolymorphicAuthValueFactoryProvider.Binder<>(ImmutableSet.of(Account.class, DisabledPermittedAccount.class)))
                                                             .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
                                                             .addProvider(new DeviceLimitExceededExceptionMapper())
-                                                            .addResource(new RemoteConfigController(remoteConfigsManager, remoteConfigsAuth))
+                                                            .addResource(new RemoteConfigController(remoteConfigsManager, remoteConfigsAuth, Map.of("maxGroupSize", "42")))
                                                             .build();
 
 
@@ -82,7 +82,7 @@ public class RemoteConfigControllerTest {
 
     verify(remoteConfigsManager, times(1)).getAll();
 
-    assertThat(configuration.getConfig()).hasSize(10);
+    assertThat(configuration.getConfig()).hasSize(11);
     assertThat(configuration.getConfig().get(0).getName()).isEqualTo("android.stickers");
     assertThat(configuration.getConfig().get(1).getName()).isEqualTo("ios.stickers");
     assertThat(configuration.getConfig().get(2).getName()).isEqualTo("always.true");
@@ -103,6 +103,7 @@ public class RemoteConfigControllerTest {
     assertThat(configuration.getConfig().get(7).getName()).isEqualTo("linked.config.0");
     assertThat(configuration.getConfig().get(8).getName()).isEqualTo("linked.config.1");
     assertThat(configuration.getConfig().get(9).getName()).isEqualTo("unlinked.config");
+    assertThat(configuration.getConfig().get(10).getName()).isEqualTo("g.maxGroupSize");
   }
 
   @Test
@@ -116,7 +117,7 @@ public class RemoteConfigControllerTest {
 
     verify(remoteConfigsManager, times(1)).getAll();
 
-    assertThat(configuration.getConfig()).hasSize(10);
+    assertThat(configuration.getConfig()).hasSize(11);
     assertThat(configuration.getConfig().get(0).getName()).isEqualTo("android.stickers");
     assertThat(configuration.getConfig().get(1).getName()).isEqualTo("ios.stickers");
     assertThat(configuration.getConfig().get(2).getName()).isEqualTo("always.true");
@@ -137,6 +138,7 @@ public class RemoteConfigControllerTest {
     assertThat(configuration.getConfig().get(7).getName()).isEqualTo("linked.config.0");
     assertThat(configuration.getConfig().get(8).getName()).isEqualTo("linked.config.1");
     assertThat(configuration.getConfig().get(9).getName()).isEqualTo("unlinked.config");
+    assertThat(configuration.getConfig().get(10).getName()).isEqualTo("g.maxGroupSize");
   }
 
   @Test
@@ -147,7 +149,7 @@ public class RemoteConfigControllerTest {
                                                     .header("Authorization", testAccount.getAuthHeader())
                                                     .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(testAccount.uuid, AuthHelper.VALID_DEVICE_ID_STRING, testAccount.password))
                                                     .get(UserRemoteConfigList.class);
-      assertThat(configuration.getConfig()).hasSize(10);
+      assertThat(configuration.getConfig()).hasSize(11);
 
       final UserRemoteConfig linkedConfig0  = configuration.getConfig().get(7);
       assertThat(linkedConfig0.getName()).isEqualTo("linked.config.0");
@@ -305,6 +307,16 @@ public class RemoteConfigControllerTest {
     verifyNoMoreInteractions(remoteConfigsManager);
   }
 
+  @Test
+  public void testSetGlobalConfig() {
+    Response response = resources.getJerseyTest()
+                                 .target("/v1/config")
+                                 .request()
+                                 .header("Config-Token", "foo")
+                                 .put(Entity.entity(new RemoteConfig("g.maxGroupSize", 88, Set.of(), "FALSE", "TRUE", null), MediaType.APPLICATION_JSON_TYPE));
+    assertThat(response.getStatus()).isEqualTo(403);
+    verifyNoMoreInteractions(remoteConfigsManager);
+  }
 
   @Test
   public void testDelete() {
@@ -330,6 +342,17 @@ public class RemoteConfigControllerTest {
 
     assertThat(response.getStatus()).isEqualTo(401);
 
+    verifyNoMoreInteractions(remoteConfigsManager);
+  }
+
+  @Test
+  public void testDeleteGlobalConfig() {
+    Response response = resources.getJerseyTest()
+                                 .target("/v1/config/g.maxGroupSize")
+                                 .request()
+                                 .header("Config-Token", "foo")
+                                 .delete();
+    assertThat(response.getStatus()).isEqualTo(403);
     verifyNoMoreInteractions(remoteConfigsManager);
   }
 
