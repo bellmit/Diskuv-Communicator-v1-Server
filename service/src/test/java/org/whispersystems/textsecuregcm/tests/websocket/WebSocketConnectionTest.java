@@ -1,7 +1,6 @@
 package org.whispersystems.textsecuregcm.tests.websocket;
 
 import com.google.protobuf.ByteString;
-import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
@@ -12,7 +11,7 @@ import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntity;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntityList;
 import org.whispersystems.textsecuregcm.push.ApnFallbackManager;
-import org.whispersystems.textsecuregcm.push.ClientPresenceManager;
+import org.whispersystems.textsecuregcm.push.KeyspaceNotificationClientPresenceManager;
 import org.whispersystems.textsecuregcm.push.PushSender;
 import org.whispersystems.textsecuregcm.push.ReceiptSender;
 import org.whispersystems.textsecuregcm.push.WebsocketSender;
@@ -78,7 +77,7 @@ public class WebSocketConnectionTest {
   public void testCredentials() throws Exception {
     MessagesManager               storedMessages         = mock(MessagesManager.class);
     WebSocketAccountAuthenticator webSocketAuthenticator = new WebSocketAccountAuthenticator(accountAuthenticator);
-    AuthenticatedConnectListener  connectListener        = new AuthenticatedConnectListener(pushSender, receiptSender, storedMessages, pubSubManager, apnFallbackManager, mock(ClientPresenceManager.class));
+    AuthenticatedConnectListener  connectListener        = new AuthenticatedConnectListener(pushSender, receiptSender, storedMessages, pubSubManager, apnFallbackManager, mock(KeyspaceNotificationClientPresenceManager.class));
     WebSocketSessionContext       sessionContext         = mock(WebSocketSessionContext.class);
 
     when(accountAuthenticator.authenticate(eq(new DiskuvDeviceCredentials(VALID_JWT_TOKEN, VALID_ACCOUNT, VALID_DEVICE_ID_NUM, VALID_PASSWORD))))
