@@ -4,6 +4,7 @@ import com.fasterxml.uuid.UUIDComparator;
 import com.opentable.db.postgres.embedded.LiquibasePreparer;
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
 import com.opentable.db.postgres.junit.PreparedDbRule;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import org.jdbi.v3.core.HandleConsumer;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.transaction.TransactionException;
@@ -17,6 +18,7 @@ import org.whispersystems.textsecuregcm.storage.Accounts;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.FaultTolerantDatabase;
 import org.whispersystems.textsecuregcm.storage.mappers.AccountRowMapper;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import java.io.IOException;
 import java.sql.PreparedStatement;
@@ -31,9 +33,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-
-import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
-import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -245,7 +244,7 @@ public class AccountsTest {
     try {
       accounts.update(account);
       throw new AssertionError();
-    } catch (CircuitBreakerOpenException e) {
+    } catch (CallNotPermittedException e) {
       // good
     }
 
