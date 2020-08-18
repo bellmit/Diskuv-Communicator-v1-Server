@@ -165,4 +165,16 @@ public class AccountTest {
     }
   }
 
+  @Test
+  public void testDiscoverableByPhoneNumber() {
+    final Account account = new Account(UUID.randomUUID(), Collections.singleton(recentMasterDevice), "1234".getBytes());
+
+    assertTrue("Freshly-loaded legacy accounts should be discoverable by phone number.", account.isDiscoverableByPhoneNumber());
+
+    account.setDiscoverableByPhoneNumber(false);
+    assertFalse(account.isDiscoverableByPhoneNumber());
+
+    account.setDiscoverableByPhoneNumber(true);
+    assertTrue(account.isDiscoverableByPhoneNumber());
+  }
 }

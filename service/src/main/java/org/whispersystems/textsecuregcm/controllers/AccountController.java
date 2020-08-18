@@ -510,6 +510,7 @@ public class AccountController {
     account.setUnidentifiedAccessKey(attributes.getUnidentifiedAccessKey());
     account.setUnrestrictedUnidentifiedAccess(attributes.isUnrestrictedUnidentifiedAccess());
     account.setPayments(attributes.getPayments());
+    account.setDiscoverableByPhoneNumber(attributes.isDiscoverableByPhoneNumber());
 
     accounts.update(account);
   }
@@ -645,6 +646,7 @@ public class AccountController {
     account.setUnidentifiedAccessKey(accountAttributes.getUnidentifiedAccessKey());
     account.setUnrestrictedUnidentifiedAccess(accountAttributes.isUnrestrictedUnidentifiedAccess());
     account.setPayments(accountAttributes.getPayments());
+    account.setDiscoverableByPhoneNumber(accountAttributes.isDiscoverableByPhoneNumber());
 
     if (accounts.create(account)) {
       newUserMeter.mark();

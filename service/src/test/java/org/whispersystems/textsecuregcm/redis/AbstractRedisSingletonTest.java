@@ -44,6 +44,7 @@ public class AbstractRedisSingletonTest {
                 new CircuitBreakerConfiguration());
 
         replicatedJedisPool = new RedisClientFactory("test-pool",
+                5_000,
                 redisUrl,
                 List.of(redisUrl),
                 new CircuitBreakerConfiguration()).getRedisClientPool();
