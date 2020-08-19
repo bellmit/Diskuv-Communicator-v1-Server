@@ -35,7 +35,7 @@ public class CertificateGenerator {
 
   public byte[] createFor(Account account, Device device, boolean includeUuid) throws IOException, InvalidKeyException {
     // [Diskuv Change] Use email-based UUID rather than number.
-    Preconditions.checkArgument(includeUuid);
+    Preconditions.checkArgument(includeUuid, "Must include the UUID in certificates");
     SenderCertificate.Certificate.Builder builder = SenderCertificate.Certificate.newBuilder()
                                                                                  // WAS: .setSender(account.getNumber())
                                                                                  .setSenderDevice(Math.toIntExact(device.getId()))
@@ -43,9 +43,7 @@ public class CertificateGenerator {
                                                                                  .setIdentityKey(ByteString.copyFrom(Base64.decode(account.getIdentityKey())))
                                                                                  .setSigner(serverCertificate);
 
-    if (includeUuid) {
-      builder.setSenderUuid(account.getUuid().toString());
-    }
+    builder.setSenderUuid(account.getUuid().toString());
 
     byte[] certificate = builder.build().toByteArray();
     byte[] signature   = Curve.calculateSignature(privateKey, certificate);
