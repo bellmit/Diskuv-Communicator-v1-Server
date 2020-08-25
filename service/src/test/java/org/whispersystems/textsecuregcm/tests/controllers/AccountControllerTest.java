@@ -68,8 +68,10 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.isA;
@@ -155,6 +157,8 @@ public class AccountControllerTest {
 
   @Before
   public void setup() throws Exception {
+    clearInvocations(AuthHelper.VALID_ACCOUNT, AuthHelper.UNDISCOVERABLE_ACCOUNT);
+
     new SecureRandom().nextBytes(registration_lock_key);
     AuthenticationCredentials registrationLockCredentials = new AuthenticationCredentials(Hex.toStringCondensed(registration_lock_key));
 
@@ -237,7 +241,7 @@ public class AccountControllerTest {
     assertThat(captor.getValue().getData().isPresent()).isTrue();
     // Hex (2*). Nonce = 16. HMAC-SHA256=256/8.
     assertThat(captor.getValue().getData().get().length()).isEqualTo(2 * (16 + 256/8));
-    validatePushChallengeAuthentication(captor.getValue().getData().get(), "mytoken", AuthHelper.VALID_UUID);
+    validatePushChallengeAuthentication(captor.getValue().getData().get(), "mytoken", org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_UUID);
 
     verifyNoMoreInteractions(apnSender);
   }
@@ -260,7 +264,7 @@ public class AccountControllerTest {
     // Hex (2*). Nonce = 16. HMAC-SHA256=256/8.
     assertThat(captor.getValue().getChallengeData().get().length()).isEqualTo(2 * (16 + 256/8));
     assertThat(captor.getValue().getMessage()).contains("\"challenge\" : \"" + captor.getValue().getChallengeData().get() + "\"");
-    validatePushChallengeAuthentication(captor.getValue().getChallengeData().get(), "mytoken", AuthHelper.VALID_UUID);
+    validatePushChallengeAuthentication(captor.getValue().getChallengeData().get(), "mytoken", org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_UUID);
 
 
     verifyNoMoreInteractions(gcmSender);
@@ -545,11 +549,10 @@ public class AccountControllerTest {
 
     verify(accountsManager, times(1)).create(accountArgumentCaptor.capture());
 
-    final Account createdAccount = accountArgumentCaptor.getValue();
-
-    assertThat(createdAccount.isDiscoverableByPhoneNumber()).isTrue();
+    assertThat(accountArgumentCaptor.getValue().isDiscoverableByPhoneNumber()).isTrue();
   }
 
+  @Ignore("Deleted the REST endpoint")
   @Test
   public void testVerifyCodeUndiscoverable() throws Exception {
     AccountCreationResult result =
@@ -567,9 +570,7 @@ public class AccountControllerTest {
 
     verify(accountsManager, times(1)).create(accountArgumentCaptor.capture());
 
-    final Account createdAccount = accountArgumentCaptor.getValue();
-
-    assertThat(createdAccount.isDiscoverableByPhoneNumber()).isFalse();
+    assertThat(accountArgumentCaptor.getValue().isDiscoverableByPhoneNumber()).isFalse();
   }
 
   @Test
@@ -1199,8 +1200,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/")
                  .request()
-                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .delete();
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -1249,5 +1250,18 @@ public class AccountControllerTest {
     }
 
     assertThat(ByteString.copyFrom(digestActual)).isEqualTo(ByteString.copyFrom(digestExpected));
+  }
+
+  @Test
+  public void testSetAccountAttributes() {
+    Response response =
+            resources.getJerseyTest()
+                    .target("/v1/accounts/attributes/")
+                    .request()
+                    .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                    .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                    .put(Entity.json(new AccountAttributes("keykeykeykey", false, 2222, null, null, null, null, true)));
+
+    assertThat(response.getStatus()).isEqualTo(204);
   }
 }

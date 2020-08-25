@@ -39,6 +39,7 @@ import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_BEARER_TOKEN;
 
 public class CertificateControllerTest {
 
@@ -159,7 +160,8 @@ public class CertificateControllerTest {
             .queryParam("includeUuid", "true")
             .queryParam("includeE164", "false")
             .request()
-            .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
             .get(DeliveryCertificate.class);
 
 
@@ -178,6 +180,7 @@ public class CertificateControllerTest {
     assertTrue(Arrays.equals(certificate.getIdentityKey().toByteArray(), Base64.decode(AuthHelper.VALID_IDENTITY)));
   }
 
+  @org.junit.Ignore("Certificates in Diskuv must include UUID")
   @Test
   public void testValidCertificateWithNoUuidNoE164() throws Exception {
     Response response = resources.getJerseyTest()
@@ -185,7 +188,8 @@ public class CertificateControllerTest {
                                  .queryParam("includeUuid", "false")
                                  .queryParam("includeE164", "false")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .get();
 
     assertEquals(response.getStatus(), 400);

@@ -115,7 +115,6 @@ public class DeviceController {
 
     account.removeDevice(deviceId);
     accounts.update(account);
-
     messages.clear(account.getNumber(), account.getUuid(), deviceId);
   }
 

@@ -502,11 +502,11 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     // is to use a canary. Second option is to setup a single REST api that can be asked to check the backends; that
     // REST api will only be called from an external machine, and only one machine will be accessed each external
     // health check period.
-    SecureRandom            secureRandom = new SecureRandom();
-    CompletableFuture<Void> p1           = sanctuariesDao.startupProbe(secureRandom);
-    CompletableFuture<Void> p2           = groupsDao.startupProbe(secureRandom);
-    CompletableFuture<Void> p3           = groupLogDao.startupProbe(secureRandom);
-    CompletableFuture.allOf(p1, p2, p3).join();
+    java.security.SecureRandom                   secureRandom = new java.security.SecureRandom();
+    java.util.concurrent.CompletableFuture<Void> p1           = sanctuariesDao.startupProbe(secureRandom);
+    java.util.concurrent.CompletableFuture<Void> p2           = groupsDao.startupProbe(secureRandom);
+    java.util.concurrent.CompletableFuture<Void> p3           = groupLogDao.startupProbe(secureRandom);
+    java.util.concurrent.CompletableFuture.allOf(p1, p2, p3).join();
 
 
     // [Diskuv Change] BEGIN: Import of groups from storage-service

@@ -18,29 +18,29 @@ package org.whispersystems.textsecuregcm.tests.storage;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.whispersystems.textsecuregcm.sqs.DirectoryQueue;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountCleaner;
 import org.whispersystems.textsecuregcm.storage.AccountDatabaseCrawlerRestartException;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
-import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.*;
-import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 public class AccountCleanerTest {
 
@@ -98,7 +98,6 @@ public class AccountCleanerTest {
     verify(deletedDisabledDevice, never()).setFetchesMessages(anyBoolean());
 
     verify(accountsManager, never()).update(eq(deletedDisabledAccount));
-
 
     verify(undeletedDisabledDevice, times(1)).setGcmId(isNull());
     verify(undeletedDisabledDevice, times(1)).setApnId(isNull());

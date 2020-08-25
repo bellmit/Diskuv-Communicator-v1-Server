@@ -514,6 +514,7 @@ public class AccountController {
 
     accounts.update(account);
   }
+
   @GET
   @Path("/whoami")
   @Produces(MediaType.APPLICATION_JSON)

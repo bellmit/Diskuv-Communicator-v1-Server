@@ -65,50 +65,69 @@ public class AuthHelper {
   public static final UUID   DISABLED_UUID             = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress(DISABLED_EMAIL);
   public static final String DISABLED_PASSWORD         = "poof";
 
+  public static final long   UNDISCOVERABLE_DEVICE_ID = 1L;
+  public static final String UNDISCOVERABLE_NUMBER   = "+18005551234";
+  public static final UUID   UNDISCOVERABLE_UUID     = UUID.randomUUID();
+  public static final String UNDISCOVERABLE_PASSWORD = "IT'S A SECRET TO EVERYBODY.";
+
   public static final String VALID_IDENTITY = "BcxxDU9FGMda70E7+Uvm7pnQcEdXQ64aJCpPUeRSfcFo";
   public static JwtAuthentication JWT_AUTHENTICATION = mock(JwtAuthentication.class);
 
-  public static AccountsManager ACCOUNTS_MANAGER  = mock(AccountsManager.class);
-  public static Account         VALID_ACCOUNT     = mock(Account.class        );
-  public static Account         VALID_ACCOUNT_TWO = mock(Account.class        );
-  public static Account         DISABLED_ACCOUNT  = mock(Account.class        );
+  public static AccountsManager ACCOUNTS_MANAGER       = mock(AccountsManager.class);
+  public static Account         VALID_ACCOUNT          = mock(Account.class        );
+  public static Account         VALID_ACCOUNT_TWO      = mock(Account.class        );
+  public static Account         DISABLED_ACCOUNT       = mock(Account.class        );
+  public static Account         UNDISCOVERABLE_ACCOUNT = mock(Account.class        );
 
-  public static Device VALID_DEVICE     = mock(Device.class);
-  public static Device VALID_DEVICE_TWO = mock(Device.class);
-  public static Device DISABLED_DEVICE  = mock(Device.class);
+  public static Device VALID_DEVICE          = mock(Device.class);
+  public static Device VALID_DEVICE_TWO      = mock(Device.class);
+  public static Device DISABLED_DEVICE       = mock(Device.class);
+  public static Device UNDISCOVERABLE_DEVICE = mock(Device.class);
 
-  private static AuthenticationCredentials VALID_CREDENTIALS     = mock(AuthenticationCredentials.class);
-  private static AuthenticationCredentials VALID_CREDENTIALS_TWO = mock(AuthenticationCredentials.class);
-  private static AuthenticationCredentials DISABLED_CREDENTIALS  = mock(AuthenticationCredentials.class);
+  private static AuthenticationCredentials VALID_CREDENTIALS          = mock(AuthenticationCredentials.class);
+  private static AuthenticationCredentials VALID_CREDENTIALS_TWO      = mock(AuthenticationCredentials.class);
+  private static AuthenticationCredentials DISABLED_CREDENTIALS       = mock(AuthenticationCredentials.class);
+  private static AuthenticationCredentials UNDISCOVERABLE_CREDENTIALS = mock(AuthenticationCredentials.class);
 
   public static PolymorphicAuthDynamicFeature<? extends Principal> getAuthFilter() {
     when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN)).thenReturn(VALID_EMAIL);
     when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN_TWO)).thenReturn(VALID_EMAIL_TWO);
     when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(DISABLED_BEARER_TOKEN)).thenReturn(DISABLED_EMAIL);
 
-    when(VALID_CREDENTIALS.verify("foo".getBytes(StandardCharsets.UTF_8))).thenReturn(true);
-    when(VALID_CREDENTIALS_TWO.verify("baz".getBytes(StandardCharsets.UTF_8))).thenReturn(true);
-    when(DISABLED_CREDENTIALS.verify(DISABLED_PASSWORD.getBytes(StandardCharsets.UTF_8))).thenReturn(true);
+    when(VALID_CREDENTIALS.verify(VALID_PASSWORD)).thenReturn(true);
+    when(VALID_CREDENTIALS_TWO.verify(VALID_PASSWORD_TWO)).thenReturn(true);
+    when(DISABLED_CREDENTIALS.verify(DISABLED_PASSWORD)).thenReturn(true);
+    when(UNDISCOVERABLE_CREDENTIALS.verify(UNDISCOVERABLE_PASSWORD)).thenReturn(true);
+
+    when(VALID_CREDENTIALS.verify(VALID_PASSWORD.getBytes(java.nio.charset.StandardCharsets.UTF_8))).thenReturn(true);
+    when(VALID_CREDENTIALS_TWO.verify(VALID_PASSWORD_TWO.getBytes(java.nio.charset.StandardCharsets.UTF_8))).thenReturn(true);
+    when(DISABLED_CREDENTIALS.verify(DISABLED_PASSWORD.getBytes(java.nio.charset.StandardCharsets.UTF_8))).thenReturn(true);
+    when(UNDISCOVERABLE_CREDENTIALS.verify(UNDISCOVERABLE_PASSWORD.getBytes(java.nio.charset.StandardCharsets.UTF_8))).thenReturn(true);
 
     when(VALID_DEVICE.getAuthenticationCredentials()).thenReturn(VALID_CREDENTIALS);
     when(VALID_DEVICE_TWO.getAuthenticationCredentials()).thenReturn(VALID_CREDENTIALS_TWO);
     when(DISABLED_DEVICE.getAuthenticationCredentials()).thenReturn(DISABLED_CREDENTIALS);
+    when(UNDISCOVERABLE_DEVICE.getAuthenticationCredentials()).thenReturn(UNDISCOVERABLE_CREDENTIALS);
 
     when(VALID_DEVICE.isMaster()).thenReturn(true);
     when(VALID_DEVICE_TWO.isMaster()).thenReturn(true);
     when(DISABLED_DEVICE.isMaster()).thenReturn(true);
+    when(UNDISCOVERABLE_DEVICE.isMaster()).thenReturn(true);
 
     when(VALID_DEVICE.getId()).thenReturn(VALID_DEVICE_ID);
-    when(VALID_DEVICE_TWO.getId()).thenReturn(VALID_DEVICE_ID);
-    when(DISABLED_DEVICE.getId()).thenReturn(VALID_DEVICE_ID);
+    when(VALID_DEVICE_TWO.getId()).thenReturn(VALID_DEVICE_ID_TWO);
+    when(DISABLED_DEVICE.getId()).thenReturn(DISABLED_DEVICE_ID);
+    when(UNDISCOVERABLE_DEVICE.getId()).thenReturn(UNDISCOVERABLE_DEVICE_ID);
 
     when(VALID_DEVICE.isEnabled()).thenReturn(true);
     when(VALID_DEVICE_TWO.isEnabled()).thenReturn(true);
     when(DISABLED_DEVICE.isEnabled()).thenReturn(false);
+    when(UNDISCOVERABLE_DEVICE.isMaster()).thenReturn(true);
 
     when(VALID_ACCOUNT.getDevice(VALID_DEVICE_ID)).thenReturn(Optional.of(VALID_DEVICE));
     when(VALID_ACCOUNT_TWO.getDevice(eq(VALID_DEVICE_ID_TWO))).thenReturn(Optional.of(VALID_DEVICE_TWO));
     when(DISABLED_ACCOUNT.getDevice(eq(DISABLED_DEVICE_ID))).thenReturn(Optional.of(DISABLED_DEVICE));
+    when(UNDISCOVERABLE_ACCOUNT.getDevice(eq(UNDISCOVERABLE_DEVICE_ID))).thenReturn(Optional.of(UNDISCOVERABLE_DEVICE));
 
     when(VALID_ACCOUNT_TWO.getEnabledDeviceCount()).thenReturn(6);
 
@@ -118,17 +137,27 @@ public class AuthHelper {
     when(VALID_ACCOUNT_TWO.getUuid()).thenReturn(VALID_UUID_TWO);
     when(DISABLED_ACCOUNT.getNumber()).thenReturn(DISABLED_NUMBER);
     when(DISABLED_ACCOUNT.getUuid()).thenReturn(DISABLED_UUID);
+    when(UNDISCOVERABLE_ACCOUNT.getNumber()).thenReturn(UNDISCOVERABLE_NUMBER);
+    when(UNDISCOVERABLE_ACCOUNT.getUuid()).thenReturn(UNDISCOVERABLE_UUID);
 
     when(VALID_ACCOUNT.getAuthenticatedDevice()).thenReturn(Optional.of(VALID_DEVICE));
     when(VALID_ACCOUNT_TWO.getAuthenticatedDevice()).thenReturn(Optional.of(VALID_DEVICE_TWO));
     when(DISABLED_ACCOUNT.getAuthenticatedDevice()).thenReturn(Optional.of(DISABLED_DEVICE));
+    when(UNDISCOVERABLE_ACCOUNT.getAuthenticatedDevice()).thenReturn(Optional.of(UNDISCOVERABLE_DEVICE));
 
-    when(VALID_ACCOUNT.getRelay()).thenReturn(Optional.<String>empty());
-    when(VALID_ACCOUNT_TWO.getRelay()).thenReturn(Optional.<String>empty());
+    when(VALID_ACCOUNT.getRelay()).thenReturn(Optional.empty());
+    when(VALID_ACCOUNT_TWO.getRelay()).thenReturn(Optional.empty());
+    when(UNDISCOVERABLE_ACCOUNT.getRelay()).thenReturn(Optional.empty());
 
     when(VALID_ACCOUNT.isEnabled()).thenReturn(true);
     when(VALID_ACCOUNT_TWO.isEnabled()).thenReturn(true);
     when(DISABLED_ACCOUNT.isEnabled()).thenReturn(false);
+    when(UNDISCOVERABLE_ACCOUNT.isEnabled()).thenReturn(true);
+
+    when(VALID_ACCOUNT.isDiscoverableByPhoneNumber()).thenReturn(true);
+    when(VALID_ACCOUNT_TWO.isDiscoverableByPhoneNumber()).thenReturn(true);
+    when(DISABLED_ACCOUNT.isDiscoverableByPhoneNumber()).thenReturn(true);
+    when(UNDISCOVERABLE_ACCOUNT.isDiscoverableByPhoneNumber()).thenReturn(false);
 
     when(VALID_ACCOUNT.getRealAccount()).thenReturn(Optional.of(VALID_ACCOUNT));
     when(VALID_ACCOUNT_TWO.getRealAccount()).thenReturn(Optional.of(VALID_ACCOUNT_TWO));
@@ -150,6 +179,11 @@ public class AuthHelper {
     when(ACCOUNTS_MANAGER.get(DISABLED_UUID)).thenReturn(Optional.of(DISABLED_ACCOUNT));
     when(ACCOUNTS_MANAGER.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasNumber() && identifier.getNumber().equals(DISABLED_NUMBER)))).thenReturn(Optional.of(DISABLED_ACCOUNT));
     when(ACCOUNTS_MANAGER.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasUuid() && identifier.getUuid().equals(DISABLED_UUID)))).thenReturn(Optional.of(DISABLED_ACCOUNT));
+
+    when(ACCOUNTS_MANAGER.get(UNDISCOVERABLE_NUMBER)).thenReturn(Optional.of(UNDISCOVERABLE_ACCOUNT));
+    when(ACCOUNTS_MANAGER.get(UNDISCOVERABLE_UUID)).thenReturn(Optional.of(UNDISCOVERABLE_ACCOUNT));
+    when(ACCOUNTS_MANAGER.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasNumber() && identifier.getNumber().equals(UNDISCOVERABLE_NUMBER)))).thenReturn(Optional.of(UNDISCOVERABLE_ACCOUNT));
+    when(ACCOUNTS_MANAGER.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasUuid() && identifier.getUuid().equals(UNDISCOVERABLE_UUID)))).thenReturn(Optional.of(UNDISCOVERABLE_ACCOUNT));
 
     for (TestAccount testAccount : TEST_ACCOUNTS) {
       testAccount.setup(ACCOUNTS_MANAGER);

@@ -3,8 +3,8 @@ package org.whispersystems.textsecuregcm.storage;
 import com.diskuv.communicatorservice.storage.GroupChangeCache;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Bytes;
-import org.whispersystems.textsecuregcm.redis.ReplicatedJedisPool;
-import redis.clients.jedis.Jedis;
+
+import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -13,13 +13,13 @@ import java.nio.charset.StandardCharsets;
 public class RedisBackedGroupChangeCache implements GroupChangeCache {
   private static final byte[] GROUP_CHANGE_KEY_PREFIX =
       "groupchange:".getBytes(StandardCharsets.UTF_8);
-  private final ReplicatedJedisPool cacheClient;
+  private final FaultTolerantRedisCluster cacheCluster;
   private final int numberOfCacheCheckingThreads;
 
   public RedisBackedGroupChangeCache(
-      ReplicatedJedisPool cacheClient, int numberOfCacheCheckingThreads) {
+      FaultTolerantRedisCluster cacheCluster, int numberOfCacheCheckingThreads) {
     Preconditions.checkArgument(numberOfCacheCheckingThreads > 0);
-    this.cacheClient = cacheClient;
+    this.cacheCluster = cacheCluster;
     this.numberOfCacheCheckingThreads = numberOfCacheCheckingThreads;
   }
 
@@ -31,15 +31,15 @@ public class RedisBackedGroupChangeCache implements GroupChangeCache {
   @Nullable
   @Override
   public byte[] getValueIfPresent(@Nonnull byte[] keyBytes) {
-    try (Jedis jedis = cacheClient.getReadResource()) {
-      return jedis.get(Bytes.concat(GROUP_CHANGE_KEY_PREFIX, keyBytes));
-    }
+    return cacheCluster.withBinaryCluster(connection -> {
+      return connection.sync().get(Bytes.concat(GROUP_CHANGE_KEY_PREFIX, keyBytes));
+    });
   }
 
   @Override
   public void putValue(@Nonnull byte[] keyBytes, @Nonnull byte[] valueBytes) {
-    try (Jedis jedis = cacheClient.getWriteResource()) {
-      jedis.set(Bytes.concat(GROUP_CHANGE_KEY_PREFIX, keyBytes), valueBytes);
-    }
+    cacheCluster.useBinaryCluster(connection -> {
+      connection.sync().set(Bytes.concat(GROUP_CHANGE_KEY_PREFIX, keyBytes), valueBytes);
+    });
   }
 }
