@@ -3,6 +3,7 @@ package org.whispersystems.textsecuregcm.tests.storage;
 import org.junit.Ignore;
 import io.lettuce.core.RedisException;
 import io.lettuce.core.cluster.api.sync.RedisAdvancedClusterCommands;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
 import org.whispersystems.textsecuregcm.storage.Account;
@@ -71,8 +72,8 @@ public class AccountsManagerTest {
     Optional<Account> account         = accountsManager.get(uuid);
 
     assertTrue(account.isPresent());
-    assertEquals(account.get().getNumber(), UUID_ALICE_STRING);
-    assertEquals(account.get().getUuid(), UUID_ALICE);
+    assertEquals(account.get().getNumber(), uuid.toString());
+    assertEquals(account.get().getUuid(), uuid);
     assertEquals(account.get().getProfileName(), "test");
 
     verify(commands, times(1)).get(eq("Account3::" + UUID_ALICE_STRING));
@@ -125,7 +126,7 @@ public class AccountsManagerTest {
     assertSame(retrieved.get(), account);
 
     verify(commands, times(1)).get(eq("Account3::" + uuid));
-    verify(commands, times(1)).set(eq("AccountMap::"+UUID_ALICE_STRING), eq(uuid.toString()));
+    verify(commands, times(1)).set(eq("AccountMap::" + uuid), eq(uuid.toString()));
     verify(commands, times(1)).set(eq("Account3::" + uuid.toString()), anyString());
     verifyNoMoreInteractions(commands);
 
@@ -178,7 +179,7 @@ public class AccountsManagerTest {
     assertSame(retrieved.get(), account);
 
     verify(commands, times(1)).get(eq("Account3::" + uuid));
-    verify(commands, times(1)).set(eq("AccountMap::"+UUID_ALICE_STRING), eq(uuid.toString()));
+    verify(commands, times(1)).set(eq("AccountMap::" + uuid), eq(uuid.toString()));
     verify(commands, times(1)).set(eq("Account3::" + uuid.toString()), anyString());
     verifyNoMoreInteractions(commands);
 

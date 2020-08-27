@@ -12,7 +12,6 @@ import org.whispersystems.textsecuregcm.util.DiskuvUuidType;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import java.util.Optional;
-import java.util.UUID;
 
 public class ReceiptSender {
 
@@ -31,12 +30,13 @@ public class ReceiptSender {
   public void sendReceipt(Account source, String destination, long messageId)
       throws NoSuchUserException
   {
+    Preconditions.checkArgument(source.getUuid() != null);
     DiskuvUuidType sourceType = DiskuvUuidUtil.verifyDiskuvUuid(source.getUuid().toString());
     DiskuvUuidType destType   = DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Preconditions.checkArgument(
         sourceType == destType, "Cannot cross boundary between OUTDOORS and a HOUSE");
 
-    if (source.getUuid().equals(UUID.fromString(destination))) {
+    if (source.getUuid().toString().equals(destination)) {
       return;
     }
 

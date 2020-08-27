@@ -9,6 +9,7 @@ import org.jdbi.v3.core.HandleConsumer;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.transaction.TransactionException;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.whispersystems.textsecuregcm.configuration.CircuitBreakerConfiguration;
@@ -59,7 +60,8 @@ public class AccountsTest {
   @Test
   public void testStore() throws SQLException, IOException {
     Device  device  = generateDevice (1                                            );
-    Account account = generateAccount(UUID_ALICE, Collections.singleton(device));
+    UUID    uuid    = UUID_ALICE;
+    Account account = generateAccount(uuid, Collections.singleton(device));
 
     accounts.create(account);
 
@@ -118,14 +120,18 @@ public class AccountsTest {
   }
 
   @Test
+  @Ignore("Diskuv does not support overwriting by UUID")
   public void testOverwrite() throws Exception {
     Device  device  = generateDevice (1                                            );
-    Account account   = generateAccount(UUID_ALICE, Collections.singleton(device));
+    UUID    firstUuid = UUID_ALICE;
+    Account account   = generateAccount(firstUuid, Collections.singleton(device));
 
     accounts.create(account);
 
     PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM accounts WHERE uuid = ?");
     verifyStoredState(statement, account.getUuid(), account);
+
+    UUID secondUuid = UUID_BOB;
 
     device = generateDevice(1);
     account = generateAccount(UUID_ALICE, Collections.singleton(device));
@@ -137,7 +143,8 @@ public class AccountsTest {
   @Test
   public void testUpdate() {
     Device  device  = generateDevice (1                                            );
-    Account account = generateAccount(UUID_ALICE, Collections.singleton(device));
+    UUID    uuid    = UUID_ALICE;
+    Account account = generateAccount(uuid, Collections.singleton(device));
 
     accounts.create(account);
 
@@ -145,7 +152,7 @@ public class AccountsTest {
 
     accounts.update(account);
 
-    Optional<Account> retrieved = accounts.get(UUID_ALICE);
+    Optional<Account> retrieved = accounts.get(uuid);
 
     assertThat(retrieved.isPresent()).isTrue();
     verifyStoredState(account.getUuid(), retrieved.get(), account);
@@ -188,12 +195,13 @@ public class AccountsTest {
   @Test
   public void testVacuum() {
     Device  device  = generateDevice (1                                            );
-    Account account = generateAccount(UUID_ALICE, Collections.singleton(device));
+    UUID    uuid    = UUID_ALICE;
+    Account account = generateAccount(uuid, Collections.singleton(device));
 
     accounts.create(account);
     accounts.vacuum();
 
-    Optional<Account> retrieved = accounts.get(UUID_ALICE);
+    Optional<Account> retrieved = accounts.get(uuid);
     assertThat(retrieved.isPresent()).isTrue();
 
     verifyStoredState(account.getUuid(), retrieved.get(), account);

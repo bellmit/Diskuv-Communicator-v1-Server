@@ -42,18 +42,19 @@ public class AuthHelper {
   public static final String VALID_EMAIL_TWO            = "email2@test.com";
   public static final long   VALID_DEVICE_ID_TWO        = 1L;
   public static final String VALID_DEVICE_ID_STRING_TWO = Long.toString(VALID_DEVICE_ID_TWO);
+  public static final String VALID_NUMBER_TWO = "+201511111110";
+  public static final UUID   VALID_UUID_TWO    = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress(VALID_EMAIL_TWO);
+  public static final String VALID_PASSWORD_TWO = "baz";
+
   // Static seed to ensure reproducible tests.
   private static final Random random = new Random(0xf744df3b43a3339cL);
 
   public static final TestAccount[] TEST_ACCOUNTS = generateTestAccounts();
 
-  public static final String VALID_NUMBER_TWO = "+201511111110";
-  public static final UUID   VALID_UUID_TWO    = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress(VALID_EMAIL_TWO);
-  public static final String VALID_PASSWORD_TWO = "baz";
-
   public static final String INVALID_BEARER_TOKEN = "bleak";
   public static final long   INVALID_DEVICE_ID    = 1L;
   public static final String INVALID_DEVICE_ID_STRING = Long.toString(INVALID_DEVICE_ID);
+  public static final String INVVALID_NUMBER  = "+14151111111";
   public static final UUID   INVALID_UUID     = UUID.randomUUID();
   public static final String INVALID_PASSWORD = "bar";
 
@@ -233,8 +234,8 @@ public class AuthHelper {
     public final String                    bearerToken;
 
     public TestAccount(String email, UUID uuid, String password) {
-      this.email    = email;
-      this.uuid     = uuid;
+      this.email = email;
+      this.uuid  = uuid;
       this.password = password;
       this.bearerToken = Hashing.sha256().hashString(email, java.nio.charset.StandardCharsets.UTF_8).toString();
     }
@@ -269,8 +270,9 @@ public class AuthHelper {
     final long numberBase = 1_409_000_0000L;
     for (int i = 0; i < testAccounts.length; i++) {
       long currentNumber = numberBase + i;
-      String email = currentNumber + "@example.com";
-      testAccounts[i] = new TestAccount(email, org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress(email), "TestAccountPassword-" + currentNumber);
+      String email       = currentNumber + "@example.com";
+      UUID uuid          = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress(email);
+      testAccounts[i]    = new TestAccount(email, uuid, "TestAccountPassword-" + currentNumber);
     }
     return testAccounts;
   }

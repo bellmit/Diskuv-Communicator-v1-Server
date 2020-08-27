@@ -4,15 +4,18 @@ import com.google.protobuf.ByteString;
 import io.lettuce.core.cluster.SlotHash;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.whispersystems.textsecuregcm.entities.MessageProtos;
 import org.whispersystems.textsecuregcm.push.PushSender;
 import org.whispersystems.textsecuregcm.redis.AbstractRedisClusterTest;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,17 +32,17 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class RedisClusterMessagePersisterTest extends AbstractRedisClusterTest {
+public class MessagePersisterTest extends AbstractRedisClusterTest {
 
     private ExecutorService              notificationExecutorService;
-    private RedisClusterMessagesCache    messagesCache;
+    private MessagesCache messagesCache;
     private Messages                     messagesDatabase;
     private PubSubManager                pubSubManager;
-    private RedisClusterMessagePersister messagePersister;
+    private MessagePersister messagePersister;
     private AccountsManager              accountsManager;
 
-    private static final UUID   DESTINATION_ACCOUNT_UUID   = UUID.randomUUID();
-    private static final String DESTINATION_ACCOUNT_NUMBER = "+18005551234";
+    private static final UUID   DESTINATION_ACCOUNT_UUID   = DiskuvUuidUtil.uuidForOutdoorEmailAddress(new Random().nextLong() + "@example.com");
+    private static final String DESTINATION_ACCOUNT_NUMBER = DESTINATION_ACCOUNT_UUID.toString();
     private static final long   DESTINATION_DEVICE_ID      = 7;
 
     private static final Duration PERSIST_DELAY = Duration.ofMinutes(5);
@@ -51,7 +54,7 @@ public class RedisClusterMessagePersisterTest extends AbstractRedisClusterTest {
 
         final MessagesManager messagesManager         = mock(MessagesManager.class);
         final FeatureFlagsManager featureFlagsManager = mock(FeatureFlagsManager.class);
-        when(featureFlagsManager.isFeatureFlagActive(RedisClusterMessagePersister.ENABLE_PERSISTENCE_FLAG)).thenReturn(true);
+        when(featureFlagsManager.isFeatureFlagActive(MessagePersister.ENABLE_PERSISTENCE_FLAG)).thenReturn(true);
 
         messagesDatabase = mock(Messages.class);
         accountsManager  = mock(AccountsManager.class);
@@ -61,10 +64,11 @@ public class RedisClusterMessagePersisterTest extends AbstractRedisClusterTest {
 
         when(accountsManager.get(DESTINATION_ACCOUNT_UUID)).thenReturn(Optional.of(account));
         when(account.getNumber()).thenReturn(DESTINATION_ACCOUNT_NUMBER);
+        when(account.getUuid()).thenReturn(DESTINATION_ACCOUNT_UUID);
 
         notificationExecutorService = Executors.newSingleThreadExecutor();
-        messagesCache               = new RedisClusterMessagesCache(getRedisCluster(), notificationExecutorService);
-        messagePersister            = new RedisClusterMessagePersister(messagesCache, messagesManager, pubSubManager, mock(PushSender.class), accountsManager, PERSIST_DELAY);
+        messagesCache               = new MessagesCache(getRedisCluster(), notificationExecutorService);
+        messagePersister            = new MessagePersister(messagesCache, messagesManager, pubSubManager, mock(PushSender.class), accountsManager, PERSIST_DELAY);
 
         doAnswer(invocation -> {
             final String destination             = invocation.getArgument(0, String.class);
@@ -97,8 +101,8 @@ public class RedisClusterMessagePersisterTest extends AbstractRedisClusterTest {
 
     @Test
     public void testPersistNextQueuesSingleQueue() {
-        final String  queueName    = new String(RedisClusterMessagesCache.getMessageQueueKey(DESTINATION_ACCOUNT_UUID, DESTINATION_DEVICE_ID), StandardCharsets.UTF_8);
-        final int     messageCount = (RedisClusterMessagePersister.MESSAGE_BATCH_LIMIT * 3) + 7;
+        final String  queueName    = new String(MessagesCache.getMessageQueueKey(DESTINATION_ACCOUNT_UUID, DESTINATION_DEVICE_ID), StandardCharsets.UTF_8);
+        final int     messageCount = (MessagePersister.MESSAGE_BATCH_LIMIT * 3) + 7;
         final Instant now          = Instant.now();
 
         insertMessages(DESTINATION_ACCOUNT_UUID, DESTINATION_ACCOUNT_NUMBER, DESTINATION_DEVICE_ID, messageCount, now);
@@ -111,8 +115,8 @@ public class RedisClusterMessagePersisterTest extends AbstractRedisClusterTest {
 
     @Test
     public void testPersistNextQueuesSingleQueueTooSoon() {
-        final String  queueName    = new String(RedisClusterMessagesCache.getMessageQueueKey(DESTINATION_ACCOUNT_UUID, DESTINATION_DEVICE_ID), StandardCharsets.UTF_8);
-        final int     messageCount = (RedisClusterMessagePersister.MESSAGE_BATCH_LIMIT * 3) + 7;
+        final String  queueName    = new String(MessagesCache.getMessageQueueKey(DESTINATION_ACCOUNT_UUID, DESTINATION_DEVICE_ID), StandardCharsets.UTF_8);
+        final int     messageCount = (MessagePersister.MESSAGE_BATCH_LIMIT * 3) + 7;
         final Instant now          = Instant.now();
 
         insertMessages(DESTINATION_ACCOUNT_UUID, DESTINATION_ACCOUNT_NUMBER, DESTINATION_DEVICE_ID, messageCount, now);
@@ -124,22 +128,23 @@ public class RedisClusterMessagePersisterTest extends AbstractRedisClusterTest {
     }
 
     @Test
+    @Ignore("Takes too much memory")
     public void testPersistNextQueuesMultiplePages() {
         final int     slot             = 7;
-        final int     queueCount       = (RedisClusterMessagePersister.QUEUE_BATCH_LIMIT * 3) + 7;
+        final int     queueCount       = (MessagePersister.QUEUE_BATCH_LIMIT * 3) + 7;
         final int     messagesPerQueue = 10;
         final Instant now              = Instant.now();
 
         for (int i = 0; i < queueCount; i++) {
             final String queueName     = generateRandomQueueNameForSlot(slot);
-            final UUID accountUuid     = RedisClusterMessagesCache.getAccountUuidFromQueueName(queueName);
-            final long deviceId        = RedisClusterMessagesCache.getDeviceIdFromQueueName(queueName);
-            final String accountNumber = "+1" + RandomStringUtils.randomNumeric(10);
+            final UUID accountUuid     = MessagesCache.getAccountUuidFromQueueName(queueName);
+            final long deviceId        = MessagesCache.getDeviceIdFromQueueName(queueName);
+            final String accountNumber = accountUuid.toString();
 
             final Account account = mock(Account.class);
 
             when(accountsManager.get(accountUuid)).thenReturn(Optional.of(account));
-            when(account.getNumber()).thenReturn(accountNumber);
+            when(account.getUuid()).thenReturn(accountUuid);
 
             insertMessages(accountUuid, accountNumber, deviceId, messagesPerQueue, now);
         }
@@ -186,6 +191,6 @@ public class RedisClusterMessagePersisterTest extends AbstractRedisClusterTest {
     }
 
     private void setNextSlotToPersist(final int nextSlot) {
-        getRedisCluster().useCluster(connection -> connection.sync().set(RedisClusterMessagesCache.NEXT_SLOT_TO_PERSIST_KEY, String.valueOf(nextSlot - 1)));
+        getRedisCluster().useCluster(connection -> connection.sync().set(MessagesCache.NEXT_SLOT_TO_PERSIST_KEY, String.valueOf(nextSlot - 1)));
     }
 }

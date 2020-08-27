@@ -129,8 +129,8 @@ public class DeviceControllerTest {
     when(accountsManager.get(AuthHelper.VALID_UUID)).thenReturn(Optional.of(account));
     when(accountsManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of(maxedAccount));
 
-    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN)).thenReturn(VALID_EMAIL);
-    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN_TWO)).thenReturn(VALID_EMAIL_TWO);
+    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(AuthHelper.VALID_BEARER_TOKEN)).thenReturn(AuthHelper.VALID_EMAIL);
+    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(AuthHelper.VALID_BEARER_TOKEN_TWO)).thenReturn(AuthHelper.VALID_EMAIL_TWO);
   }
 
   @Test
@@ -138,8 +138,8 @@ public class DeviceControllerTest {
     VerificationCode deviceCode = resources.getJerseyTest()
                                            .target("/v1/devices/provisioning/code")
                                            .request()
-            .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
-            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                           .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                           .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                            .get(VerificationCode.class);
 
     assertThat(deviceCode).isEqualTo(new VerificationCode(5678901));
@@ -147,8 +147,8 @@ public class DeviceControllerTest {
     DeviceResponse response = resources.getJerseyTest()
                                        .target("/v1/devices/5678901")
                                        .request()
-                                       .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
-                                       .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                       .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                       .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, "password1"))
                                        .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 1234, null),
                                                           MediaType.APPLICATION_JSON_TYPE),
                                             DeviceResponse.class);
@@ -164,7 +164,8 @@ public class DeviceControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/devices/provisioning/code")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.DISABLED_NUMBER, AuthHelper.DISABLED_PASSWORD))
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
+                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                                  .get();
 
       assertThat(response.getStatus()).isEqualTo(401);
@@ -175,8 +176,8 @@ public class DeviceControllerTest {
     VerificationCode deviceCode = resources.getJerseyTest()
                                            .target("/v1/devices/provisioning/code")
                                            .request()
-            .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
-            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                           .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                           .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                            .get(VerificationCode.class);
 
     assertThat(deviceCode).isEqualTo(new VerificationCode(5678901));
@@ -184,8 +185,8 @@ public class DeviceControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/devices/5678902")
                                  .request()
-                                  .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
-                                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, "password1"))
                                  .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 1234, null),
                                                     MediaType.APPLICATION_JSON_TYPE));
 
@@ -214,8 +215,8 @@ public class DeviceControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/devices/provisioning/code")
                                  .request()
-                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
-                                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
                                  .get();
 
     assertEquals(411, response.getStatus());

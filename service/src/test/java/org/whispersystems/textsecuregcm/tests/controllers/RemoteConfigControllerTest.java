@@ -76,8 +76,8 @@ public class RemoteConfigControllerTest {
     UserRemoteConfigList configuration = resources.getJerseyTest()
                                                   .target("/v1/config/")
                                                   .request()
-            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                                   .get(UserRemoteConfigList.class);
 
     verify(remoteConfigsManager, times(1)).getAll();
@@ -145,10 +145,7 @@ public class RemoteConfigControllerTest {
   public void testHashKeyLinkedConfigs() {
     boolean allUnlinkedConfigsMatched = true;
     for (AuthHelper.TestAccount testAccount : AuthHelper.TEST_ACCOUNTS) {
-      UserRemoteConfigList configuration = resources.getJerseyTest().target("/v1/config/").request()
-                                                    .header("Authorization", testAccount.getAuthHeader())
-                                                    .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(testAccount.uuid, AuthHelper.VALID_DEVICE_ID_STRING, testAccount.password))
-                                                    .get(UserRemoteConfigList.class);
+      UserRemoteConfigList configuration = resources.getJerseyTest().target("/v1/config/").request().header("Authorization", testAccount.getAuthHeader()).header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(testAccount.uuid, AuthHelper.VALID_DEVICE_ID_STRING, testAccount.password)).get(UserRemoteConfigList.class);
       assertThat(configuration.getConfig()).hasSize(11);
 
       final UserRemoteConfig linkedConfig0  = configuration.getConfig().get(7);
@@ -172,8 +169,8 @@ public class RemoteConfigControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/config/")
                                  .request()
-            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.INVALID_PASSWORD))
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.INVALID_BEARER_TOKEN))
+                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.INVALID_DEVICE_ID_STRING, AuthHelper.INVALID_PASSWORD))
                                  .get();
 
     assertThat(response.getStatus()).isEqualTo(401);

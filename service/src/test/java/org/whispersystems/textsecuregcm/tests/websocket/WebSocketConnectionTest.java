@@ -22,6 +22,7 @@ import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.storage.PubSubManager;
 import org.whispersystems.textsecuregcm.storage.PubSubProtos;
 import org.whispersystems.textsecuregcm.util.Base64;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.websocket.AuthenticatedConnectListener;
 import org.whispersystems.textsecuregcm.websocket.WebSocketAccountAuthenticator;
 import org.whispersystems.textsecuregcm.websocket.WebSocketConnection;
@@ -37,6 +38,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -163,9 +165,9 @@ public class WebSocketConnectionTest {
   public void testOpen() throws Exception {
     MessagesManager storedMessages = mock(MessagesManager.class);
 
-    UUID accountUuid   = UUID.randomUUID();
-    UUID senderOneUuid = UUID.randomUUID();
-    UUID senderTwoUuid = UUID.randomUUID();
+    UUID accountUuid   = DiskuvUuidUtil.uuidForOutdoorEmailAddress(new Random().nextLong() + "@example.com");
+    UUID senderOneUuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress(new Random().nextLong() + "@example.com");
+    UUID senderTwoUuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress(new Random().nextLong() + "@example.com");
 
     List<OutgoingMessageEntity> outgoingMessages = new LinkedList<OutgoingMessageEntity> () {{
       add(createMessage(1L, false, "sender1", senderOneUuid, 1111, false, "first"));
@@ -179,7 +181,7 @@ public class WebSocketConnectionTest {
     when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
-    when(account.getNumber()).thenReturn(UUID_ALICE_STRING);
+    when(account.getNumber()).thenReturn(accountUuid.toString());
     when(account.getUuid()).thenReturn(accountUuid);
 
     final Device sender1device = mock(Device.class);
@@ -213,7 +215,7 @@ public class WebSocketConnectionTest {
           }
         });
 
-    WebsocketAddress websocketAddress = new WebsocketAddress(account.getNumber(), device.getId());
+    WebsocketAddress websocketAddress = new WebsocketAddress(account.getUuid().toString(), device.getId());
     WebSocketConnection connection = new WebSocketConnection(pushSender, receiptSender, storedMessages,
                                                              account, device, client, "someid");
 
@@ -243,10 +245,11 @@ public class WebSocketConnectionTest {
 
     when(pushSender.getWebSocketSender()).thenReturn(websocketSender);
 
+    UUID sender1Uuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress("sender1@example.com");
+    UUID sender2Uuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress("sender2@example.com");
     Envelope firstMessage = Envelope.newBuilder()
                                     .setLegacyMessage(ByteString.copyFrom("first".getBytes()))
-                                    .setSource("")
-                                    .setSourceUuid(UUID_ALICE_STRING)
+                                    .setSourceUuid(sender1Uuid.toString())
                                     .setTimestamp(System.currentTimeMillis())
                                     .setSourceDevice(1)
                                     .setType(Envelope.Type.CIPHERTEXT)
@@ -254,8 +257,7 @@ public class WebSocketConnectionTest {
 
     Envelope secondMessage = Envelope.newBuilder()
                                      .setLegacyMessage(ByteString.copyFrom("second".getBytes()))
-                                     .setSource("")
-                                     .setSourceUuid(UUID_BOB_STRING)
+                                     .setSourceUuid(sender2Uuid.toString())
                                      .setTimestamp(System.currentTimeMillis())
                                      .setSourceDevice(2)
                                      .setType(Envelope.Type.CIPHERTEXT)
@@ -268,8 +270,9 @@ public class WebSocketConnectionTest {
     when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
-    when(account.getNumber()).thenReturn(UUID_ALICE_STRING);
-    when(account.getUuid()).thenReturn(UUID_ALICE);
+    UUID accountUuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress(new Random().nextLong() + "@example.com");
+    when(account.getNumber()).thenReturn(accountUuid.toString());
+    when(account.getUuid()).thenReturn(accountUuid);
 
     final Device sender1device = mock(Device.class);
 
@@ -280,8 +283,8 @@ public class WebSocketConnectionTest {
     Account sender1 = mock(Account.class);
     when(sender1.getDevices()).thenReturn(sender1devices);
 
-    when(accountsManager.get(UUID_ALICE)).thenReturn(Optional.of(sender1));
-    when(accountsManager.get(UUID_BOB)).thenReturn(Optional.<Account>empty());
+    when(accountsManager.get(sender1Uuid)).thenReturn(Optional.of(sender1));
+    when(accountsManager.get(sender2Uuid)).thenReturn(Optional.<Account>empty());
 
     String userAgent = "user-agent";
 
@@ -302,7 +305,7 @@ public class WebSocketConnectionTest {
           }
         });
 
-    WebsocketAddress websocketAddress = new WebsocketAddress(account.getNumber(), device.getId());
+    WebsocketAddress websocketAddress = new WebsocketAddress(account.getUuid().toString(), device.getId());
     WebSocketConnection connection = new WebSocketConnection(pushSender, receiptSender, storedMessages,
                                                              account, device, client, "anotherid");
 
@@ -326,7 +329,7 @@ public class WebSocketConnectionTest {
     futures.get(1).complete(response);
     futures.get(0).completeExceptionally(new IOException());
 
-    verify(receiptSender, times(1)).sendReceipt(eq(account), eq(UUID_BOB_STRING), eq(secondMessage.getTimestamp()));
+    verify(receiptSender, times(1)).sendReceipt(eq(account), eq(sender2Uuid.toString()), eq(secondMessage.getTimestamp()));
     verify(websocketSender, times(1)).queueMessage(eq(account), eq(device), any(Envelope.class));
     verify(pushSender, times(1)).sendQueuedNotification(eq(account), eq(device));
 
@@ -344,10 +347,11 @@ public class WebSocketConnectionTest {
 
     when(pushSender.getWebSocketSender()).thenReturn(websocketSender);
 
+    UUID sender1Uuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress("sender1@example.com");
+    UUID sender2Uuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress("sender2@example.com");
     final Envelope firstMessage = Envelope.newBuilder()
                                     .setLegacyMessage(ByteString.copyFrom("first".getBytes()))
-                                    .setSource("")
-                                    .setSourceUuid(UUID_ALICE_STRING)
+                                    .setSourceUuid(sender1Uuid.toString())
                                     .setTimestamp(System.currentTimeMillis())
                                     .setSourceDevice(1)
                                     .setType(Envelope.Type.CIPHERTEXT)
@@ -355,8 +359,7 @@ public class WebSocketConnectionTest {
 
     final Envelope secondMessage = Envelope.newBuilder()
                                      .setLegacyMessage(ByteString.copyFrom("second".getBytes()))
-                                     .setSource("")
-                                     .setSourceUuid(UUID_BOB_STRING)
+                                     .setSourceUuid(sender2Uuid.toString())
                                      .setTimestamp(System.currentTimeMillis())
                                      .setSourceDevice(2)
                                      .setType(Envelope.Type.CIPHERTEXT)
@@ -379,8 +382,9 @@ public class WebSocketConnectionTest {
     when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
-    when(account.getNumber()).thenReturn(UUID_ALICE_STRING);
-    when(account.getUuid()).thenReturn(UUID_ALICE);
+    UUID accountUuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress(new Random().nextLong() + "@example.com");
+    when(account.getNumber()).thenReturn(accountUuid.toString());
+    when(account.getUuid()).thenReturn(accountUuid);
 
     final Device sender1device = mock(Device.class);
 
@@ -391,8 +395,8 @@ public class WebSocketConnectionTest {
     Account sender1 = mock(Account.class);
     when(sender1.getDevices()).thenReturn(sender1devices);
 
-    when(accountsManager.get(UUID_ALICE)).thenReturn(Optional.of(sender1));
-    when(accountsManager.get(UUID_BOB)).thenReturn(Optional.<Account>empty());
+    when(accountsManager.get(sender1Uuid)).thenReturn(Optional.of(sender1));
+    when(accountsManager.get(sender2Uuid)).thenReturn(Optional.<Account>empty());
 
     String userAgent = "user-agent";
 
@@ -413,7 +417,7 @@ public class WebSocketConnectionTest {
           }
         });
 
-    WebsocketAddress websocketAddress = new WebsocketAddress(account.getNumber(), device.getId());
+    WebsocketAddress websocketAddress = new WebsocketAddress(account.getUuid().toString(), device.getId());
     WebSocketConnection connection = new WebSocketConnection(pushSender, receiptSender, storedMessages,
                                                              account, device, client, "onemoreid");
 
@@ -428,7 +432,7 @@ public class WebSocketConnectionTest {
     futures.get(1).complete(response);
     futures.get(0).completeExceptionally(new IOException());
 
-    verify(receiptSender, times(1)).sendReceipt(eq(account), eq(UUID_BOB_STRING), eq(secondMessage.getTimestamp()));
+    verify(receiptSender, times(1)).sendReceipt(eq(account), eq(sender2Uuid.toString()), eq(secondMessage.getTimestamp()));
     verifyNoMoreInteractions(websocketSender);
     verifyNoMoreInteractions(pushSender);
 

@@ -21,9 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
-import com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.InvalidAuthorizationHeaderException;
-import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import org.whispersystems.textsecuregcm.auth.StoredVerificationCode;
 import org.whispersystems.textsecuregcm.entities.AccountAttributes;
 import org.whispersystems.textsecuregcm.entities.DeviceInfo;
@@ -36,6 +34,7 @@ import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.Device.DeviceCapabilities;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.storage.PendingDevicesManager;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Util;
 import org.whispersystems.textsecuregcm.util.VerificationCode;
 
@@ -71,14 +70,14 @@ public class DeviceController {
 
   private final PendingDevicesManager pendingDevices;
   private final AccountsManager       accounts;
-  private final JwtAuthentication     jwtAuthentication;
+  private final com.diskuv.communicatorservice.auth.JwtAuthentication     jwtAuthentication;
   private final MessagesManager       messages;
   private final RateLimiters          rateLimiters;
   private final Map<String, Integer>  maxDeviceConfiguration;
 
   public DeviceController(PendingDevicesManager pendingDevices,
                           AccountsManager accounts,
-                          JwtAuthentication jwtAuthentication,
+                          com.diskuv.communicatorservice.auth.JwtAuthentication jwtAuthentication,
                           MessagesManager messages,
                           RateLimiters rateLimiters,
                           Map<String, Integer> maxDeviceConfiguration)
@@ -169,9 +168,9 @@ public class DeviceController {
 
     // device password to be used for subsequent device authentication.
     // ignore any device id from the device header though. we will create the "next" device id a bit later in this method
-    final DeviceAuthorizationHeader deviceHeader;
+    final com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader deviceHeader;
     try {
-      deviceHeader = DeviceAuthorizationHeader.fromFullHeader(deviceAuthorizationHeader);
+      deviceHeader = com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.fromFullHeader(deviceAuthorizationHeader);
     } catch (InvalidAuthorizationHeaderException e) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
@@ -238,6 +237,23 @@ public class DeviceController {
     assert(account.getAuthenticatedDevice().isPresent());
     account.getAuthenticatedDevice().get().setCapabilities(capabilities);
     accounts.update(account);
+  }
+
+  private UUID getAndValidateAccountUuid(String authorizationHeader) {
+    final String bearerToken;
+    try {
+      bearerToken = com.diskuv.communicatorservice.auth.BearerTokenAuthorizationHeader.fromFullHeader(authorizationHeader);
+    } catch (InvalidAuthorizationHeaderException e) {
+      logger.info("Bad Authorization Header", e);
+      throw new WebApplicationException(Response.status(401).build());
+    }
+    final String emailAddress;
+    try {
+      emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(bearerToken);
+    } catch (IllegalArgumentException e) {
+      throw new WebApplicationException(Response.status(401).build());
+    }
+    return DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress);
   }
 
   @VisibleForTesting protected VerificationCode generateVerificationCode() {

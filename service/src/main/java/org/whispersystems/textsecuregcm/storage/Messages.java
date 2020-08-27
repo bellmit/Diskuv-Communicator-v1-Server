@@ -88,10 +88,10 @@ public class Messages {
   public Optional<OutgoingMessageEntity> remove(String destination, long destinationDevice, String source, long timestamp) {
     return database.with(jdbi -> jdbi.withHandle(handle -> {
       try (Timer.Context ignored = removeBySourceTimer.time()) {
-        return handle.createQuery("DELETE FROM messages WHERE " + ID + " IN (SELECT " + ID + " FROM messages WHERE " + DESTINATION + " = :destination AND " + DESTINATION_DEVICE + " = :destination_device AND " + SOURCE + " = :source AND " + TIMESTAMP + " = :timestamp ORDER BY " + ID + " LIMIT 1) RETURNING *")
+        return handle.createQuery("DELETE FROM messages WHERE " + ID + " IN (SELECT " + ID + " FROM messages WHERE " + DESTINATION + " = :destination AND " + DESTINATION_DEVICE + " = :destination_device AND " + SOURCE_UUID + " = :source_uuid AND " + TIMESTAMP + " = :timestamp ORDER BY " + ID + " LIMIT 1) RETURNING *")
                      .bind("destination", destination)
                      .bind("destination_device", destinationDevice)
-                     .bind("source", source)
+                     .bind("source_uuid", UUID.fromString(source))
                      .bind("timestamp", timestamp)
                      .mapTo(OutgoingMessageEntity.class)
                      .findFirst();

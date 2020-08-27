@@ -1,4 +1,4 @@
-package org.whispersystems.textsecuregcm.tests.storage;
+ package org.whispersystems.textsecuregcm.tests.storage;
 
 import com.google.protobuf.ByteString;
 import com.opentable.db.postgres.embedded.LiquibasePreparer;
@@ -64,7 +64,7 @@ public class MessagesTest {
     assertThat(resultSet.getString("relay")).isNullOrEmpty();
     assertThat(resultSet.getLong("timestamp")).isEqualTo(envelope.getTimestamp());
     assertThat(resultSet.getLong("server_timestamp")).isEqualTo(envelope.getServerTimestamp());
-    assertThat(resultSet.getString("source")).isEqualTo(envelope.getSource());
+    assertThat(resultSet.getString("source_uuid")).isEqualTo(envelope.getSourceUuid());
     assertThat(resultSet.getLong("source_device")).isEqualTo(envelope.getSourceDevice());
     assertThat(resultSet.getBytes("message")).isEqualTo(envelope.getLegacyMessage().toByteArray());
     assertThat(resultSet.getBytes("content")).isEqualTo(envelope.getContent().toByteArray());
@@ -102,7 +102,7 @@ public class MessagesTest {
     List<MessageToStore>            inserted = insertRandom(UUID_ALICE, 1);
     List<MessageToStore>            unrelated = insertRandom(UUID_BOB, 3);
     MessageToStore                  toRemove = inserted.remove(new Random(System.currentTimeMillis()).nextInt(inserted.size() - 1));
-    Optional<OutgoingMessageEntity> removed  = messages.remove(UUID_ALICE_STRING, 1, toRemove.envelope.getSource(), toRemove.envelope.getTimestamp());
+    Optional<OutgoingMessageEntity> removed  = messages.remove(UUID_ALICE_STRING, 1, toRemove.envelope.getSourceUuid(), toRemove.envelope.getTimestamp());
 
     assertThat(removed.isPresent()).isTrue();
     verifyExpected(removed.get(), toRemove.envelope, toRemove.guid);
@@ -215,7 +215,8 @@ public class MessagesTest {
 
   private void verifyExpected(OutgoingMessageEntity retrieved, Envelope inserted, UUID guid) {
     assertThat(retrieved.getTimestamp()).isEqualTo(inserted.getTimestamp());
-    assertThat(retrieved.getSource()).isEqualTo(inserted.getSource());
+    assertThat(retrieved.getSource() == null ? "" : retrieved.getSource()).isEqualTo(inserted.getSource());
+    assertThat(retrieved.getSourceUuid() == null ? "" : retrieved.getSourceUuid().toString()).isEqualTo(inserted.getSourceUuid());
     assertThat(retrieved.getRelay()).isEqualTo(inserted.getRelay());
     assertThat(retrieved.getType()).isEqualTo(inserted.getType().getNumber());
     assertThat(retrieved.getContent()).isEqualTo(inserted.getContent().toByteArray());
@@ -250,7 +251,7 @@ public class MessagesTest {
 
     return Envelope.newBuilder()
                    .setSourceDevice(random.nextInt(10000))
-                   .setSource("testSource" + random.nextInt())
+                   .setSourceUuid(org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress("testSource" + random.nextInt() + "@example.com").toString())
                    .setTimestamp(serialTimestamp++)
                    .setServerTimestamp(serialTimestamp++)
                    .setLegacyMessage(ByteString.copyFrom(legacy))

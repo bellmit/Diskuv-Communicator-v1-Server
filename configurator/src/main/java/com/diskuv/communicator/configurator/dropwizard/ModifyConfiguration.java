@@ -231,8 +231,8 @@ public class ModifyConfiguration implements Callable<Integer> {
 
   public void messageCache(WhisperServerConfiguration config) throws IllegalAccessException {
     MessageCacheConfiguration value = config.getMessageCacheConfiguration();
-    RedisConfiguration redis = value.getRedisConfiguration();
-    setRedisUrlAndReplicas(redis);
+    RedisClusterConfiguration redis = value.getRedisClusterConfiguration();
+    setRedisUrls(redis);
   }
 
   private void setRedisUrls(RedisClusterConfiguration value) throws IllegalAccessException {
