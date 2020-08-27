@@ -81,13 +81,13 @@ import org.whispersystems.textsecuregcm.auth.CertificateGenerator;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
 import org.whispersystems.textsecuregcm.auth.ExternalServiceCredentialGenerator;
 import org.whispersystems.textsecuregcm.auth.TurnTokenGenerator;
-import org.whispersystems.textsecuregcm.configuration.MicrometerConfiguration;
 import org.whispersystems.textsecuregcm.controllers.AccountController;
 import org.whispersystems.textsecuregcm.controllers.AttachmentControllerV1;
 import org.whispersystems.textsecuregcm.controllers.AttachmentControllerV2;
 import org.whispersystems.textsecuregcm.controllers.AttachmentControllerV3;
 import org.whispersystems.textsecuregcm.controllers.CertificateController;
 import org.whispersystems.textsecuregcm.controllers.DeviceController;
+import org.whispersystems.textsecuregcm.controllers.FeatureFlagsController;
 import org.whispersystems.textsecuregcm.controllers.KeepAliveController;
 import org.whispersystems.textsecuregcm.controllers.KeysController;
 import org.whispersystems.textsecuregcm.controllers.MessageController;
@@ -139,6 +139,8 @@ import org.whispersystems.textsecuregcm.storage.Accounts;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.ActiveUserCounter;
 import org.whispersystems.textsecuregcm.storage.FaultTolerantDatabase;
+import org.whispersystems.textsecuregcm.storage.FeatureFlags;
+import org.whispersystems.textsecuregcm.storage.FeatureFlagsManager;
 import org.whispersystems.textsecuregcm.storage.Keys;
 import org.whispersystems.textsecuregcm.storage.MessagePersister;
 import org.whispersystems.textsecuregcm.storage.Messages;
@@ -182,7 +184,6 @@ import java.security.Security;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -294,6 +295,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     Messages          messages          = new Messages(messageDatabase);
     AbusiveHostRules  abusiveHostRules  = new AbusiveHostRules(abuseDatabase);
     RemoteConfigs     remoteConfigs     = new RemoteConfigs(accountDatabase);
+    FeatureFlags      featureFlags      = new FeatureFlags(accountDatabase);
 
     RedisClientFactory pubSubClientFactory        = new RedisClientFactory("pubsub_cache", config.getPubsubCacheConfiguration().getReadTimeoutMs(), config.getPubsubCacheConfiguration().getUrl(), config.getPubsubCacheConfiguration().getReplicaUrls(), config.getPubsubCacheConfiguration().getCircuitBreakerConfiguration());
     RedisClientFactory messagesClientFactory      = new RedisClientFactory("message_cache", config.getMessageCacheConfiguration().getRedisConfiguration().getReadTimeoutMs(), config.getMessageCacheConfiguration().getRedisConfiguration().getUrl(), config.getMessageCacheConfiguration().getRedisConfiguration().getReplicaUrls(), config.getMessageCacheConfiguration().getRedisConfiguration().getCircuitBreakerConfiguration());
@@ -308,6 +310,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     FaultTolerantRedisCluster metricsCluster       = new FaultTolerantRedisCluster("metrics_cluster", config.getMetricsClusterConfiguration());
 
     ScheduledExecutorService clientPresenceExecutor                = environment.lifecycle().scheduledExecutorService("clientPresenceManager").threads(1).build();
+    ScheduledExecutorService refreshFeatureFlagsExecutor           = environment.lifecycle().scheduledExecutorService("featureFlags").threads(1).build();
     ExecutorService          messageNotificationExecutor           = environment.lifecycle().executorService("messageCacheNotifications").maxThreads(8).workQueue(new ArrayBlockingQueue<>(1_000)).build();
     ExecutorService          messageCacheClusterExperimentExecutor = environment.lifecycle().executorService("messages_cache_experiment").maxThreads(8).workQueue(new ArrayBlockingQueue<>(1_000)).build();
     ExecutorService          websocketExperimentExecutor           = environment.lifecycle().executorService("websocketPresenceExperiment").maxThreads(8).workQueue(new ArrayBlockingQueue<>(1_000)).build();
@@ -325,6 +328,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     PushLatencyManager         pushLatencyManager         = new PushLatencyManager(metricsCluster);
     MessagesManager            messagesManager            = new MessagesManager(messages, messagesCache, clusterMessagesCache, pushLatencyManager, messageCacheClusterExperimentExecutor);
     RemoteConfigsManager       remoteConfigsManager       = new RemoteConfigsManager(remoteConfigs);
+    FeatureFlagsManager        featureFlagsManager        = new FeatureFlagsManager(featureFlags, refreshFeatureFlagsExecutor);
     DeadLetterHandler          deadLetterHandler          = new DeadLetterHandler(accountsManager, messagesManager);
     DispatchManager            dispatchManager            = new DispatchManager(pubSubClientFactory, Optional.of(deadLetterHandler));
     RateLimiters               rateLimiters               = new RateLimiters(config.getLimitsConfiguration(), cacheCluster);
@@ -390,6 +394,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     ProfileController      profileController         = new ProfileController(rateLimiters, syntheticAccountsManager, syntheticProfilesManager, usernamesManager, cdnS3Client, profileCdnPolicyGenerator, profileCdnPolicySigner, config.getCdnConfiguration().getBucket(), zkProfileOperations, isZkEnabled);
     StickerController      stickerController         = new StickerController(rateLimiters, config.getCdnConfiguration().getAccessKey(), config.getCdnConfiguration().getAccessSecret(), config.getCdnConfiguration().getRegion(), config.getCdnConfiguration().getBucket());
     RemoteConfigController remoteConfigController    = new RemoteConfigController(remoteConfigsManager, config.getRemoteConfigConfiguration().getAuthorizedTokens(), config.getRemoteConfigConfiguration().getGlobalConfig());
+    FeatureFlagsController featureFlagsController    = new FeatureFlagsController(featureFlagsManager, config.getFeatureFlagConfiguration().getAuthorizedTokens());
 
     AuthFilter<DiskuvDeviceCredentials, Account>                  accountAuthFilter                  = new DiskuvDeviceCredentialAuthFilter.Builder<Account>().setAuthenticator(accountAuthenticator).buildAuthFilter();
     AuthFilter<DiskuvDeviceCredentials, DisabledPermittedAccount> disabledPermittedAccountAuthFilter = new DiskuvDeviceCredentialAuthFilter.Builder<DisabledPermittedAccount>().setAuthenticator(disabledPermittedAccountAuthenticator).buildAuthFilter();
@@ -434,6 +439,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     environment.jersey().register(profileController);
     environment.jersey().register(stickerController);
     environment.jersey().register(remoteConfigController);
+    environment.jersey().register(featureFlagsController);
 
     ///
     WebSocketEnvironment<Account> webSocketEnvironment = new WebSocketEnvironment<>(environment, config.getWebSocketConfiguration(), 90000);
