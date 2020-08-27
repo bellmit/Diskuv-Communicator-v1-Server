@@ -81,6 +81,7 @@ public class MessagesManager {
     DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Preconditions.checkArgument(destinationUuid.toString().equals(destination));
     this.messagesCache.clear(destination, destinationUuid);
+    this.clusterMessagesCache.clear(destination, destinationUuid);
     this.messages.clear(destination);
   }
 
@@ -88,6 +89,7 @@ public class MessagesManager {
     DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Preconditions.checkArgument(destinationUuid.toString().equals(destination));
     this.messagesCache.clear(destination, destinationUuid, deviceId);
+    this.clusterMessagesCache.clear(destination, destinationUuid, deviceId);
     this.messages.clear(destination, deviceId);
   }
 
