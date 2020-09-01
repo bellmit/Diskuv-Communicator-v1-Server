@@ -305,10 +305,9 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     FaultTolerantRedisCluster messagesCacheCluster = new FaultTolerantRedisCluster("messages_cluster", config.getMessageCacheConfiguration().getRedisClusterConfiguration());
     FaultTolerantRedisCluster metricsCluster       = new FaultTolerantRedisCluster("metrics_cluster", config.getMetricsClusterConfiguration());
 
-    ScheduledExecutorService clientPresenceExecutor                = environment.lifecycle().scheduledExecutorService("clientPresenceManager").threads(1).build();
-    ScheduledExecutorService refreshFeatureFlagsExecutor           = environment.lifecycle().scheduledExecutorService("featureFlags").threads(1).build();
-    ExecutorService          messageNotificationExecutor           = environment.lifecycle().executorService("messageCacheNotifications").maxThreads(8).workQueue(new ArrayBlockingQueue<>(1_000)).build();
-    ExecutorService          websocketExperimentExecutor           = environment.lifecycle().executorService("websocketPresenceExperiment").maxThreads(8).workQueue(new ArrayBlockingQueue<>(1_000)).build();
+    ScheduledExecutorService clientPresenceExecutor      = environment.lifecycle().scheduledExecutorService("clientPresenceManager").threads(1).build();
+    ScheduledExecutorService refreshFeatureFlagsExecutor = environment.lifecycle().scheduledExecutorService("featureFlags").threads(1).build();
+    ExecutorService          messageNotificationExecutor = environment.lifecycle().executorService("messageCacheNotifications").maxThreads(8).workQueue(new ArrayBlockingQueue<>(1_000)).build();
 
     ClientPresenceManager      clientPresenceManager      = new ClientPresenceManager(messagesCacheCluster, clientPresenceExecutor);
     PendingAccountsManager     pendingAccountsManager     = new PendingAccountsManager(pendingAccounts, cacheCluster);
@@ -329,7 +328,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     PubSubManager              pubSubManager              = new PubSubManager(pubsubClient, dispatchManager, rateLimiters.getConnectWebSocketLimiter());
     APNSender                  apnSender                  = new APNSender(accountsManager, config.getApnConfiguration());
     GCMSender                  gcmSender                  = new GCMSender(accountsManager, config.getGcmConfiguration().getApiKey());
-    WebsocketSender            websocketSender            = new WebsocketSender(messagesManager, pubSubManager, clientPresenceManager, websocketExperimentExecutor);
+    WebsocketSender            websocketSender            = new WebsocketSender(messagesManager, pubSubManager, clientPresenceManager);
 
     JwtAuthentication jwtAuthentication                                               = new JwtAuthentication(config.getJwtKeys());
     DiskuvAccountAuthenticator accountAuthenticator                                   = new DiskuvAccountAuthenticator(accountsManager, jwtAuthentication);
