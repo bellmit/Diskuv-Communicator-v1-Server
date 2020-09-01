@@ -305,11 +305,10 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     FaultTolerantRedisCluster messagesCacheCluster = new FaultTolerantRedisCluster("messages_cluster", config.getMessageCacheConfiguration().getRedisClusterConfiguration());
     FaultTolerantRedisCluster metricsCluster       = new FaultTolerantRedisCluster("metrics_cluster", config.getMetricsClusterConfiguration());
 
-    ScheduledExecutorService clientPresenceExecutor      = environment.lifecycle().scheduledExecutorService("clientPresenceManager").threads(1).build();
-    ScheduledExecutorService refreshFeatureFlagsExecutor = environment.lifecycle().scheduledExecutorService("featureFlags").threads(1).build();
-    ExecutorService          messageNotificationExecutor = environment.lifecycle().executorService("messageCacheNotifications").maxThreads(8).workQueue(new ArrayBlockingQueue<>(1_000)).build();
+    ScheduledExecutorService recurringJobExecutor                 = environment.lifecycle().scheduledExecutorService("clientPresenceManager").threads(1).build();
+    ExecutorService          keyspaceNotificationDispatchExecutor = environment.lifecycle().executorService("messageCacheNotifications").maxThreads(8).workQueue(new ArrayBlockingQueue<>(10_000)).build();
 
-    ClientPresenceManager      clientPresenceManager      = new ClientPresenceManager(messagesCacheCluster, clientPresenceExecutor);
+    ClientPresenceManager      clientPresenceManager      = new ClientPresenceManager(messagesCacheCluster, recurringJobExecutor, keyspaceNotificationDispatchExecutor);
     PendingAccountsManager     pendingAccountsManager     = new PendingAccountsManager(pendingAccounts, cacheCluster);
     PendingDevicesManager      pendingDevicesManager      = new PendingDevicesManager(pendingDevices, cacheCluster);
     AccountsManager            accountsManager            = new AccountsManager(accounts, cacheCluster);
@@ -317,11 +316,11 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     UsernamesManager           usernamesManager           = new UsernamesManager(usernames, reservedUsernames, cacheCluster);
     ProfilesManager            profilesManager            = new ProfilesManager(profiles, cacheCluster);
     org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager syntheticProfilesManager = new org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager(profilesManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
-    RedisClusterMessagesCache  clusterMessagesCache       = new RedisClusterMessagesCache(messagesCacheCluster, messageNotificationExecutor);
+    RedisClusterMessagesCache  clusterMessagesCache       = new RedisClusterMessagesCache(messagesCacheCluster, keyspaceNotificationDispatchExecutor);
     PushLatencyManager         pushLatencyManager         = new PushLatencyManager(metricsCluster);
     MessagesManager            messagesManager            = new MessagesManager(messages, clusterMessagesCache, pushLatencyManager);
     RemoteConfigsManager       remoteConfigsManager       = new RemoteConfigsManager(remoteConfigs);
-    FeatureFlagsManager        featureFlagsManager        = new FeatureFlagsManager(featureFlags, refreshFeatureFlagsExecutor);
+    FeatureFlagsManager        featureFlagsManager        = new FeatureFlagsManager(featureFlags, recurringJobExecutor);
     DeadLetterHandler          deadLetterHandler          = new DeadLetterHandler(accountsManager, messagesManager);
     DispatchManager            dispatchManager            = new DispatchManager(pubSubClientFactory, Optional.of(deadLetterHandler));
     RateLimiters               rateLimiters               = new RateLimiters(config.getLimitsConfiguration(), cacheCluster);
