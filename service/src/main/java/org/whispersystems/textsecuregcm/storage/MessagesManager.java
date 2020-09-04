@@ -43,6 +43,14 @@ public class MessagesManager {
     messagesCache.insert(UUID.randomUUID(), destinationUuid, destinationDevice, message);
   }
 
+  public void insertEphemeral(final UUID destinationUuid, final long destinationDevice, final Envelope message) {
+    messagesCache.insertEphemeral(destinationUuid, destinationDevice, message);
+  }
+
+  public Optional<Envelope> takeEphemeralMessage(final UUID destinationUuid, final long destinationDevice) {
+    return messagesCache.takeEphemeralMessage(destinationUuid, destinationDevice);
+  }
+
   public OutgoingMessageEntityList getMessagesForDevice(String destination, UUID destinationUuid, long destinationDevice, final String userAgent) {
     DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Preconditions.checkArgument(destinationUuid.toString().equals(destination));
