@@ -173,7 +173,7 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
   public boolean isGroupsV2Supported() {
     return devices.stream()
                   .filter(Device::isEnabled)
-                  .anyMatch(device -> device.getCapabilities() != null && device.getCapabilities().isGv2());
+                  .allMatch(device -> device.getCapabilities() != null && device.getCapabilities().isGv2());
   }
 
   public boolean isStorageSupported() {
