@@ -43,7 +43,7 @@ public class ReceiptSender {
     Account          destinationAccount = getDestinationAccount(destination);
     // Contact by email address. Not phone number.
     Envelope.Builder message            = Envelope.newBuilder()
-                                                  .setSource("") // WAS: .setSource(source.getNumber())
+                                                  // WAS: .setSource(source.getNumber())
                                                   .setSourceUuid(source.getUuid().toString())
                                                   .setSourceDevice((int) source.getAuthenticatedDevice().get().getId())
                                                   .setTimestamp(messageId)

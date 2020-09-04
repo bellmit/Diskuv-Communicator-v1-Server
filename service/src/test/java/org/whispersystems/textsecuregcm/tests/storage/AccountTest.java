@@ -196,7 +196,7 @@ public class AccountTest {
       when(secondGv2CapableDevice.getCapabilities()).thenReturn(secondGv2Capabilities);
       when(secondGv2Capabilities.isGv2()).thenReturn(true);
 
-      final Account account = new Account("+18005551234", UUID.randomUUID(), Set.of(gv2CapableDevice, secondGv2CapableDevice), "1234".getBytes(StandardCharsets.UTF_8));
+      final Account account = new Account(UUID.randomUUID(), Set.of(gv2CapableDevice, secondGv2CapableDevice), "1234".getBytes(StandardCharsets.UTF_8));
 
       assertTrue(account.isGroupsV2Supported());
     }
@@ -215,7 +215,7 @@ public class AccountTest {
       when(nonGv2CapableDevice.getCapabilities()).thenReturn(nonGv2Capabilities);
       when(nonGv2Capabilities.isGv2()).thenReturn(false);
 
-      final Account account = new Account("+18005551234", UUID.randomUUID(), Set.of(gv2CapableDevice, nonGv2CapableDevice), "1234".getBytes(StandardCharsets.UTF_8));
+      final Account account = new Account(UUID.randomUUID(), Set.of(gv2CapableDevice, nonGv2CapableDevice), "1234".getBytes(StandardCharsets.UTF_8));
 
       assertFalse(account.isGroupsV2Supported());
     }

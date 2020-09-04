@@ -193,14 +193,9 @@ public class DeviceController {
     }
     Account account = accountOpt.get();
 
-    int maxDeviceLimit = MAX_DEVICES;
-
-    if (maxDeviceConfiguration.containsKey(accountId)) {
-      maxDeviceLimit = maxDeviceConfiguration.get(accountId);
-    }
-
-    if (account.getEnabledDeviceCount() >= maxDeviceLimit) {
-      throw new DeviceLimitExceededException(account.getDevices().size(), MAX_DEVICES);
+    final DeviceCapabilities capabilities = accountAttributes.getCapabilities();
+    if (capabilities != null && isCapabilityDowngrade(account, capabilities)) {
+      throw new WebApplicationException(Response.status(409).build());
     }
 
     Device device = new Device();
@@ -260,5 +255,10 @@ public class DeviceController {
     SecureRandom random = new SecureRandom();
     int randomInt       = 100000 + random.nextInt(900000);
     return new VerificationCode(randomInt);
+  }
+
+  private boolean isCapabilityDowngrade(Account account, DeviceCapabilities capabilities) {
+    return (!capabilities.isGv2() && account.isGroupsV2Supported())
+            || (!capabilities.isUuid() && account.isUuidAddressingSupported());
   }
 }

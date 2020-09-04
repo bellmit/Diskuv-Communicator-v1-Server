@@ -7,6 +7,7 @@ import org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntity;
 import org.whispersystems.textsecuregcm.storage.mappers.OutgoingMessageEntityRowMapper;
 import org.whispersystems.textsecuregcm.util.Constants;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import java.util.List;
 import java.util.Optional;
@@ -86,6 +87,7 @@ public class Messages {
   }
 
   public Optional<OutgoingMessageEntity> remove(String destination, long destinationDevice, String source, long timestamp) {
+    DiskuvUuidUtil.verifyDiskuvUuid(source);
     return database.with(jdbi -> jdbi.withHandle(handle -> {
       try (Timer.Context ignored = removeBySourceTimer.time()) {
         return handle.createQuery("DELETE FROM messages WHERE " + ID + " IN (SELECT " + ID + " FROM messages WHERE " + DESTINATION + " = :destination AND " + DESTINATION_DEVICE + " = :destination_device AND " + SOURCE_UUID + " = :source_uuid AND " + TIMESTAMP + " = :timestamp ORDER BY " + ID + " LIMIT 1) RETURNING *")

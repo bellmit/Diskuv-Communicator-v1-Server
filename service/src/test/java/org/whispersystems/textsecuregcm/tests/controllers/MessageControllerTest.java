@@ -136,7 +136,7 @@ public class MessageControllerTest {
     ArgumentCaptor<Envelope> captor = ArgumentCaptor.forClass(Envelope.class);
     verify(pushSender, times(1)).sendMessage(any(Account.class), any(Device.class), captor.capture(), eq(false));
 
-    assertTrue(captor.getValue().hasSource());
+    assertTrue(captor.getValue().hasSourceUuid());
     assertTrue(captor.getValue().hasSourceDevice());
   }
 
