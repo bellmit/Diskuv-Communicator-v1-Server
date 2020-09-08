@@ -264,7 +264,7 @@ public class MessageController {
 
       message.ifPresent(outgoingMessageEntity -> WebSocketConnection.messageTime.update(System.currentTimeMillis() - outgoingMessageEntity.getTimestamp()));
 
-      if (message.isPresent() && !Util.isEmpty(message.get().getSource()) && message.get().getType() != Envelope.Type.RECEIPT_VALUE) {
+      if (message.isPresent() && message.get().getSourceUuid() != null && message.get().getType() != Envelope.Type.RECEIPT_VALUE) {
         receiptSender.sendReceipt(account, message.get().getSourceUuid().toString(), message.get().getTimestamp());
       }
     } catch (NoSuchUserException e) {
