@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.whispersystems.textsecuregcm.entities.MessageProtos;
-import org.whispersystems.textsecuregcm.push.PushSender;
 import org.whispersystems.textsecuregcm.redis.AbstractRedisClusterTest;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
@@ -34,12 +33,11 @@ import static org.mockito.Mockito.when;
 
 public class MessagePersisterTest extends AbstractRedisClusterTest {
 
-    private ExecutorService              notificationExecutorService;
-    private MessagesCache messagesCache;
-    private Messages                     messagesDatabase;
-    private PubSubManager                pubSubManager;
+    private ExecutorService  notificationExecutorService;
+    private MessagesCache    messagesCache;
+    private Messages         messagesDatabase;
     private MessagePersister messagePersister;
-    private AccountsManager              accountsManager;
+    private AccountsManager  accountsManager;
 
     private static final UUID   DESTINATION_ACCOUNT_UUID   = DiskuvUuidUtil.uuidForOutdoorEmailAddress(new Random().nextLong() + "@example.com");
     private static final String DESTINATION_ACCOUNT_NUMBER = DESTINATION_ACCOUNT_UUID.toString();
@@ -58,7 +56,6 @@ public class MessagePersisterTest extends AbstractRedisClusterTest {
 
         messagesDatabase = mock(Messages.class);
         accountsManager  = mock(AccountsManager.class);
-        pubSubManager    = mock(PubSubManager.class);
 
         final Account account = mock(Account.class);
 
@@ -68,7 +65,7 @@ public class MessagePersisterTest extends AbstractRedisClusterTest {
 
         notificationExecutorService = Executors.newSingleThreadExecutor();
         messagesCache               = new MessagesCache(getRedisCluster(), notificationExecutorService);
-        messagePersister            = new MessagePersister(messagesCache, messagesManager, pubSubManager, mock(PushSender.class), accountsManager, PERSIST_DELAY);
+        messagePersister            = new MessagePersister(messagesCache, messagesManager, accountsManager, PERSIST_DELAY);
 
         doAnswer(invocation -> {
             final String destination             = invocation.getArgument(0, String.class);
@@ -153,7 +150,6 @@ public class MessagePersisterTest extends AbstractRedisClusterTest {
 
         messagePersister.persistNextQueues(now.plus(messagePersister.getPersistDelay()));
 
-        verify(pubSubManager, times(queueCount)).publish(any(), any());
         verify(messagesDatabase, times(queueCount * messagesPerQueue)).store(any(UUID.class), any(MessageProtos.Envelope.class), anyString(), anyLong());
     }
 
