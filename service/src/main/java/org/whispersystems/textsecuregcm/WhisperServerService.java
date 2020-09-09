@@ -325,7 +325,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     PubSubManager              pubSubManager              = new PubSubManager(pubsubClient, dispatchManager, rateLimiters.getConnectWebSocketLimiter());
     APNSender                  apnSender                  = new APNSender(accountsManager, config.getApnConfiguration());
     GCMSender                  gcmSender                  = new GCMSender(accountsManager, config.getGcmConfiguration().getApiKey());
-    WebsocketSender            websocketSender            = new WebsocketSender(messagesManager, pubSubManager, clientPresenceManager, featureFlagsManager);
+    WebsocketSender            websocketSender            = new WebsocketSender(messagesManager, pubSubManager, clientPresenceManager);
 
     JwtAuthentication jwtAuthentication                                               = new JwtAuthentication(config.getJwtKeys());
     DiskuvAccountAuthenticator accountAuthenticator                                   = new DiskuvAccountAuthenticator(accountsManager, jwtAuthentication);
