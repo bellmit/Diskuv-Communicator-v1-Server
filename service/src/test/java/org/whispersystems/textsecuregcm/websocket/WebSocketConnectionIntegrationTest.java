@@ -14,7 +14,6 @@ import org.mockito.stubbing.Answer;
 import org.whispersystems.textsecuregcm.configuration.CircuitBreakerConfiguration;
 import org.whispersystems.textsecuregcm.entities.MessageProtos;
 import org.whispersystems.textsecuregcm.metrics.PushLatencyManager;
-import org.whispersystems.textsecuregcm.push.PushSender;
 import org.whispersystems.textsecuregcm.push.ReceiptSender;
 import org.whispersystems.textsecuregcm.redis.AbstractRedisClusterTest;
 import org.whispersystems.textsecuregcm.storage.Account;
@@ -74,11 +73,11 @@ public class WebSocketConnectionIntegrationTest extends AbstractRedisClusterTest
         device = mock(Device.class);
         webSocketClient = mock(WebSocketClient.class);
 
-        when(account.getNumber()).thenReturn(org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForEmailAddress("test123@example.com").toString());
-        when(account.getUuid()).thenReturn(org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForEmailAddress("test123@example.com"));
+        when(account.getNumber()).thenReturn(org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress("test123@example.com").toString());
+        when(account.getUuid()).thenReturn(org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress("test123@example.com"));
         when(device.getId()).thenReturn(1L);
 
-        webSocketConnection = new WebSocketConnection(mock(PushSender.class),
+        webSocketConnection = new WebSocketConnection(
                 mock(ReceiptSender.class),
                 new MessagesManager(messages, messagesCache, mock(PushLatencyManager.class)),
                 account,
