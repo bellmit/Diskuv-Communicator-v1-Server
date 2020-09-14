@@ -280,9 +280,6 @@ public class Device implements PossiblySyntheticDevice {
   }
 
   public static class DeviceCapabilities {
-    @JsonProperty
-    private boolean uuid;
-
     // Confer: org.whispersystems.signalservice.api.account.AccountAttributes.Capabilities
     // WAS: @JsonProperty
     @JsonProperty("gv2-3")
@@ -296,15 +293,10 @@ public class Device implements PossiblySyntheticDevice {
 
     public DeviceCapabilities() {}
 
-    public DeviceCapabilities(boolean uuid, boolean gv2, boolean storage, boolean transfer) {
-      this.uuid     = uuid;
+    public DeviceCapabilities(boolean gv2, boolean storage, boolean transfer) {
       this.gv2      = gv2;
       this.storage  = storage;
       this.transfer = transfer;
-    }
-
-    public boolean isUuid() {
-      return uuid;
     }
 
     public boolean isGv2() {

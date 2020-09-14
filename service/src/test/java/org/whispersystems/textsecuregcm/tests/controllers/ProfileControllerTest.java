@@ -103,7 +103,7 @@ public class ProfileControllerTest {
     when(profileAccount.getAvatar()).thenReturn("profiles/bang");
     when(profileAccount.getUuid()).thenReturn(AuthHelper.VALID_UUID_TWO);
     when(profileAccount.isEnabled()).thenReturn(true);
-    when(profileAccount.isUuidAddressingSupported()).thenReturn(false);
+    when(profileAccount.isGroupsV2Supported()).thenReturn(false);
     when(profileAccount.getPayments()).thenReturn(List.of(new PaymentAddress("mc", "12345678901234567890123456789012")));
 
     Account capabilitiesAccount = mock(Account.class);
@@ -112,7 +112,7 @@ public class ProfileControllerTest {
     when(capabilitiesAccount.getProfileName()).thenReturn("bazz");
     when(capabilitiesAccount.getAvatar()).thenReturn("profiles/bangz");
     when(capabilitiesAccount.isEnabled()).thenReturn(true);
-    when(capabilitiesAccount.isUuidAddressingSupported()).thenReturn(true);
+    when(capabilitiesAccount.isGroupsV2Supported()).thenReturn(true);
 
     when(accountsManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of(profileAccount));
     when(usernamesManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of("n00bkiller"));
@@ -162,7 +162,7 @@ public class ProfileControllerTest {
     assertThat(profile.getName()).isEqualTo("baz");
     assertThat(profile.getAvatar()).isEqualTo("profiles/bang");
     assertThat(profile.getPayments()).isEqualTo(List.of(new PaymentAddress("mc", "12345678901234567890123456789012")));
-    assertThat(profile.getCapabilities().isUuid()).isFalse();
+    assertThat(profile.getCapabilities().isGv2()).isFalse();
     assertThat(profile.getUsername()).isNull();
     assertThat(profile.getUuid()).isNull();
   }
@@ -239,7 +239,7 @@ public class ProfileControllerTest {
                               .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                               .get(Profile.class);
 
-    assertThat(profile.getCapabilities().isUuid()).isTrue();
+    assertThat(profile.getCapabilities().isGv2()).isTrue();
   }
 
   @Test
@@ -396,7 +396,7 @@ public class ProfileControllerTest {
     assertThat(profile.getIdentityKey()).isEqualTo("bar");
     assertThat(profile.getName()).isEqualTo("validname");
     assertThat(profile.getAvatar()).isEqualTo("profiles/validavatar");
-    assertThat(profile.getCapabilities().isUuid()).isFalse();
+    assertThat(profile.getCapabilities().isGv2()).isFalse();
     assertThat(profile.getUsername()).isEqualTo("n00bkiller");
     assertThat(profile.getUuid()).isNull();;
 

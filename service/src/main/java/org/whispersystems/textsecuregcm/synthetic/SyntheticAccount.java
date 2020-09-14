@@ -166,11 +166,6 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
   }
 
   @Override
-  public boolean isUuidAddressingSupported() {
-    return true;
-  }
-
-  @Override
   public boolean isGroupsV2Supported() {
     return true;
   }

@@ -32,8 +32,6 @@ public interface PossiblySyntheticAccount {
 
     boolean isUnrestrictedUnidentifiedAccess();
 
-    boolean isUuidAddressingSupported();
-
     boolean isGroupsV2Supported();
 
     String getProfileName();
