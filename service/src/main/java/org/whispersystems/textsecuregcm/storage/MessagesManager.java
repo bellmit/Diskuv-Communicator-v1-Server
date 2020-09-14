@@ -13,7 +13,6 @@ import org.whispersystems.textsecuregcm.redis.RedisOperation;
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,13 +51,13 @@ public class MessagesManager {
     return messagesCache.takeEphemeralMessage(destinationUuid, destinationDevice);
   }
 
-  public OutgoingMessageEntityList getMessagesForDevice(String destination, UUID destinationUuid, long destinationDevice, final String userAgent, final boolean cachedMessagesOnly) {
+  public OutgoingMessageEntityList getMessagesForDevice(String destination, UUID destinationUuid, long destinationDevice, final String userAgent) {
     DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Preconditions.checkArgument(destinationUuid.toString().equals(destination));
 
     RedisOperation.unchecked(() -> pushLatencyManager.recordQueueRead(destinationUuid, destinationDevice, userAgent));
 
-    List<OutgoingMessageEntity> messages = cachedMessagesOnly ? new ArrayList<>() : this.messages.load(destination, destinationDevice);
+    List<OutgoingMessageEntity> messages = this.messages.load(destination, destinationDevice);
 
     if (messages.size() <= Messages.RESULT_SET_CHUNK_SIZE) {
       messages.addAll(messagesCache.get(destinationUuid, destinationDevice, Messages.RESULT_SET_CHUNK_SIZE - messages.size()));
