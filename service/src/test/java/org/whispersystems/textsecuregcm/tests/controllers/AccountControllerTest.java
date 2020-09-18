@@ -1279,7 +1279,8 @@ public class AccountControllerTest {
             resources.getJerseyTest()
                      .target("/v1/accounts/me")
                      .request()
-                     .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                     .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                     .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                      .delete();
 
     assertThat(response.getStatus()).isEqualTo(204);

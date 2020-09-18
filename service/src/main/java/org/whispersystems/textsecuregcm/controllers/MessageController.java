@@ -42,7 +42,7 @@ import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.metrics.UserAgentTagUtil;
 import org.whispersystems.textsecuregcm.push.ApnFallbackManager;
 import org.whispersystems.textsecuregcm.push.NotPushRegisteredException;
-import org.whispersystems.textsecuregcm.push.PushSender;
+import org.whispersystems.textsecuregcm.push.MessageSender;
 import org.whispersystems.textsecuregcm.push.ReceiptSender;
 import org.whispersystems.textsecuregcm.redis.RedisOperation;
 import org.whispersystems.textsecuregcm.storage.Account;
@@ -97,7 +97,7 @@ public class MessageController {
 
   private final com.diskuv.communicatorservice.auth.JwtAuthentication      jwtAuthentication;
   private final RateLimiters           rateLimiters;
-  private final PushSender             pushSender;
+  private final MessageSender          messageSender;
   private final ReceiptSender          receiptSender;
   private final PossiblySyntheticAccountsManager accountsManager;
   private final MessagesManager        messagesManager;
@@ -110,7 +110,7 @@ public class MessageController {
 
   public MessageController(com.diskuv.communicatorservice.auth.JwtAuthentication jwtAuthentication,
                            RateLimiters rateLimiters,
-                           PushSender pushSender,
+                           MessageSender messageSender,
                            ReceiptSender receiptSender,
                            PossiblySyntheticAccountsManager accountsManager,
                            MessagesManager messagesManager,
@@ -118,7 +118,7 @@ public class MessageController {
   {
     this.jwtAuthentication      = jwtAuthentication;
     this.rateLimiters           = rateLimiters;
-    this.pushSender             = pushSender;
+    this.messageSender          = messageSender;
     this.receiptSender          = receiptSender;
     this.accountsManager        = accountsManager;
     this.messagesManager        = messagesManager;
@@ -235,7 +235,7 @@ public class MessageController {
       RedisOperation.unchecked(() -> apnFallbackManager.cancel(account, account.getAuthenticatedDevice().get()));
     }
 
-    final OutgoingMessageEntityList outgoingMessages = messagesManager.getMessagesForDevice(account.getNumber(),
+    final OutgoingMessageEntityList outgoingMessages = messagesManager.getMessagesForDevice(account.getUuid().toString(),
                                                                                             account.getUuid(),
                                                                                             account.getAuthenticatedDevice().get().getId(),
                                                                                             userAgent,
@@ -286,7 +286,7 @@ public class MessageController {
     try {
       WebSocketConnection.messageTime.update(System.currentTimeMillis() - timestamp);
 
-      Optional<OutgoingMessageEntity> message = messagesManager.delete(account.getNumber(),
+      Optional<OutgoingMessageEntity> message = messagesManager.delete(account.getUuid().toString(),
                                                                        account.getUuid(),
                                                                        account.getAuthenticatedDevice().get().getId(),
                                                                        source, timestamp);
@@ -306,7 +306,7 @@ public class MessageController {
   @Path("/uuid/{uuid}")
   public void removePendingMessage(@Auth Account account, @PathParam("uuid") UUID uuid) {
     try {
-      Optional<OutgoingMessageEntity> message = messagesManager.delete(account.getNumber(),
+      Optional<OutgoingMessageEntity> message = messagesManager.delete(account.getUuid().toString(),
                                                                        account.getUuid(),
                                                                        account.getAuthenticatedDevice().get().getId(),
                                                                        uuid);
@@ -355,7 +355,7 @@ public class MessageController {
         messageBuilder.setContent(ByteString.copyFrom(messageContent.get()));
       }
 
-      pushSender.sendMessage(destinationAccount, destinationDevice, messageBuilder.build(), online);
+      messageSender.sendMessage(destinationAccount, destinationDevice, messageBuilder.build(), online);
     } catch (NotPushRegisteredException e) {
       if (destinationDevice.isMaster()) throw new NoSuchUserException(e);
       else                              logger.debug("Not registered", e);

@@ -66,7 +66,7 @@ public class MessagePersisterIntegrationTest extends AbstractRedisClusterTest {
 
         account = mock(Account.class);
 
-        final UUID accountUuid = UUID.randomUUID();
+        final UUID accountUuid = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForEmailAddress("test@example.com");
 
         when(account.getNumber()).thenReturn("+18005551234");
         when(account.getUuid()).thenReturn(accountUuid);
@@ -135,7 +135,7 @@ public class MessagePersisterIntegrationTest extends AbstractRedisClusterTest {
         final List<MessageProtos.Envelope> persistedMessages = new ArrayList<>(messageCount);
 
         try (final PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM messages WHERE destination = ? ORDER BY timestamp ASC")) {
-            statement.setString(1, account.getNumber());
+            statement.setString(1, account.getUuid().toString());
 
             try (final ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {

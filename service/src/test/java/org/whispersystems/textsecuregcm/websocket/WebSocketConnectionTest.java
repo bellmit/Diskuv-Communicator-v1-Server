@@ -255,7 +255,7 @@ public class WebSocketConnectionTest {
     when(device.getId()).thenReturn(1L);
     when(client.getUserAgent()).thenReturn("Test-UA");
 
-    when(messagesManager.getMessagesForDevice(eq("+18005551234"), eq(accountUuid), eq(1L), eq("Test-UA"), anyBoolean()))
+    when(messagesManager.getMessagesForDevice(anyString(), eq(accountUuid), eq(1L), eq("Test-UA"), anyBoolean()))
             .thenReturn(new OutgoingMessageEntityList(Collections.emptyList(), false))
             .thenReturn(new OutgoingMessageEntityList(List.of(createMessage(1L, false, "sender1", UUID.randomUUID(), 1111, false, "first")), false))
             .thenReturn(new OutgoingMessageEntityList(List.of(createMessage(2L, false, "sender1", UUID.randomUUID(), 2222, false, "second")), false));
@@ -408,7 +408,7 @@ public class WebSocketConnectionTest {
     final AtomicBoolean threadWaiting     = new AtomicBoolean(false);
     final AtomicBoolean returnMessageList = new AtomicBoolean(false);
 
-    when(messagesManager.getMessagesForDevice(account.getNumber(), account.getUuid(), 1L, client.getUserAgent(), false)).thenAnswer((Answer<OutgoingMessageEntityList>)invocation -> {
+    when(messagesManager.getMessagesForDevice(account.getUuid().toString(), account.getUuid(), 1L, client.getUserAgent(), false)).thenAnswer((Answer<OutgoingMessageEntityList>)invocation -> {
       synchronized (threadWaiting) {
         threadWaiting.set(true);
         threadWaiting.notifyAll();
@@ -476,7 +476,7 @@ public class WebSocketConnectionTest {
     final OutgoingMessageEntityList firstPage  = new OutgoingMessageEntityList(firstPageMessages, true);
     final OutgoingMessageEntityList secondPage = new OutgoingMessageEntityList(secondPageMessages, false);
 
-    when(messagesManager.getMessagesForDevice(account.getNumber(), account.getUuid(), 1L, client.getUserAgent(), false))
+    when(messagesManager.getMessagesForDevice(account.getUuid().toString(), account.getUuid(), 1L, client.getUserAgent(), false))
             .thenReturn(firstPage)
             .thenReturn(secondPage);
 
@@ -511,7 +511,7 @@ public class WebSocketConnectionTest {
     when(device.getId()).thenReturn(1L);
     when(client.getUserAgent()).thenReturn("Test-UA");
 
-    when(messagesManager.getMessagesForDevice(eq("+18005551234"), eq(accountUuid), eq(1L), eq("Test-UA"), anyBoolean()))
+    when(messagesManager.getMessagesForDevice(anyString(), eq(accountUuid), eq(1L), eq("Test-UA"), anyBoolean()))
             .thenReturn(new OutgoingMessageEntityList(Collections.emptyList(), false));
 
     final WebSocketResponseMessage successResponse = mock(WebSocketResponseMessage.class);
@@ -549,7 +549,7 @@ public class WebSocketConnectionTest {
     final OutgoingMessageEntityList firstPage  = new OutgoingMessageEntityList(firstPageMessages, false);
     final OutgoingMessageEntityList secondPage = new OutgoingMessageEntityList(secondPageMessages, false);
 
-    when(messagesManager.getMessagesForDevice(eq("+18005551234"), eq(accountUuid), eq(1L), eq("Test-UA"), anyBoolean()))
+    when(messagesManager.getMessagesForDevice(anyString(), eq(accountUuid), eq(1L), eq("Test-UA"), anyBoolean()))
             .thenReturn(firstPage)
             .thenReturn(secondPage)
             .thenReturn(new OutgoingMessageEntityList(Collections.emptyList(), false));
@@ -587,7 +587,7 @@ public class WebSocketConnectionTest {
     when(device.getId()).thenReturn(1L);
     when(client.getUserAgent()).thenReturn("Test-UA");
 
-    when(messagesManager.getMessagesForDevice(eq("+18005551234"), eq(accountUuid), eq(1L), eq("Test-UA"), anyBoolean()))
+    when(messagesManager.getMessagesForDevice(anyString(), eq(accountUuid), eq(1L), eq("Test-UA"), anyBoolean()))
             .thenReturn(new OutgoingMessageEntityList(Collections.emptyList(), false));
 
     final WebSocketResponseMessage successResponse = mock(WebSocketResponseMessage.class);
@@ -599,11 +599,11 @@ public class WebSocketConnectionTest {
     // anything.
     connection.processStoredMessages();
 
-    verify(messagesManager).getMessagesForDevice(account.getNumber(), account.getUuid(), device.getId(), client.getUserAgent(), false);
+    verify(messagesManager).getMessagesForDevice(account.getUuid().toString(), account.getUuid(), device.getId(), client.getUserAgent(), false);
 
     connection.handleNewMessagesAvailable();
 
-    verify(messagesManager).getMessagesForDevice(account.getNumber(), account.getUuid(), device.getId(), client.getUserAgent(), true);
+    verify(messagesManager).getMessagesForDevice(account.getUuid().toString(), account.getUuid(), device.getId(), client.getUserAgent(), true);
   }
 
   @Test
@@ -619,7 +619,7 @@ public class WebSocketConnectionTest {
     when(device.getId()).thenReturn(1L);
     when(client.getUserAgent()).thenReturn("Test-UA");
 
-    when(messagesManager.getMessagesForDevice(eq("+18005551234"), eq(accountUuid), eq(1L), eq("Test-UA"), anyBoolean()))
+    when(messagesManager.getMessagesForDevice(anyString(), eq(accountUuid), eq(1L), eq("Test-UA"), anyBoolean()))
             .thenReturn(new OutgoingMessageEntityList(Collections.emptyList(), false));
 
     final WebSocketResponseMessage successResponse = mock(WebSocketResponseMessage.class);
@@ -632,7 +632,7 @@ public class WebSocketConnectionTest {
     connection.processStoredMessages();
     connection.handleMessagesPersisted();
 
-    verify(messagesManager, times(2)).getMessagesForDevice(account.getNumber(), account.getUuid(), device.getId(), client.getUserAgent(), false);
+    verify(messagesManager, times(2)).getMessagesForDevice(account.getUuid().toString(), account.getUuid(), device.getId(), client.getUserAgent(), false);
   }
 
   private OutgoingMessageEntity createMessage(long id, boolean cached, String sender, UUID senderUuid, long timestamp, boolean receipt, String content) {

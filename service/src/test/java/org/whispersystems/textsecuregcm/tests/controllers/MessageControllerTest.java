@@ -22,7 +22,7 @@ import org.whispersystems.textsecuregcm.entities.StaleDevices;
 import org.whispersystems.textsecuregcm.limits.RateLimiter;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.push.ApnFallbackManager;
-import org.whispersystems.textsecuregcm.push.PushSender;
+import org.whispersystems.textsecuregcm.push.MessageSender;
 import org.whispersystems.textsecuregcm.push.ReceiptSender;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Device;
@@ -61,13 +61,13 @@ public class MessageControllerTest {
 
   private static final UUID   MULTI_DEVICE_UUID       = UUID_ALICE;
 
-  private  final PushSender             pushSender             = mock(PushSender.class            );
+  private  final MessageSender          messageSender          = mock(MessageSender.class);
   private  final ReceiptSender          receiptSender          = mock(ReceiptSender.class);
   private  final PossiblySyntheticAccountsManager        accountsManager        = mock(PossiblySyntheticAccountsManager.class);
   private  final MessagesManager        messagesManager        = mock(MessagesManager.class);
   private  final JwtAuthentication      jwtAuthentication      = mock(JwtAuthentication.class);
-  private  final RateLimiters           rateLimiters           = mock(RateLimiters.class          );
-  private  final RateLimiter            rateLimiter            = mock(RateLimiter.class           );
+  private  final RateLimiters           rateLimiters           = mock(RateLimiters.class);
+  private  final RateLimiter            rateLimiter            = mock(RateLimiter.class);
   private  final ApnFallbackManager     apnFallbackManager     = mock(ApnFallbackManager.class);
 
   private  final ObjectMapper mapper = new ObjectMapper();
@@ -77,7 +77,7 @@ public class MessageControllerTest {
                                                             .addProvider(AuthHelper.getAuthFilter())
                                                             .addProvider(new PolymorphicAuthValueFactoryProvider.Binder<>(ImmutableSet.of(Account.class, DisabledPermittedAccount.class)))
                                                             .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
-                                                            .addResource(new MessageController(jwtAuthentication, rateLimiters, pushSender, receiptSender, accountsManager,
+                                                            .addResource(new MessageController(jwtAuthentication, rateLimiters, messageSender, receiptSender, accountsManager,
                                                                                                messagesManager, apnFallbackManager))
                                                             .build();
 
@@ -134,7 +134,7 @@ public class MessageControllerTest {
     assertThat("Good Response", response.getStatus(), is(equalTo(200)));
 
     ArgumentCaptor<Envelope> captor = ArgumentCaptor.forClass(Envelope.class);
-    verify(pushSender, times(1)).sendMessage(any(Account.class), any(Device.class), captor.capture(), eq(false));
+    verify(messageSender, times(1)).sendMessage(any(Account.class), any(Device.class), captor.capture(), eq(false));
 
     assertTrue(captor.getValue().hasSourceUuid());
     assertTrue(captor.getValue().hasSourceDevice());
@@ -155,7 +155,7 @@ public class MessageControllerTest {
     assertThat("Good Response", response.getStatus(), is(equalTo(200)));
 
     ArgumentCaptor<Envelope> captor = ArgumentCaptor.forClass(Envelope.class);
-    verify(pushSender, times(1)).sendMessage(any(Account.class), any(Device.class), captor.capture(), eq(false));
+    verify(messageSender, times(1)).sendMessage(any(Account.class), any(Device.class), captor.capture(), eq(false));
 
     assertFalse(captor.getValue().hasSourceUuid());
     assertFalse(captor.getValue().hasSourceDevice());
@@ -191,7 +191,7 @@ public class MessageControllerTest {
                asJson(response.readEntity(MismatchedDevices.class)),
                is(equalTo(jsonFixture("fixtures/missing_device_response.json"))));
 
-    verifyNoMoreInteractions(pushSender);
+    verifyNoMoreInteractions(messageSender);
   }
 
   @Test
@@ -211,7 +211,7 @@ public class MessageControllerTest {
                asJson(response.readEntity(MismatchedDevices.class)),
                is(equalTo(jsonFixture("fixtures/missing_device_response2.json"))));
 
-    verifyNoMoreInteractions(pushSender);
+    verifyNoMoreInteractions(messageSender);
   }
 
   @Test
@@ -227,7 +227,7 @@ public class MessageControllerTest {
 
     assertThat("Good Response Code", response.getStatus(), is(equalTo(200)));
 
-    verify(pushSender, times(2)).sendMessage(any(Account.class), any(Device.class), any(Envelope.class), eq(false));
+    verify(messageSender, times(2)).sendMessage(any(Account.class), any(Device.class), any(Envelope.class), eq(false));
   }
 
   @Test
@@ -246,7 +246,7 @@ public class MessageControllerTest {
                asJson(response.readEntity(StaleDevices.class)),
                is(equalTo(jsonFixture("fixtures/mismatched_registration_id.json"))));
 
-    verifyNoMoreInteractions(pushSender);
+    verifyNoMoreInteractions(messageSender);
 
   }
 

@@ -130,7 +130,7 @@ public class MessagePersister implements Managed {
         final String accountNumber;
 
         if (maybeAccount.isPresent()) {
-            accountNumber = maybeAccount.get().getNumber();
+            accountNumber = maybeAccount.get().getUuid().toString();
         } else {
             logger.error("No account record found for account {}", accountUuid);
             return;
