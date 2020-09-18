@@ -124,6 +124,7 @@ import org.whispersystems.textsecuregcm.push.APNSender;
 import org.whispersystems.textsecuregcm.push.ApnFallbackManager;
 import org.whispersystems.textsecuregcm.push.ClientPresenceManager;
 import org.whispersystems.textsecuregcm.push.GCMSender;
+import org.whispersystems.textsecuregcm.push.ProvisioningManager;
 import org.whispersystems.textsecuregcm.push.PushSender;
 import org.whispersystems.textsecuregcm.push.ReceiptSender;
 import org.whispersystems.textsecuregcm.push.WebsocketSender;
@@ -336,7 +337,8 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     PubSubManager              pubSubManager              = new PubSubManager(pubsubClient, dispatchManager, rateLimiters.getConnectWebSocketLimiter());
     APNSender                  apnSender                  = new APNSender(accountsManager, config.getApnConfiguration());
     GCMSender                  gcmSender                  = new GCMSender(accountsManager, config.getGcmConfiguration().getApiKey());
-    WebsocketSender            websocketSender            = new WebsocketSender(messagesManager, pubSubManager, clientPresenceManager);
+    WebsocketSender            websocketSender            = new WebsocketSender(messagesManager, clientPresenceManager);
+    ProvisioningManager        provisioningManager        = new ProvisioningManager(pubSubManager);
 
     JwtAuthentication jwtAuthentication                                               = new JwtAuthentication(config.getJwtKeys());
     DiskuvAccountAuthenticator accountAuthenticator                                   = new DiskuvAccountAuthenticator(accountsManager, jwtAuthentication);
@@ -427,7 +429,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     environment.jersey().register(new AccountController(pendingAccountsManager, accountsManager, jwtAuthentication, usernamesManager, abusiveHostRules, rateLimiters, smsSender, messagesManager, turnTokenGenerator, config.getTestDevices(), recaptchaClient, gcmSender, apnSender, backupCredentialsGenerator));
     environment.jersey().register(new DeviceController(pendingDevicesManager, accountsManager, jwtAuthentication, messagesManager, rateLimiters, config.getMaxDevices()));
-    environment.jersey().register(new ProvisioningController(rateLimiters, pushSender));
+    environment.jersey().register(new ProvisioningController(rateLimiters, provisioningManager));
     environment.jersey().register(new CertificateController(new CertificateGenerator(config.getDeliveryCertificate().getCertificate(), config.getDeliveryCertificate().getPrivateKey(), config.getDeliveryCertificate().getExpiresDays()), zkAuthOperations, isZkEnabled));
     environment.jersey().register(new VoiceVerificationController(config.getVoiceVerificationConfiguration().getUrl(), config.getVoiceVerificationConfiguration().getLocales()));
     environment.jersey().register(new SecureStorageController(storageCredentialsGenerator));
