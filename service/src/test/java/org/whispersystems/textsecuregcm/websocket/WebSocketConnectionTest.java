@@ -14,7 +14,6 @@ import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntityList;
 import org.whispersystems.textsecuregcm.push.ApnFallbackManager;
 import org.whispersystems.textsecuregcm.push.ClientPresenceManager;
 import org.whispersystems.textsecuregcm.push.ReceiptSender;
-import org.whispersystems.textsecuregcm.push.WebsocketSender;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
@@ -51,10 +50,8 @@ import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.*;
@@ -306,7 +303,6 @@ public class WebSocketConnectionTest {
   @Test
   public void testPendingSend() throws Exception {
     MessagesManager storedMessages  = mock(MessagesManager.class);
-    WebsocketSender websocketSender = mock(WebsocketSender.class);
 
     UUID sender1Uuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress("sender1@example.com");
     UUID sender2Uuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress("sender2@example.com");
@@ -393,7 +389,6 @@ public class WebSocketConnectionTest {
     futures.get(0).completeExceptionally(new IOException());
 
     verify(receiptSender, times(1)).sendReceipt(eq(account), eq(sender2Uuid.toString()), eq(secondMessage.getTimestamp()));
-    verifyNoMoreInteractions(websocketSender);
 
     connection.stop();
     verify(client).close(anyInt(), anyString());
