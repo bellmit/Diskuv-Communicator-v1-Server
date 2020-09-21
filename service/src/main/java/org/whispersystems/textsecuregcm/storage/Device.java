@@ -19,15 +19,11 @@ package org.whispersystems.textsecuregcm.storage;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
-import org.whispersystems.textsecuregcm.entities.PreKey;
-import org.whispersystems.textsecuregcm.entities.UserCapabilities;
 import org.whispersystems.textsecuregcm.entities.SignedPreKey;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice;
 import org.whispersystems.textsecuregcm.util.Util;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class Device implements PossiblySyntheticDevice {
@@ -113,13 +109,13 @@ public class Device implements PossiblySyntheticDevice {
   }
 
   @Override
-  public Optional<Device> getRealDevice() {
-    return Optional.of(this);
+  public java.util.Optional<Device> getRealDevice() {
+    return java.util.Optional.of(this);
   }
 
   @Override
-  public Optional<PreKey> generateUniqueSyntheticPreKey() {
-    return Optional.empty();
+  public java.util.Optional<org.whispersystems.textsecuregcm.entities.PreKey> generateUniqueSyntheticPreKey() {
+    return java.util.Optional.empty();
   }
 
   public String getApnId() {
@@ -285,6 +281,9 @@ public class Device implements PossiblySyntheticDevice {
     @JsonProperty("gv2-3")
     private boolean gv2;
 
+    @JsonProperty("gv2-2")
+    private boolean gv2_2;
+
     @JsonProperty
     private boolean storage;
 
@@ -293,14 +292,19 @@ public class Device implements PossiblySyntheticDevice {
 
     public DeviceCapabilities() {}
 
-    public DeviceCapabilities(boolean gv2, boolean storage, boolean transfer) {
+    public DeviceCapabilities(boolean gv2, final boolean gv2_2, boolean storage, boolean transfer) {
       this.gv2      = gv2;
+      this.gv2_2    = gv2_2;
       this.storage  = storage;
       this.transfer = transfer;
     }
 
     public boolean isGv2() {
       return gv2;
+    }
+
+    public boolean isGv2_2() {
+      return gv2_2;
     }
 
     public boolean isStorage() {
