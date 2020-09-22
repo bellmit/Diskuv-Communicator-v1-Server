@@ -516,6 +516,13 @@ public class AccountController {
   }
 
   @GET
+  @Path("/me")
+  @Produces(MediaType.APPLICATION_JSON)
+  public AccountCreationResult getMe(@Auth Account account) {
+    return whoAmI(account);
+  }
+
+  @GET
   @Path("/whoami")
   @Produces(MediaType.APPLICATION_JSON)
   public AccountCreationResult whoAmI(@Auth Account account) {
@@ -611,6 +618,13 @@ public class AccountController {
     }
 
     return new CaptchaRequirement(false, false);
+  }
+
+  @Timed
+  @DELETE
+  @Path("/me")
+  public void deleteAccount(@Auth Account account) {
+    accounts.delete(account);
   }
 
   private boolean shouldAutoBlock(String requester) {
