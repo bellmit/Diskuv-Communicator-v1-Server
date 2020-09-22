@@ -9,6 +9,10 @@ import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Accounts;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
+import org.whispersystems.textsecuregcm.storage.Keys;
+import org.whispersystems.textsecuregcm.storage.MessagesManager;
+import org.whispersystems.textsecuregcm.storage.ProfilesManager;
+import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.tests.util.RedisClusterHelper;
 
 import java.util.HashSet;
@@ -26,12 +30,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
-import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE_STRING;
 
 public class AccountsManagerTest {
-
-  public static final String ACCOUNT_MAP_ALICE = "AccountMap::" + UUID_ALICE_STRING;
-  public static final String ACCOUNT_ENTITY_ALICE = "Account3::" + UUID_ALICE_STRING;
 
   @Ignore("Diskuv does not use phone numbers")
   @Test
@@ -39,20 +39,24 @@ public class AccountsManagerTest {
     RedisAdvancedClusterCommands<String, String> commands         = mock(RedisAdvancedClusterCommands.class);
     FaultTolerantRedisCluster                    cacheCluster     = RedisClusterHelper.buildMockRedisCluster(commands);
     Accounts                                     accounts         = mock(Accounts.class);
+    Keys                                         keys             = mock(Keys.class);
+    MessagesManager                              messagesManager  = mock(MessagesManager.class);
+    UsernamesManager                             usernamesManager = mock(UsernamesManager.class);
+    ProfilesManager                              profilesManager  = mock(ProfilesManager.class);
 
     UUID uuid = UUID_ALICE;
 
-    when(commands.get(eq("AccountMap::"+UUID_ALICE_STRING))).thenReturn(uuid.toString());
+    when(commands.get(eq("AccountMap::"+uuid))).thenReturn(uuid.toString());
     when(commands.get(eq("Account3::" + uuid.toString()))).thenReturn("{\"number\": \"+14152222222\", \"name\": \"test\"}");
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster, keys, messagesManager, usernamesManager, profilesManager);
     Optional<Account> account         = accountsManager.get("+14152222222");
 
     assertTrue(account.isPresent());
     assertEquals(account.get().getNumber(), "+14152222222");
     assertEquals(account.get().getProfileName(), "test");
 
-    verify(commands, times(1)).get(eq("AccountMap::"+UUID_ALICE_STRING));
+    verify(commands, times(1)).get(eq("AccountMap::"+uuid));
     verify(commands, times(1)).get(eq("Account3::" + uuid.toString()));
     verifyNoMoreInteractions(commands);
     verifyNoMoreInteractions(accounts);
@@ -63,12 +67,16 @@ public class AccountsManagerTest {
     RedisAdvancedClusterCommands<String, String> commands         = mock(RedisAdvancedClusterCommands.class);
     FaultTolerantRedisCluster                    cacheCluster     = RedisClusterHelper.buildMockRedisCluster(commands);
     Accounts                                     accounts         = mock(Accounts.class);
+    Keys                                         keys             = mock(Keys.class);
+    MessagesManager                              messagesManager  = mock(MessagesManager.class);
+    UsernamesManager                             usernamesManager = mock(UsernamesManager.class);
+    ProfilesManager                              profilesManager  = mock(ProfilesManager.class);
 
     UUID uuid = UUID_ALICE;
 
-    when(commands.get(eq("Account3::" + uuid.toString()))).thenReturn("{\"number\": \""+UUID_ALICE_STRING+"\", \"name\": \"test\"}");
+    when(commands.get(eq("Account3::" + uuid.toString()))).thenReturn("{\"number\": \""+uuid+"\", \"name\": \"test\"}");
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster, keys, messagesManager, usernamesManager, profilesManager);
     Optional<Account> account         = accountsManager.get(uuid);
 
     assertTrue(account.isPresent());
@@ -76,7 +84,7 @@ public class AccountsManagerTest {
     assertEquals(account.get().getUuid(), uuid);
     assertEquals(account.get().getProfileName(), "test");
 
-    verify(commands, times(1)).get(eq("Account3::" + UUID_ALICE_STRING));
+    verify(commands, times(1)).get(eq("Account3::" + uuid));
     verifyNoMoreInteractions(commands);
     verifyNoMoreInteractions(accounts);
   }
@@ -87,20 +95,24 @@ public class AccountsManagerTest {
     RedisAdvancedClusterCommands<String, String> commands         = mock(RedisAdvancedClusterCommands.class);
     FaultTolerantRedisCluster                    cacheCluster     = RedisClusterHelper.buildMockRedisCluster(commands);
     Accounts                                     accounts         = mock(Accounts.class);
+    Keys                                         keys             = mock(Keys.class);
+    MessagesManager                              messagesManager  = mock(MessagesManager.class);
+    UsernamesManager                             usernamesManager = mock(UsernamesManager.class);
+    ProfilesManager                              profilesManager  = mock(ProfilesManager.class);
     UUID                                         uuid             = UUID_ALICE;
-    Account                                      account          = new Account(uuid, new HashSet<>(), new byte[16]);
+    Account                                      account          = new Account("+14152222222", uuid, new HashSet<>(), new byte[16]);
 
-    when(commands.get(eq("AccountMap::"+UUID_ALICE_STRING))).thenReturn(null);
+    when(commands.get(eq("AccountMap::"+uuid))).thenReturn(null);
     when(accounts.get(eq("+14152222222"))).thenReturn(Optional.of(account));
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster, keys, messagesManager, usernamesManager, profilesManager);
     Optional<Account> retrieved       = accountsManager.get("+14152222222");
 
     assertTrue(retrieved.isPresent());
     assertSame(retrieved.get(), account);
 
-    verify(commands, times(1)).get(eq("AccountMap::"+UUID_ALICE_STRING));
-    verify(commands, times(1)).set(eq("AccountMap::"+UUID_ALICE_STRING), eq(uuid.toString()));
+    verify(commands, times(1)).get(eq("AccountMap::"+uuid));
+    verify(commands, times(1)).set(eq("AccountMap::"+uuid), eq(uuid.toString()));
     verify(commands, times(1)).set(eq("Account3::" + uuid.toString()), anyString());
     verifyNoMoreInteractions(commands);
 
@@ -113,13 +125,17 @@ public class AccountsManagerTest {
     RedisAdvancedClusterCommands<String, String> commands         = mock(RedisAdvancedClusterCommands.class);
     FaultTolerantRedisCluster                    cacheCluster     = RedisClusterHelper.buildMockRedisCluster(commands);
     Accounts                                     accounts         = mock(Accounts.class);
-    UUID                                         uuid             = UUID_ALICE;
-    Account                                      account          = new Account(uuid, new HashSet<>(), new byte[16]);
+    Keys                                         keys             = mock(Keys.class);
+    MessagesManager                              messagesManager  = mock(MessagesManager.class);
+    UsernamesManager                             usernamesManager = mock(UsernamesManager.class);
+    ProfilesManager                              profilesManager  = mock(ProfilesManager.class);
+    UUID                                         uuid             = UUID.randomUUID();
+    Account                                      account          = new Account("+14152222222", uuid, new HashSet<>(), new byte[16]);
 
     when(commands.get(eq("Account3::" + uuid))).thenReturn(null);
     when(accounts.get(eq(uuid))).thenReturn(Optional.of(account));
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster, keys, messagesManager, usernamesManager, profilesManager);
     Optional<Account> retrieved       = accountsManager.get(uuid);
 
     assertTrue(retrieved.isPresent());
@@ -140,24 +156,28 @@ public class AccountsManagerTest {
     RedisAdvancedClusterCommands<String, String> commands         = mock(RedisAdvancedClusterCommands.class);
     FaultTolerantRedisCluster                    cacheCluster     = RedisClusterHelper.buildMockRedisCluster(commands);
     Accounts                                     accounts         = mock(Accounts.class);
-    UUID                                         uuid             = UUID_ALICE;
-    Account                                      account          = new Account(uuid, new HashSet<>(), new byte[16]);
+    Keys                                         keys             = mock(Keys.class);
+    MessagesManager                              messagesManager  = mock(MessagesManager.class);
+    UsernamesManager                             usernamesManager = mock(UsernamesManager.class);
+    ProfilesManager                              profilesManager  = mock(ProfilesManager.class);
+    UUID                                         uuid             = UUID.randomUUID();
+    Account                                      account          = new Account("+14152222222", uuid, new HashSet<>(), new byte[16]);
 
-    when(commands.get(eq("AccountMap::"+UUID_ALICE_STRING))).thenThrow(new RedisException("Connection lost!"));
+    when(commands.get(eq("AccountMap::"+uuid))).thenThrow(new RedisException("Connection lost!"));
     when(accounts.get(eq("+14152222222"))).thenReturn(Optional.of(account));
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster, keys, messagesManager, usernamesManager, profilesManager);
     Optional<Account> retrieved       = accountsManager.get("+14152222222");
 
     assertTrue(retrieved.isPresent());
     assertSame(retrieved.get(), account);
 
-    verify(commands, times(1)).get(eq("AccountMap::"+UUID_ALICE_STRING));
-    verify(commands, times(1)).set(eq("AccountMap::"+UUID_ALICE_STRING), eq(uuid.toString()));
+    verify(commands, times(1)).get(eq("AccountMap::"+uuid));
+    verify(commands, times(1)).set(eq("AccountMap::"+uuid), eq(uuid.toString()));
     verify(commands, times(1)).set(eq("Account3::" + uuid.toString()), anyString());
     verifyNoMoreInteractions(commands);
 
-    verify(accounts, times(1)).get(eq(UUID_ALICE));
+    verify(accounts, times(1)).get(eq(uuid));
     verifyNoMoreInteractions(accounts);
   }
 
@@ -166,13 +186,17 @@ public class AccountsManagerTest {
     RedisAdvancedClusterCommands<String, String> commands         = mock(RedisAdvancedClusterCommands.class);
     FaultTolerantRedisCluster                    cacheCluster     = RedisClusterHelper.buildMockRedisCluster(commands);
     Accounts                                     accounts         = mock(Accounts.class);
-    UUID                                         uuid             = UUID_ALICE;
-    Account                                      account          = new Account(uuid, new HashSet<>(), new byte[16]);
+    Keys                                         keys             = mock(Keys.class);
+    MessagesManager                              messagesManager  = mock(MessagesManager.class);
+    UsernamesManager                             usernamesManager = mock(UsernamesManager.class);
+    ProfilesManager                              profilesManager  = mock(ProfilesManager.class);
+    UUID                                         uuid             = UUID.randomUUID();
+    Account                                      account          = new Account("+14152222222", uuid, new HashSet<>(), new byte[16]);
 
     when(commands.get(eq("Account3::" + uuid))).thenThrow(new RedisException("Connection lost!"));
     when(accounts.get(eq(uuid))).thenReturn(Optional.of(account));
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster);
+    AccountsManager   accountsManager = new AccountsManager(accounts, cacheCluster, keys, messagesManager, usernamesManager, profilesManager);
     Optional<Account> retrieved       = accountsManager.get(uuid);
 
     assertTrue(retrieved.isPresent());
@@ -183,7 +207,7 @@ public class AccountsManagerTest {
     verify(commands, times(1)).set(eq("Account3::" + uuid.toString()), anyString());
     verifyNoMoreInteractions(commands);
 
-    verify(accounts, times(1)).get(eq(UUID_ALICE));
+    verify(accounts, times(1)).get(eq(uuid));
     verifyNoMoreInteractions(accounts);
   }
 

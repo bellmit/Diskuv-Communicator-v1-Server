@@ -314,14 +314,14 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     ClientPresenceManager      clientPresenceManager      = new ClientPresenceManager(messagesCacheCluster, recurringJobExecutor, keyspaceNotificationDispatchExecutor);
     PendingAccountsManager     pendingAccountsManager     = new PendingAccountsManager(pendingAccounts, cacheCluster);
     PendingDevicesManager      pendingDevicesManager      = new PendingDevicesManager(pendingDevices, cacheCluster);
-    AccountsManager            accountsManager            = new AccountsManager(accounts, cacheCluster);
-    org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager syntheticAccountsManager = new org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager(accountsManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
     UsernamesManager           usernamesManager           = new UsernamesManager(usernames, reservedUsernames, cacheCluster);
     ProfilesManager            profilesManager            = new ProfilesManager(profiles, cacheCluster);
     org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager syntheticProfilesManager = new org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager(profilesManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
     MessagesCache              messagesCache              = new MessagesCache(messagesCacheCluster, keyspaceNotificationDispatchExecutor);
     PushLatencyManager         pushLatencyManager         = new PushLatencyManager(metricsCluster);
     MessagesManager            messagesManager            = new MessagesManager(messages, messagesCache, pushLatencyManager);
+    AccountsManager            accountsManager            = new AccountsManager(accounts, cacheCluster, keys, messagesManager, usernamesManager, profilesManager);
+    org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager syntheticAccountsManager = new org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager(accountsManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
     RemoteConfigsManager       remoteConfigsManager       = new RemoteConfigsManager(remoteConfigs);
     FeatureFlagsManager        featureFlagsManager        = new FeatureFlagsManager(featureFlags, recurringJobExecutor);
     DeadLetterHandler          deadLetterHandler          = new DeadLetterHandler(accountsManager, messagesManager);

@@ -195,9 +195,9 @@ public class AccountsTest {
   @Test
   public void testDelete() {
     final Device  deletedDevice   = generateDevice (1);
-    final Account deletedAccount  = generateAccount("+14151112222", UUID.randomUUID(), Collections.singleton(deletedDevice));
+    final Account deletedAccount  = generateAccount(UUID.randomUUID(), Collections.singleton(deletedDevice));
     final Device  retainedDevice  = generateDevice (1);
-    final Account retainedAccount = generateAccount("+14151112345", UUID.randomUUID(), Collections.singleton(retainedDevice));
+    final Account retainedAccount = generateAccount(UUID.randomUUID(), Collections.singleton(retainedDevice));
 
     accounts.create(deletedAccount);
     accounts.create(retainedAccount);
@@ -209,7 +209,7 @@ public class AccountsTest {
 
     assertThat(accounts.get(deletedAccount.getUuid())).isNotPresent();
 
-    verifyStoredState(retainedAccount.getNumber(), retainedAccount.getUuid(), accounts.get(retainedAccount.getUuid()).get(), retainedAccount);
+    verifyStoredState(retainedAccount.getUuid(), accounts.get(retainedAccount.getUuid()).get(), retainedAccount);
   }
 
   @Test

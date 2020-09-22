@@ -49,17 +49,26 @@ public class AccountsManager {
   private static final Timer redisSetTimer       = metricRegistry.timer(name(AccountsManager.class, "redisSet"      ));
   private static final Timer redisNumberGetTimer = metricRegistry.timer(name(AccountsManager.class, "redisNumberGet"));
   private static final Timer redisUuidGetTimer   = metricRegistry.timer(name(AccountsManager.class, "redisUuidGet"  ));
+  private static final Timer redisDeleteTimer    = metricRegistry.timer(name(AccountsManager.class, "redisDelete"   ));
 
   private final Logger logger = LoggerFactory.getLogger(AccountsManager.class);
 
   private final Accounts                  accounts;
   private final FaultTolerantRedisCluster cacheCluster;
+  private final Keys                      keys;
+  private final MessagesManager           messagesManager;
+  private final UsernamesManager          usernamesManager;
+  private final ProfilesManager           profilesManager;
   private final ObjectMapper              mapper;
 
-  public AccountsManager(Accounts accounts, FaultTolerantRedisCluster cacheCluster) {
-    this.accounts               = accounts;
-    this.cacheCluster           = cacheCluster;
-    this.mapper                 = SystemMapper.getMapper();
+  public AccountsManager(Accounts accounts, FaultTolerantRedisCluster cacheCluster, final Keys keys, final MessagesManager messagesManager, final UsernamesManager usernamesManager, final ProfilesManager profilesManager) {
+    this.accounts         = accounts;
+    this.cacheCluster     = cacheCluster;
+    this.keys             = keys;
+    this.messagesManager  = messagesManager;
+    this.usernamesManager = usernamesManager;
+    this.profilesManager  = profilesManager;
+    this.mapper           = SystemMapper.getMapper();
   }
 
   public boolean create(Account account) {
@@ -110,6 +119,15 @@ public class AccountsManager {
 
   public List<Account> getAllFrom(UUID uuid, int length) {
     return accounts.getAllFrom(uuid, length);
+  }
+
+  public void delete(final Account account) {
+    usernamesManager.delete(account.getUuid());
+    profilesManager.deleteAll(account.getUuid());
+    keys.delete(account.getNumber());
+    messagesManager.clear(account.getNumber(), account.getUuid());
+    redisDelete(account);
+    databaseDelete(account);
   }
 
   private void updateDirectory(Account account) {
@@ -176,6 +194,12 @@ public class AccountsManager {
     }
   }
 
+  private void redisDelete(final Account account) {
+    try (final Timer.Context ignored = redisDeleteTimer.time()) {
+      cacheCluster.useCluster(connection -> connection.sync().del(getAccountMapKey(account.getNumber()), getAccountEntityKey(account.getUuid())));
+    }
+  }
+
   private Optional<Account> databaseGet(String number) {
     return accounts.get(number);
   }
@@ -190,5 +214,9 @@ public class AccountsManager {
 
   private void databaseUpdate(Account account) {
     accounts.update(account);
+  }
+
+  private void databaseDelete(final Account account) {
+    accounts.delete(account.getUuid());
   }
 }
