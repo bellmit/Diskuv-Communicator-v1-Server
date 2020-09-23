@@ -74,8 +74,8 @@ public class WebSocketConnectionIntegrationTest extends AbstractRedisClusterTest
         device = mock(Device.class);
         webSocketClient = mock(WebSocketClient.class);
 
-        when(account.getNumber()).thenReturn("+18005551234");
-        when(account.getUuid()).thenReturn(UUID.randomUUID());
+        when(account.getNumber()).thenReturn(org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForEmailAddress("test123@example.com").toString());
+        when(account.getUuid()).thenReturn(org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForEmailAddress("test123@example.com"));
         when(device.getId()).thenReturn(1L);
 
         webSocketConnection = new WebSocketConnection(mock(PushSender.class),
@@ -103,7 +103,7 @@ public class WebSocketConnectionIntegrationTest extends AbstractRedisClusterTest
 
         for (int i = 0; i < persistedMessageCount; i++) {
             final UUID messageGuid = UUID.randomUUID();
-            messages.store(messageGuid, generateRandomMessage(messageGuid), account.getNumber(), device.getId());
+            messages.store(messageGuid, generateRandomMessage(messageGuid), account.getUuid().toString(), device.getId());
         }
 
         for (int i = 0; i < cachedMessageCount; i++) {

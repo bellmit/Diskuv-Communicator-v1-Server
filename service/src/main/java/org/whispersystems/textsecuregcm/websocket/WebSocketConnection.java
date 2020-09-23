@@ -214,7 +214,7 @@ public class WebSocketConnection implements DispatchChannel, MessageAvailability
   }
 
   private void sendNextMessagePage(final boolean cachedMessagesOnly, final CompletableFuture<Void> queueClearedFuture) {
-    final OutgoingMessageEntityList messages    = messagesManager.getMessagesForDevice(account.getNumber(), account.getUuid(), device.getId(), client.getUserAgent(), cachedMessagesOnly);
+    final OutgoingMessageEntityList messages    = messagesManager.getMessagesForDevice(account.getUuid().toString(), account.getUuid(), device.getId(), client.getUserAgent(), cachedMessagesOnly);
     final CompletableFuture<?>[]    sendFutures = new CompletableFuture[messages.getMessages().size()];
 
     for (int i = 0; i < messages.getMessages().size(); i++) {
