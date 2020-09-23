@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -142,10 +143,7 @@ public class MessagesManager {
   public void persistMessages(final String destination, final UUID destinationUuid, final long destinationDeviceId, final List<Envelope> messages) {
     DiskuvUuidUtil.verifyDiskuvUuid(destination);
     this.messages.store(messages, destination, destinationDeviceId);
-
-    for (final Envelope message : messages) {
-      messagesCache.remove(destinationUuid, destinationDeviceId, UUID.fromString(message.getServerGuid()));
-    }
+    messagesCache.remove(destinationUuid, destinationDeviceId, messages.stream().map(message -> UUID.fromString(message.getServerGuid())).collect(Collectors.toList()));
   }
 
   public void addMessageAvailabilityListener(final UUID destinationUuid, final long deviceId, final MessageAvailabilityListener listener) {
