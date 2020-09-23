@@ -41,14 +41,17 @@ public class MessagesManager {
   }
 
   public void insert(UUID destinationUuid, long destinationDevice, Envelope message) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destinationUuid.toString());
     messagesCache.insert(UUID.randomUUID(), destinationUuid, destinationDevice, message);
   }
 
   public void insertEphemeral(final UUID destinationUuid, final long destinationDevice, final Envelope message) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destinationUuid.toString());
     messagesCache.insertEphemeral(destinationUuid, destinationDevice, message);
   }
 
   public Optional<Envelope> takeEphemeralMessage(final UUID destinationUuid, final long destinationDevice) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destinationUuid.toString());
     return messagesCache.takeEphemeralMessage(destinationUuid, destinationDevice);
   }
 
@@ -93,6 +96,7 @@ public class MessagesManager {
 
   public Optional<OutgoingMessageEntity> delete(String destination, UUID destinationUuid, long destinationDevice, String source, long timestamp)
   {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Preconditions.checkArgument(destinationUuid.toString().equals(destination));
 
     Optional<OutgoingMessageEntity> removed = messagesCache.remove(destinationUuid, destinationDevice, source, timestamp);
@@ -135,9 +139,13 @@ public class MessagesManager {
     }
   }
 
-  public void persistMessage(String destination, UUID destinationUuid, Envelope envelope, UUID messageGuid, long deviceId) {
-    messages.store(messageGuid, envelope, destination, deviceId);
-    messagesCache.remove(destinationUuid, deviceId, messageGuid);
+  public void persistMessages(final String destination, final UUID destinationUuid, final long destinationDeviceId, final List<Envelope> messages) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
+    this.messages.store(messages, destination, destinationDeviceId);
+
+    for (final Envelope message : messages) {
+      messagesCache.remove(destinationUuid, destinationDeviceId, UUID.fromString(message.getServerGuid()));
+    }
   }
 
   public void addMessageAvailabilityListener(final UUID destinationUuid, final long deviceId, final MessageAvailabilityListener listener) {
