@@ -58,6 +58,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 import io.dropwizard.auth.Auth;
+import org.whispersystems.textsecuregcm.util.ua.ClientPlatform;
+import org.whispersystems.textsecuregcm.util.ua.UnrecognizedUserAgentException;
+import org.whispersystems.textsecuregcm.util.ua.UserAgent;
+import org.whispersystems.textsecuregcm.util.ua.UserAgentUtil;
 
 import static com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER;
 
@@ -160,6 +164,7 @@ public class DeviceController {
   public DeviceResponse verifyDeviceToken(@PathParam("verification_code") String verificationCode,
                                           @HeaderParam("Authorization")   String authorizationHeader,
                                           @HeaderParam(DEVICE_AUTHORIZATION_HEADER)   String deviceAuthorizationHeader,
+                                          @HeaderParam("User-Agent")      String userAgent,
                                           @Valid                          AccountAttributes accountAttributes)
       throws RateLimitExceededException, DeviceLimitExceededException
   {
@@ -186,15 +191,13 @@ public class DeviceController {
       throw new WebApplicationException(Response.Status.FORBIDDEN);
     }
 
-    Optional<Account> accountOpt = accounts.get(accountUuid);
-
-    if (!accountOpt.isPresent()) {
+    Optional<Account> account = accounts.get(accountUuid);
+    if (account.isEmpty()) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
-    Account account = accountOpt.get();
 
     final DeviceCapabilities capabilities = accountAttributes.getCapabilities();
-    if (capabilities != null && isCapabilityDowngrade(account, capabilities)) {
+    if (capabilities != null && isCapabilityDowngrade(account.get(), capabilities, userAgent)) {
       throw new WebApplicationException(Response.status(409).build());
     }
 
@@ -203,14 +206,14 @@ public class DeviceController {
     device.setAuthenticationCredentials(new AuthenticationCredentials(devicePassword));
     device.setSignalingKey(accountAttributes.getSignalingKey());
     device.setFetchesMessages(accountAttributes.getFetchesMessages());
-    device.setId(account.getNextDeviceId());
+    device.setId(account.get().getNextDeviceId());
     device.setRegistrationId(accountAttributes.getRegistrationId());
     device.setLastSeen(Util.todayInMillis());
     device.setCreated(System.currentTimeMillis());
 
-    account.addDevice(device);
-    messages.clear(accountId, account.getUuid(), device.getId());
-    accounts.update(account);
+    account.get().addDevice(device);
+    messages.clear(accountId, account.get().getUuid(), device.getId());
+    accounts.update(account.get());
 
     pendingDevices.remove(accountUuid);
 
@@ -257,9 +260,42 @@ public class DeviceController {
     return new VerificationCode(randomInt);
   }
 
-  private boolean isCapabilityDowngrade(Account account, DeviceCapabilities capabilities) {
-    // Only iOS and desktop clients can be linked devices right now, and both require the second-gen GV2 capability to
-    // support GV2.
-    return (!capabilities.isGv2_2() && account.isGroupsV2Supported());
+  private boolean isCapabilityDowngrade(Account account, DeviceCapabilities capabilities, String userAgent) {
+    boolean isDowngrade = false;
+
+    if (account.isGroupsV2Supported()) {
+      try {
+        switch (UserAgentUtil.parseUserAgentString(userAgent).getPlatform()) {
+          case ANDROID: {
+            if (!capabilities.isGv2() && !capabilities.isGv2_2() && !capabilities.isGv2_3()) {
+              isDowngrade = true;
+            }
+
+            break;
+          }
+
+          case IOS: {
+            if (!capabilities.isGv2_2() && !capabilities.isGv2_3()) {
+              isDowngrade = true;
+            }
+
+            break;
+          }
+
+          case DESKTOP: {
+            if (!capabilities.isGv2_3()) {
+              isDowngrade = true;
+            }
+
+            break;
+          }
+        }
+      } catch (final UnrecognizedUserAgentException e) {
+        // If we can't parse the UA string, the client is for sure too old to support groups V2
+        isDowngrade = true;
+      }
+    }
+
+    return isDowngrade;
   }
 }
