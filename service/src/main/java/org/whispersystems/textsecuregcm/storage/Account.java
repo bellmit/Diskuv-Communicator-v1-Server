@@ -188,10 +188,7 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
   }
 
   public boolean isEnabled() {
-    final boolean enabled =
-        getMasterDevice().isPresent()       &&
-        getMasterDevice().get().isEnabled() &&
-        getLastSeen() > (System.currentTimeMillis() - TimeUnit.DAYS.toMillis(365));
+    final boolean enabled = getMasterDevice().map(Device::isEnabled).orElse(false);
 
     if (enabled) {
       ENABLED_ACCOUNT_COUNTER.increment();
