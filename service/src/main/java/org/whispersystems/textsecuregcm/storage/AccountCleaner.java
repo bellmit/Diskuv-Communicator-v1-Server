@@ -60,14 +60,8 @@ public class AccountCleaner extends AccountDatabaseCrawlerListener {
         expiredAccountsMeter.mark();
 
         if (accountUpdateCount < MAX_ACCOUNT_UPDATES_PER_CHUNK) {
-          Device masterDevice = account.getMasterDevice().get();
-          masterDevice.setFetchesMessages(false);
-          masterDevice.setApnId(null);
-          masterDevice.setVoipApnId(null);
-          masterDevice.setGcmId(null);
-
+          accountsManager.delete(account);
           accountUpdateCount++;
-          accountsManager.update(account);
         }
       }
     }

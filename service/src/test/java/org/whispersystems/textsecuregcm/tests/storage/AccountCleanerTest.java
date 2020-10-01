@@ -31,10 +31,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -92,26 +88,9 @@ public class AccountCleanerTest {
     accountCleaner.timeAndProcessCrawlChunk(Optional.empty(), Arrays.asList(deletedDisabledAccount, undeletedDisabledAccount, undeletedEnabledAccount));
     accountCleaner.onCrawlEnd(Optional.empty());
 
-    verify(deletedDisabledDevice, never()).setGcmId(any());
-    verify(deletedDisabledDevice, never()).setApnId(any());
-    verify(deletedDisabledDevice, never()).setVoipApnId(any());
-    verify(deletedDisabledDevice, never()).setFetchesMessages(anyBoolean());
-
-    verify(accountsManager, never()).update(eq(deletedDisabledAccount));
-
-    verify(undeletedDisabledDevice, times(1)).setGcmId(isNull());
-    verify(undeletedDisabledDevice, times(1)).setApnId(isNull());
-    verify(undeletedDisabledDevice, times(1)).setVoipApnId(isNull());
-    verify(undeletedDisabledDevice, times(1)).setFetchesMessages(eq(false));
-
-    verify(accountsManager, times(1)).update(eq(undeletedDisabledAccount));
-
-    verify(undeletedEnabledDevice, never()).setGcmId(any());
-    verify(undeletedEnabledDevice, never()).setApnId(any());
-    verify(undeletedEnabledDevice, never()).setVoipApnId(any());
-    verify(undeletedEnabledDevice, never()).setFetchesMessages(anyBoolean());
-
-    verify(accountsManager, never()).update(eq(undeletedEnabledAccount));
+    verify(accountsManager, never()).delete(deletedDisabledAccount);
+    verify(accountsManager).delete(undeletedDisabledAccount);
+    verify(accountsManager, never()).delete(undeletedEnabledAccount);
 
     verifyNoMoreInteractions(accountsManager);
   }
@@ -133,22 +112,7 @@ public class AccountCleanerTest {
     accountCleaner.timeAndProcessCrawlChunk(Optional.empty(), accounts);
     accountCleaner.onCrawlEnd(Optional.empty());
 
-    verify(undeletedDisabledDevice, times(AccountCleaner.MAX_ACCOUNT_UPDATES_PER_CHUNK)).setGcmId(isNull());
-    verify(undeletedDisabledDevice, times(AccountCleaner.MAX_ACCOUNT_UPDATES_PER_CHUNK)).setApnId(isNull());
-    verify(undeletedDisabledDevice, times(AccountCleaner.MAX_ACCOUNT_UPDATES_PER_CHUNK)).setVoipApnId(isNull());
-    verify(undeletedDisabledDevice, times(AccountCleaner.MAX_ACCOUNT_UPDATES_PER_CHUNK)).setFetchesMessages(eq(false));
-
-    verify(accountsManager, times(AccountCleaner.MAX_ACCOUNT_UPDATES_PER_CHUNK)).update(eq(undeletedDisabledAccount));
-
-    verify(deletedDisabledDevice, never()).setGcmId(any());
-    verify(deletedDisabledDevice, never()).setApnId(any());
-    verify(deletedDisabledDevice, never()).setFetchesMessages(anyBoolean());
-
-    verify(undeletedEnabledDevice, never()).setGcmId(any());
-    verify(undeletedEnabledDevice, never()).setApnId(any());
-    verify(undeletedEnabledDevice, never()).setVoipApnId(any());
-    verify(undeletedEnabledDevice, never()).setFetchesMessages(anyBoolean());
-
+    verify(accountsManager, times(AccountCleaner.MAX_ACCOUNT_UPDATES_PER_CHUNK)).delete(undeletedDisabledAccount);
     verifyNoMoreInteractions(accountsManager);
   }
 
