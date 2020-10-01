@@ -5,6 +5,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.Timer;
+import org.jdbi.v3.core.argument.SetObjectArgumentFactory;
 import org.jdbi.v3.core.statement.PreparedBatch;
 import org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntity;
@@ -12,7 +13,9 @@ import org.whispersystems.textsecuregcm.storage.mappers.OutgoingMessageEntityRow
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
+import java.sql.Types;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,9 +54,16 @@ public class Messages {
 
   private final FaultTolerantDatabase database;
 
+  private static class UUIDArgumentFactory extends SetObjectArgumentFactory {
+    public UUIDArgumentFactory() {
+      super(Map.of(UUID.class, Types.OTHER));
+    }
+  }
+
   public Messages(FaultTolerantDatabase database) {
     this.database = database;
     this.database.getDatabase().registerRowMapper(new OutgoingMessageEntityRowMapper());
+    this.database.getDatabase().registerArgument(new UUIDArgumentFactory());
   }
 
   public void store(final List<Envelope> messages, final String destination, final long destinationDevice) {
