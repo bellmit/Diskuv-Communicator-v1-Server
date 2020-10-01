@@ -21,8 +21,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Metrics;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
 import org.whispersystems.textsecuregcm.auth.StoredRegistrationLock;
 
@@ -33,15 +31,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import static com.codahale.metrics.MetricRegistry.name;
 
 public class Account implements Principal, org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount {
-
-  // TODO Remove these temporary metrics
-  private static final Counter ENABLED_ACCOUNT_COUNTER  = Metrics.counter(name(Account.class, "isEnabled"), "enabled", "true");
-  private static final Counter DISABLED_ACCOUNT_COUNTER = Metrics.counter(name(Account.class, "isEnabled"), "enabled", "false");
 
   @JsonIgnore
   private UUID uuid;
@@ -188,15 +179,7 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
   }
 
   public boolean isEnabled() {
-    final boolean enabled = getMasterDevice().map(Device::isEnabled).orElse(false);
-
-    if (enabled) {
-      ENABLED_ACCOUNT_COUNTER.increment();
-    } else {
-      DISABLED_ACCOUNT_COUNTER.increment();
-    }
-
-    return enabled;
+    return getMasterDevice().map(Device::isEnabled).orElse(false);
   }
 
   public long getNextDeviceId() {
