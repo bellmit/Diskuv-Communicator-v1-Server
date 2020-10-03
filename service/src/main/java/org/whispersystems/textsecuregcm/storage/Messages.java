@@ -11,7 +11,6 @@ import org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntity;
 import org.whispersystems.textsecuregcm.storage.mappers.OutgoingMessageEntityRowMapper;
 import org.whispersystems.textsecuregcm.util.Constants;
-import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import java.sql.Types;
 import java.util.List;
@@ -69,33 +68,31 @@ public class Messages {
   public void store(final List<Envelope> messages, final String destination, final long destinationDevice) {
     database.use(jdbi -> jdbi.useHandle(handle -> {
       try (final Timer.Context ignored = storeTimer.time()) {
-        final PreparedBatch batch = handle.prepareBatch("INSERT INTO messages (" + GUID + ", " + TYPE + ", " + RELAY + ", " + TIMESTAMP + ", " + SERVER_TIMESTAMP + ", " + SOURCE + ", " + SOURCE_UUID + ", " + SOURCE_DEVICE + ", " + DESTINATION + ", " + DESTINATION_DEVICE + ", " + MESSAGE + ", " + CONTENT + ", " + SOURCE_OUTDOORS_UUID + ") " +
-                                                        "VALUES (:guid, :type, :relay, :timestamp, :server_timestamp, :source, :source_uuid, :source_device, :destination, :destination_device, :message, :content, :source_outdoors_uuid)");
-
         for (final Envelope message : messages) {
           if (message.getServerGuid() == null) {
             insertNullGuidMeter.mark();
           }
 
-          batch.bind("guid", UUID.fromString(message.getServerGuid()))
-               .bind("destination", destination)
-               .bind("destination_device", destinationDevice)
-               .bind("type", message.getType().getNumber())
-               .bind("relay", message.getRelay())
-               .bind("timestamp", message.getTimestamp())
-               .bind("server_timestamp", message.getServerTimestamp())
-               .bind("source", message.hasSource() ? message.getSource() : null)
-               .bind("source_uuid", message.hasSourceUuid() ? UUID.fromString(message.getSourceUuid()) : null)
-               .bind("source_device", message.hasSourceDevice() ? message.getSourceDevice() : null)
-               .bind("message", message.hasLegacyMessage() ? message.getLegacyMessage().toByteArray() : null)
-               .bind("content", message.hasContent() ? message.getContent().toByteArray() : null)
-               .bind("source_outdoors_uuid", message.hasServerOutdoorsSourceUuid() ? UUID.fromString(message.getServerOutdoorsSourceUuid()) : null)
-               .add();
+          handle.createUpdate("INSERT INTO messages (" + GUID + ", " + TYPE + ", " + RELAY + ", " + TIMESTAMP + ", " + SERVER_TIMESTAMP + ", " + SOURCE + ", " + SOURCE_UUID + ", " + SOURCE_DEVICE + ", " + DESTINATION + ", " + DESTINATION_DEVICE + ", " + MESSAGE + ", " + CONTENT + ", " + SOURCE_OUTDOORS_UUID + ") " +
+                              "VALUES (:guid, :type, :relay, :timestamp, :server_timestamp, :source, :source_uuid, :source_device, :destination, :destination_device, :message, :content, :source_outdoors_uuid)")
+                .bind("guid", UUID.fromString(message.getServerGuid()))
+                .bind("destination", destination)
+                .bind("destination_device", destinationDevice)
+                .bind("type", message.getType().getNumber())
+                .bind("relay", message.getRelay())
+                .bind("timestamp", message.getTimestamp())
+                .bind("server_timestamp", message.getServerTimestamp())
+                .bind("source", message.hasSource() ? message.getSource() : null)
+                .bind("source_uuid", message.hasSourceUuid() ? UUID.fromString(message.getSourceUuid()) : null)
+                .bind("source_device", message.hasSourceDevice() ? message.getSourceDevice() : null)
+                .bind("message", message.hasLegacyMessage() ? message.getLegacyMessage().toByteArray() : null)
+                .bind("content", message.hasContent() ? message.getContent().toByteArray() : null)
+                .bind("source_outdoors_uuid", message.hasServerOutdoorsSourceUuid() ? UUID.fromString(message.getServerOutdoorsSourceUuid()) : null)
+                .execute();
         }
-
-        batch.execute();
-        storeSizeHistogram.update(messages.size());
       }
+
+      storeSizeHistogram.update(messages.size());
     }));
   }
 
