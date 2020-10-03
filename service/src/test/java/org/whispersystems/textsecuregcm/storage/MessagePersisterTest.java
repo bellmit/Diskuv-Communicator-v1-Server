@@ -21,7 +21,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -39,7 +38,6 @@ import static org.mockito.Mockito.when;
 public class MessagePersisterTest extends AbstractRedisClusterTest {
 
     private ExecutorService          notificationExecutorService;
-    private ScheduledExecutorService scheduledExecutorService;
     private MessagesCache            messagesCache;
     private Messages                 messagesDatabase;
     private MessagePersister         messagePersister;
@@ -70,9 +68,8 @@ public class MessagePersisterTest extends AbstractRedisClusterTest {
         when(account.getUuid()).thenReturn(DESTINATION_ACCOUNT_UUID);
 
         notificationExecutorService = Executors.newSingleThreadExecutor();
-        scheduledExecutorService    = Executors.newSingleThreadScheduledExecutor();
         messagesCache               = new MessagesCache(getRedisCluster(), notificationExecutorService);
-        messagePersister            = new MessagePersister(messagesCache, messagesManager, accountsManager, scheduledExecutorService, PERSIST_DELAY);
+        messagePersister            = new MessagePersister(messagesCache, messagesManager, accountsManager, PERSIST_DELAY);
 
         doAnswer(invocation -> {
             final String destination                    = invocation.getArgument(0, String.class);
@@ -96,9 +93,6 @@ public class MessagePersisterTest extends AbstractRedisClusterTest {
 
         notificationExecutorService.shutdown();
         notificationExecutorService.awaitTermination(1, TimeUnit.SECONDS);
-
-        scheduledExecutorService.shutdown();
-        scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS);
     }
 
     @Test
