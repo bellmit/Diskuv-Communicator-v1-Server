@@ -32,6 +32,7 @@ import org.whispersystems.textsecuregcm.configuration.JwtKeysConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MaxDeviceConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MessageCacheConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MicrometerConfiguration;
+import org.whispersystems.textsecuregcm.configuration.PaymentsServiceConfiguration;
 import org.whispersystems.textsecuregcm.configuration.PushConfiguration;
 import org.whispersystems.textsecuregcm.configuration.RateLimitsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.RecaptchaConfiguration;
@@ -201,6 +202,11 @@ public class WhisperServerConfiguration extends Configuration {
   @Valid
   @NotNull
   @JsonProperty
+  private PaymentsServiceConfiguration paymentsService;
+
+  @Valid
+  @NotNull
+  @JsonProperty
   private ZkConfig zkConfig;
 
   @Valid
@@ -353,6 +359,10 @@ public class WhisperServerConfiguration extends Configuration {
 
   public SecureBackupServiceConfiguration getSecureBackupServiceConfiguration() {
     return backupService;
+  }
+
+  public PaymentsServiceConfiguration getPaymentsServiceConfiguration() {
+    return paymentsService;
   }
 
   public ZkConfig getZkConfig() {
