@@ -109,6 +109,8 @@ import org.whispersystems.textsecuregcm.mappers.RateLimitExceededExceptionMapper
 import org.whispersystems.textsecuregcm.metrics.CpuUsageGauge;
 import org.whispersystems.textsecuregcm.metrics.FileDescriptorGauge;
 import org.whispersystems.textsecuregcm.metrics.FreeMemoryGauge;
+import org.whispersystems.textsecuregcm.metrics.GarbageCollectionCountGauge;
+import org.whispersystems.textsecuregcm.metrics.GarbageCollectionTimeGauge;
 import org.whispersystems.textsecuregcm.metrics.MetricsApplicationEventListener;
 import org.whispersystems.textsecuregcm.metrics.NetworkReceivedGauge;
 import org.whispersystems.textsecuregcm.metrics.NetworkSentGauge;
@@ -530,6 +532,9 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     environment.jersey().register(new GroupsController(groupsManager, serverSecretParams, policySigner, postPolicyGenerator, config.getGroupConfiguration(), sanctuariesDao, externalGroupCredentialGenerator));
     // [Diskuv Change] END: Import of groups from storage-service
+
+    environment.metrics().register(name(GarbageCollectionCountGauge.class, "gc_count"), new GarbageCollectionCountGauge());
+    environment.metrics().register(name(GarbageCollectionTimeGauge.class, "gc_time"), new GarbageCollectionTimeGauge());
   }
 
   private void registerExceptionMappers(Environment environment, WebSocketEnvironment<Account> webSocketEnvironment, WebSocketEnvironment<Account> provisioningEnvironment) {
