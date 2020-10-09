@@ -111,6 +111,7 @@ import org.whispersystems.textsecuregcm.metrics.FileDescriptorGauge;
 import org.whispersystems.textsecuregcm.metrics.FreeMemoryGauge;
 import org.whispersystems.textsecuregcm.metrics.GarbageCollectionCountGauge;
 import org.whispersystems.textsecuregcm.metrics.GarbageCollectionTimeGauge;
+import org.whispersystems.textsecuregcm.metrics.MaxFileDescriptorGauge;
 import org.whispersystems.textsecuregcm.metrics.MetricsApplicationEventListener;
 import org.whispersystems.textsecuregcm.metrics.NetworkReceivedGauge;
 import org.whispersystems.textsecuregcm.metrics.NetworkSentGauge;
@@ -535,6 +536,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     environment.metrics().register(name(GarbageCollectionCountGauge.class, "gc_count"), new GarbageCollectionCountGauge());
     environment.metrics().register(name(GarbageCollectionTimeGauge.class, "gc_time"), new GarbageCollectionTimeGauge());
+    environment.metrics().register(name(MaxFileDescriptorGauge.class, "max_fd_count"), new MaxFileDescriptorGauge());
   }
 
   private void registerExceptionMappers(Environment environment, WebSocketEnvironment<Account> webSocketEnvironment, WebSocketEnvironment<Account> provisioningEnvironment) {
