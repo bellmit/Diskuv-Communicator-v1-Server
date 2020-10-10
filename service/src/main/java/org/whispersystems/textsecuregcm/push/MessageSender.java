@@ -16,9 +16,7 @@
  */
 package org.whispersystems.textsecuregcm.push;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.SharedMetricRegistries;
-import com.google.common.annotations.VisibleForTesting;
+import io.dropwizard.lifecycle.Managed;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import org.whispersystems.textsecuregcm.metrics.PushLatencyManager;
@@ -26,17 +24,12 @@ import org.whispersystems.textsecuregcm.redis.RedisOperation;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
-import org.whispersystems.textsecuregcm.util.BlockingThreadPoolExecutor;
-import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.Util;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import io.dropwizard.lifecycle.Managed;
 import static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 
 /**
@@ -59,8 +52,6 @@ public class MessageSender implements Managed {
   private final MessagesManager            messagesManager;
   private final GCMSender                  gcmSender;
   private final APNSender                  apnSender;
-  private final ExecutorService            executor;
-  private final int                        queueSize;
   private final PushLatencyManager         pushLatencyManager;
 
   private static final String SEND_COUNTER_NAME      = name(MessageSender.class, "sendMessage");
@@ -73,40 +64,13 @@ public class MessageSender implements Managed {
                        MessagesManager       messagesManager,
                        GCMSender             gcmSender,
                        APNSender             apnSender,
-                       int                   queueSize,
                        PushLatencyManager    pushLatencyManager)
   {
-    this(apnFallbackManager,
-         clientPresenceManager,
-         messagesManager,
-         gcmSender,
-         apnSender,
-         queueSize,
-         new BlockingThreadPoolExecutor("pushSender", 50, queueSize),
-         pushLatencyManager);
-
-    SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME)
-                          .register(name(MessageSender.class, "send_queue_depth"),
-                                    (Gauge<Integer>) ((BlockingThreadPoolExecutor)executor)::getSize);
-  }
-
-  @VisibleForTesting
-  MessageSender(ApnFallbackManager    apnFallbackManager,
-                ClientPresenceManager clientPresenceManager,
-                MessagesManager       messagesManager,
-                GCMSender             gcmSender,
-                APNSender             apnSender,
-                int                   queueSize,
-                ExecutorService       executor,
-                PushLatencyManager    pushLatencyManager) {
-
     this.apnFallbackManager    = apnFallbackManager;
     this.clientPresenceManager = clientPresenceManager;
     this.messagesManager       = messagesManager;
     this.gcmSender             = gcmSender;
     this.apnSender             = apnSender;
-    this.queueSize             = queueSize;
-    this.executor              = executor;
     this.pushLatencyManager    = pushLatencyManager;
   }
 
@@ -117,15 +81,6 @@ public class MessageSender implements Managed {
       throw new NotPushRegisteredException("No delivery possible!");
     }
 
-    if (queueSize > 0) {
-      executor.execute(() -> sendSynchronousMessage(account, device, message, online));
-    } else {
-      sendSynchronousMessage(account, device, message, online);
-    }
-  }
-
-  @VisibleForTesting
-  void sendSynchronousMessage(Account account, Device device, Envelope message, boolean online) {
     final String channel;
 
     if (device.getGcmId() != null) {
@@ -205,10 +160,7 @@ public class MessageSender implements Managed {
   }
 
   @Override
-  public void stop() throws Exception {
-    executor.shutdown();
-    executor.awaitTermination(5, TimeUnit.MINUTES);
-
+  public void stop() {
     apnSender.stop();
   }
 }

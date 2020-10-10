@@ -11,7 +11,6 @@ import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -52,8 +51,6 @@ public class MessageSenderTest {
                                                   messagesManager,
                                                   gcmSender,
                                                   apnSender,
-                                                  0,
-                                                  mock(ExecutorService.class),
                                                   mock(PushLatencyManager.class));
 
         when(account.getUuid()).thenReturn(ACCOUNT_UUID);
@@ -61,11 +58,11 @@ public class MessageSenderTest {
     }
 
     @Test
-    public void testSendOnlineMessageClientPresent() {
+    public void testSendOnlineMessageClientPresent() throws Exception {
         when(clientPresenceManager.isPresent(ACCOUNT_UUID, DEVICE_ID)).thenReturn(true);
         when(device.getGcmId()).thenReturn("gcm-id");
 
-        messageSender.sendSynchronousMessage(account, device, message, true);
+        messageSender.sendMessage(account, device, message, true);
 
         verify(messagesManager).insertEphemeral(ACCOUNT_UUID, DEVICE_ID, message);
         verify(messagesManager, never()).insert(any(), anyLong(), any());
@@ -74,11 +71,11 @@ public class MessageSenderTest {
     }
 
     @Test
-    public void testSendOnlineMessageClientNotPresent() {
+    public void testSendOnlineMessageClientNotPresent() throws Exception {
         when(clientPresenceManager.isPresent(ACCOUNT_UUID, DEVICE_ID)).thenReturn(false);
         when(device.getGcmId()).thenReturn("gcm-id");
 
-        messageSender.sendSynchronousMessage(account, device, message, true);
+        messageSender.sendMessage(account, device, message, true);
 
         verify(messagesManager, never()).insertEphemeral(any(), anyLong(), any());
         verify(messagesManager, never()).insert(any(), anyLong(), any());
@@ -87,11 +84,11 @@ public class MessageSenderTest {
     }
 
     @Test
-    public void testSendMessageClientPresent() {
+    public void testSendMessageClientPresent() throws Exception {
         when(clientPresenceManager.isPresent(ACCOUNT_UUID, DEVICE_ID)).thenReturn(true);
         when(device.getGcmId()).thenReturn("gcm-id");
 
-        messageSender.sendSynchronousMessage(account, device, message, false);
+        messageSender.sendMessage(account, device, message, false);
 
         verify(messagesManager, never()).insertEphemeral(any(), anyLong(), any());
         verify(messagesManager).insert(ACCOUNT_UUID, DEVICE_ID, message);
@@ -100,11 +97,11 @@ public class MessageSenderTest {
     }
 
     @Test
-    public void testSendMessageGcmClientNotPresent() {
+    public void testSendMessageGcmClientNotPresent() throws Exception {
         when(clientPresenceManager.isPresent(ACCOUNT_UUID, DEVICE_ID)).thenReturn(false);
         when(device.getGcmId()).thenReturn("gcm-id");
 
-        messageSender.sendSynchronousMessage(account, device, message, false);
+        messageSender.sendMessage(account, device, message, false);
 
         verify(messagesManager, never()).insertEphemeral(any(), anyLong(), any());
         verify(messagesManager).insert(ACCOUNT_UUID, DEVICE_ID, message);
@@ -113,11 +110,11 @@ public class MessageSenderTest {
     }
 
     @Test
-    public void testSendMessageApnClientNotPresent() {
+    public void testSendMessageApnClientNotPresent() throws Exception {
         when(clientPresenceManager.isPresent(ACCOUNT_UUID, DEVICE_ID)).thenReturn(false);
         when(device.getApnId()).thenReturn("apn-id");
 
-        messageSender.sendSynchronousMessage(account, device, message, false);
+        messageSender.sendMessage(account, device, message, false);
 
         verify(messagesManager, never()).insertEphemeral(any(), anyLong(), any());
         verify(messagesManager).insert(ACCOUNT_UUID, DEVICE_ID, message);
@@ -126,11 +123,11 @@ public class MessageSenderTest {
     }
 
     @Test
-    public void testSendMessageFetchClientNotPresent() {
+    public void testSendMessageFetchClientNotPresent() throws Exception {
         when(clientPresenceManager.isPresent(ACCOUNT_UUID, DEVICE_ID)).thenReturn(false);
         when(device.getFetchesMessages()).thenReturn(true);
 
-        messageSender.sendSynchronousMessage(account, device, message, false);
+        messageSender.sendMessage(account, device, message, false);
 
         verify(messagesManager, never()).insertEphemeral(any(), anyLong(), any());
         verify(messagesManager).insert(ACCOUNT_UUID, DEVICE_ID, message);
