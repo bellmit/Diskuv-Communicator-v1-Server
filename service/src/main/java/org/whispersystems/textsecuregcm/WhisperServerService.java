@@ -55,6 +55,7 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import io.micrometer.wavefront.WavefrontConfig;
 import io.micrometer.wavefront.WavefrontMeterRegistry;
@@ -181,6 +182,8 @@ import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import javax.servlet.ServletRegistration;
 import java.security.SecureRandom;
+import java.lang.management.BufferPoolMXBean;
+import java.lang.management.ManagementFactory;
 import java.security.Security;
 import java.time.Duration;
 import java.util.Collections;
@@ -537,6 +540,14 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     environment.metrics().register(name(GarbageCollectionCountGauge.class, "gc_count"), new GarbageCollectionCountGauge());
     environment.metrics().register(name(GarbageCollectionTimeGauge.class, "gc_time"), new GarbageCollectionTimeGauge());
     environment.metrics().register(name(MaxFileDescriptorGauge.class, "max_fd_count"), new MaxFileDescriptorGauge());
+
+    for (final BufferPoolMXBean bufferPoolMXBean : ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class)) {
+      final List<Tag> tags = List.of(Tag.of("name", bufferPoolMXBean.getName()));
+
+      Metrics.gauge(name(BufferPoolMXBean.class, "count"), tags, bufferPoolMXBean, BufferPoolMXBean::getCount);
+      Metrics.gauge(name(BufferPoolMXBean.class, "memory_used"), tags, bufferPoolMXBean, BufferPoolMXBean::getMemoryUsed);
+      Metrics.gauge(name(BufferPoolMXBean.class, "total_capacity"), tags, bufferPoolMXBean, BufferPoolMXBean::getTotalCapacity);
+    }
   }
 
   private void registerExceptionMappers(Environment environment, WebSocketEnvironment<Account> webSocketEnvironment, WebSocketEnvironment<Account> provisioningEnvironment) {
