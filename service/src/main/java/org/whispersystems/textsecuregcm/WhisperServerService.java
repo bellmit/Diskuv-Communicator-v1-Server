@@ -115,6 +115,7 @@ import org.whispersystems.textsecuregcm.metrics.MaxFileDescriptorGauge;
 import org.whispersystems.textsecuregcm.metrics.MetricsApplicationEventListener;
 import org.whispersystems.textsecuregcm.metrics.NetworkReceivedGauge;
 import org.whispersystems.textsecuregcm.metrics.NetworkSentGauge;
+import org.whispersystems.textsecuregcm.metrics.OperatingSystemMemoryGauge;
 import org.whispersystems.textsecuregcm.metrics.PushLatencyManager;
 import org.whispersystems.textsecuregcm.metrics.TrafficSource;
 import org.whispersystems.textsecuregcm.providers.RedisClientFactory;
@@ -534,6 +535,8 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     // [Diskuv Change] END: Import of groups from storage-service
 
     environment.metrics().register(name(MaxFileDescriptorGauge.class, "max_fd_count"), new MaxFileDescriptorGauge());
+    environment.metrics().register(name(OperatingSystemMemoryGauge.class, "buffers"), new OperatingSystemMemoryGauge("Buffers"));
+    environment.metrics().register(name(OperatingSystemMemoryGauge.class, "cached"), new OperatingSystemMemoryGauge("Cached"));
 
     BufferPoolGauges.registerMetrics();
     GarbageCollectionGauges.registerMetrics();
