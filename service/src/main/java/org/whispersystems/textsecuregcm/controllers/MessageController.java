@@ -55,6 +55,9 @@ import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice;
 import org.whispersystems.textsecuregcm.util.Base64;
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.Util;
+import org.whispersystems.textsecuregcm.util.ua.UnrecognizedUserAgentException;
+import org.whispersystems.textsecuregcm.util.ua.UserAgent;
+import org.whispersystems.textsecuregcm.util.ua.UserAgentUtil;
 import org.whispersystems.textsecuregcm.websocket.WebSocketConnection;
 
 import javax.validation.Valid;
@@ -70,6 +73,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -99,7 +103,8 @@ public class MessageController {
   private final MessagesManager        messagesManager;
   private final ApnFallbackManager     apnFallbackManager;
 
-  private static final String CONTENT_SIZE_DISTRIBUTION_NAME = name(MessageController.class, "messageContentSize");
+  private static final String CONTENT_SIZE_DISTRIBUTION_NAME                     = name(MessageController.class, "messageContentSize");
+  private static final String OUTGOING_MESSAGE_LIST_SIZE_BYTES_DISTRIBUTION_NAME = name(MessageController.class, "outgoingMessageListSizeBytes");
 
   private static final int MAX_MESSAGE_SIZE = 64 * 1024;
 
@@ -238,7 +243,32 @@ public class MessageController {
 
     outgoingMessageListSizeHistogram.update(outgoingMessages.getMessages().size());
 
+    {
+      String platform;
+
+      try {
+        platform = UserAgentUtil.parseUserAgentString(userAgent).getPlatform().name().toLowerCase();
+      } catch (final UnrecognizedUserAgentException ignored) {
+        platform = "unrecognized";
+      }
+
+      Metrics.summary(OUTGOING_MESSAGE_LIST_SIZE_BYTES_DISTRIBUTION_NAME, "platform", platform).record(estimateMessageListSizeBytes(outgoingMessages));
+    }
+
     return outgoingMessages;
+  }
+
+  private static long estimateMessageListSizeBytes(final OutgoingMessageEntityList messageList) {
+    long size = 0;
+
+    for (final OutgoingMessageEntity message : messageList.getMessages()) {
+      size += message.getContent() == null      ? 0 : message.getContent().length;
+      size += message.getMessage() == null      ? 0 : message.getMessage().length;
+      size += Util.isEmpty(message.getSource()) ? 0 : message.getSource().length();
+      size += Util.isEmpty(message.getRelay())  ? 0 : message.getRelay().length();
+    }
+
+    return size;
   }
 
   @Timed
