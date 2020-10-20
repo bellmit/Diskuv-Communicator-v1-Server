@@ -174,6 +174,8 @@ import org.whispersystems.textsecuregcm.websocket.ProvisioningConnectListener;
 import org.whispersystems.textsecuregcm.websocket.WebSocketAccountAuthenticator;
 import org.whispersystems.textsecuregcm.workers.CertificateCommand;
 import org.whispersystems.textsecuregcm.workers.DeleteUserCommand;
+import org.whispersystems.textsecuregcm.workers.DisableRequestLoggingTask;
+import org.whispersystems.textsecuregcm.workers.EnableRequestLoggingTask;
 import org.whispersystems.textsecuregcm.workers.GetRedisCommandStatsCommand;
 import org.whispersystems.textsecuregcm.workers.GetRedisSlowlogCommand;
 import org.whispersystems.textsecuregcm.workers.VacuumCommand;
@@ -483,6 +485,9 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     provisioning.addMapping("/v1/websocket/provisioning/");
     provisioning.setAsyncSupported(true);
+
+    environment.admin().addTask(new EnableRequestLoggingTask());
+    environment.admin().addTask(new DisableRequestLoggingTask());
 
 ///
 
