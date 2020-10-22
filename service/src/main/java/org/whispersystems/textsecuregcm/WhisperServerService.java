@@ -311,7 +311,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     ReplicatedJedisPool pubsubClient        = pubSubClientFactory.getRedisClientPool();
     ReplicatedJedisPool pushSchedulerClient = pushSchedulerClientFactory.getRedisClientPool();
 
-    ClientResources redisClusterClientResources = ClientResources.builder().commandLatencyRecorder(new MicrometerLettuceCommandLatencyRecorder()).build();
+    ClientResources redisClusterClientResources = ClientResources.builder().build();
 
     FaultTolerantRedisCluster cacheCluster         = new FaultTolerantRedisCluster("main_cache_cluster", config.getCacheClusterConfiguration(), redisClusterClientResources);
     FaultTolerantRedisCluster messagesCacheCluster = new FaultTolerantRedisCluster("messages_cluster", config.getMessageCacheConfiguration().getRedisClusterConfiguration(), redisClusterClientResources);
