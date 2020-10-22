@@ -42,7 +42,7 @@ License
 
 Most of the code in this repository is:
 
-> Copyright 2013-2016 Open Whisper Systems
+> Copyright 2013-2020 Signal Messenger, LLC
 
 > Licensed under the AGPLv3: https://www.gnu.org/licenses/agpl-3.0.html
 
