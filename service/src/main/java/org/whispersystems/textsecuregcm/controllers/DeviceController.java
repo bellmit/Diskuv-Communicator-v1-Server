@@ -18,6 +18,7 @@ package org.whispersystems.textsecuregcm.controllers;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.VisibleForTesting;
+import io.dropwizard.auth.Auth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
@@ -37,6 +38,8 @@ import org.whispersystems.textsecuregcm.storage.PendingDevicesManager;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Util;
 import org.whispersystems.textsecuregcm.util.VerificationCode;
+import org.whispersystems.textsecuregcm.util.ua.UnrecognizedUserAgentException;
+import org.whispersystems.textsecuregcm.util.ua.UserAgentUtil;
 
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
@@ -56,12 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-
-import io.dropwizard.auth.Auth;
-import org.whispersystems.textsecuregcm.util.ua.ClientPlatform;
-import org.whispersystems.textsecuregcm.util.ua.UnrecognizedUserAgentException;
-import org.whispersystems.textsecuregcm.util.ua.UserAgent;
-import org.whispersystems.textsecuregcm.util.ua.UserAgentUtil;
 
 import static com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER;
 
@@ -262,6 +259,10 @@ public class DeviceController {
 
   private boolean isCapabilityDowngrade(Account account, DeviceCapabilities capabilities, String userAgent) {
     boolean isDowngrade = false;
+
+    if (account.isGv1MigrationSupported() && !capabilities.isGv1Migration()) {
+      isDowngrade = true;
+    }
 
     if (account.isGroupsV2Supported()) {
       try {

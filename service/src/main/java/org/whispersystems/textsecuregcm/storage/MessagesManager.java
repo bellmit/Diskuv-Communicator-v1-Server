@@ -146,6 +146,7 @@ public class MessagesManager {
 
   public void persistMessages(final String destination, final UUID destinationUuid, final long destinationDeviceId, final List<Envelope> messages) {
     DiskuvUuidUtil.verifyDiskuvUuid(destination);
+    Preconditions.checkArgument(destinationUuid.toString().equals(destination));
     this.messages.store(messages, destination, destinationDeviceId);
     messagesCache.remove(destinationUuid, destinationDeviceId, messages.stream().map(message -> UUID.fromString(message.getServerGuid())).collect(Collectors.toList()));
   }

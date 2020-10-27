@@ -17,6 +17,8 @@
 package org.whispersystems.textsecuregcm.tests.controllers;
 
 import com.google.common.collect.ImmutableSet;
+import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
+import io.dropwizard.testing.junit.ResourceTestRule;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
@@ -52,12 +54,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
-import io.dropwizard.testing.junit.ResourceTestRule;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
-import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 @RunWith(JUnitParamsRunner.class)
 public class DeviceControllerTest {
@@ -128,6 +131,7 @@ public class DeviceControllerTest {
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(masterDevice));
     when(account.isEnabled()).thenReturn(false);
     when(account.isGroupsV2Supported()).thenReturn(true);
+    when(account.isGv1MigrationSupported()).thenReturn(true);
 
     when(pendingDevicesManager.getCodeForPendingDevice(AuthHelper.VALID_UUID)).thenReturn(Optional.of(new StoredVerificationCode("5678901", System.currentTimeMillis(), null)));
     when(pendingDevicesManager.getCodeForPendingDevice(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of(new StoredVerificationCode("1112223", System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(31), null)));
@@ -233,7 +237,7 @@ public class DeviceControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/devices/5678901")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 1234, "this is a really long name that is longer than 80 characters it's so long that it's even longer than 204 characters. that's a lot of characters. we're talking lots and lots and lots of characters. 12345678", null, null, null, true, null),
                                                     MediaType.APPLICATION_JSON_TYPE));
@@ -245,12 +249,12 @@ public class DeviceControllerTest {
   @Test
   @Parameters(method = "argumentsForDeviceDowngradeCapabilitiesTest")
   public void deviceDowngradeCapabilitiesTest(final String userAgent, final boolean gv2, final boolean gv2_2, final boolean gv2_3, final int expectedStatus) throws Exception {
-    Device.DeviceCapabilities deviceCapabilities = new Device.DeviceCapabilities(gv2, gv2_2, gv2_3, true, false);
+    Device.DeviceCapabilities deviceCapabilities = new Device.DeviceCapabilities(gv2, gv2_2, gv2_3, true, false, true);
     AccountAttributes accountAttributes = new AccountAttributes("keykeykeykey", false, 1234, null, null, null, null, true, deviceCapabilities);
     Response response = resources.getJerseyTest()
             .target("/v1/devices/5678901")
             .request()
-            .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
             .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
             .header("User-Agent", userAgent)
             .put(Entity.entity(accountAttributes, MediaType.APPLICATION_JSON_TYPE));
@@ -282,5 +286,33 @@ public class DeviceControllerTest {
             new Object[] { "Old client with unparsable UA",    false, true,  false, 409 },
             new Object[] { "Old client with unparsable UA",    false, false, true,  409 }
     };
+  }
+
+  @Test
+  public void deviceDowngradeGv1MigrationTest() {
+    Device.DeviceCapabilities deviceCapabilities = new Device.DeviceCapabilities(true, true, true, true, false, false);
+    AccountAttributes accountAttributes = new AccountAttributes("keykeykeykey", false, 1234, null, null, null, null, true, deviceCapabilities);
+    Response response = resources.getJerseyTest()
+                                 .target("/v1/devices/5678901")
+                                 .request()
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                 .header("user-agent", "Signal-Android/4.68.3 Android/25")
+                                 .put(Entity.entity(accountAttributes, MediaType.APPLICATION_JSON_TYPE));
+
+    assertThat(response.getStatus()).isEqualTo(409);
+
+    deviceCapabilities = new Device.DeviceCapabilities(true, true, true, true, false, true);
+    accountAttributes = new AccountAttributes("keykeykeykey", false, 1234, null, null, null, null, true, deviceCapabilities);
+    response = resources.getJerseyTest()
+                        .target("/v1/devices/5678901")
+                        .request()
+                        .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                        .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                        .header("user-agent", "Signal-Android/4.68.3 Android/25")
+                        .put(Entity.entity(accountAttributes, MediaType.APPLICATION_JSON_TYPE));
+
+    assertThat(response.getStatus()).isEqualTo(200);
+
   }
 }

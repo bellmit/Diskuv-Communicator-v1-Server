@@ -81,8 +81,9 @@ public class WebSocketConnectionIntegrationTest extends AbstractRedisClusterTest
         device = mock(Device.class);
         webSocketClient = mock(WebSocketClient.class);
 
-        when(account.getNumber()).thenReturn(org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress("test123@example.com").toString());
-        when(account.getUuid()).thenReturn(org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress("test123@example.com"));
+        UUID uuid = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress(new java.util.Random().nextLong() + "@example.com");
+        when(account.getNumber()).thenReturn(uuid.toString());
+        when(account.getUuid()).thenReturn(uuid);
         when(device.getId()).thenReturn(1L);
 
         webSocketConnection = new WebSocketConnection(
