@@ -183,6 +183,9 @@ public class WebSocketConnection implements MessageAvailabilityListener, Displac
       if (message.getSourceUuid() != null) {
         builder.setSourceUuid(message.getSourceUuid().toString())
                .setSourceDevice(message.getSourceDevice());
+        if (message.getSourceUuid() != null) {
+          builder.setSourceUuid(message.getSourceUuid().toString());
+        }
       }
 
       if (message.getMessage() != null) {
