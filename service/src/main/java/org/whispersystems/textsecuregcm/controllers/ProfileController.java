@@ -209,7 +209,7 @@ public class ProfileController {
                                      accountProfile.getIdentityKey(),
                                      UnidentifiedAccessChecksum.generateFor(accountProfile.getUnidentifiedAccessKey()),
                                      accountProfile.isUnrestrictedUnidentifiedAccess(),
-                                     new UserCapabilities(accountProfile.isGroupsV2Supported()),
+                                     new UserCapabilities(accountProfile.isGroupsV2Supported(), accountProfile.isGv1MigrationSupported()),
                                      username.orElse(null),
                                      null,
                                      emailAddress,
@@ -249,7 +249,7 @@ public class ProfileController {
                        accountProfile.get().getIdentityKey(),
                        UnidentifiedAccessChecksum.generateFor(accountProfile.get().getUnidentifiedAccessKey()),
                        accountProfile.get().isUnrestrictedUnidentifiedAccess(),
-                       new UserCapabilities(accountProfile.get().isGroupsV2Supported()),
+                       new UserCapabilities(accountProfile.get().isGroupsV2Supported(), accountProfile.get().isGv1MigrationSupported()),
                        username,
                        accountProfile.get().getUuid(),
                        null,
@@ -314,12 +314,17 @@ public class ProfileController {
 
     Optional<String> username = usernamesManager.get(accountProfile.getUuid());
 
+    if (!identifier.hasNumber()) {
+      //noinspection OptionalGetWithoutIsPresent
+      username = usernamesManager.get(accountProfile.getUuid());
+    }
+
     return new Profile(accountProfile.getProfileName(),
                        accountProfile.getAvatar(),
                        accountProfile.getIdentityKey(),
                        UnidentifiedAccessChecksum.generateFor(accountProfile.getUnidentifiedAccessKey()),
                        accountProfile.isUnrestrictedUnidentifiedAccess(),
-                       new UserCapabilities(accountProfile.isGroupsV2Supported()),
+                       new UserCapabilities(accountProfile.isGroupsV2Supported(), accountProfile.isGv1MigrationSupported()),
                        username.orElse(null),
                        null,
                        accountProfile.getProfileEmailAddress(),
