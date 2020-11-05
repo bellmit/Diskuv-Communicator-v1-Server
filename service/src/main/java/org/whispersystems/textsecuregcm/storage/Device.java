@@ -290,9 +290,7 @@ public class Device implements PossiblySyntheticDevice {
   }
 
   public static class DeviceCapabilities {
-    // Confer: org.whispersystems.signalservice.api.account.AccountAttributes.Capabilities
-    // WAS: @JsonProperty
-    @JsonProperty("gv2-3")
+    @JsonProperty("gv2")
     private boolean gv2;
 
     @JsonProperty("gv2-2")

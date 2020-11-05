@@ -314,11 +314,6 @@ public class ProfileController {
 
     Optional<String> username = usernamesManager.get(accountProfile.getUuid());
 
-    if (!identifier.hasNumber()) {
-      //noinspection OptionalGetWithoutIsPresent
-      username = usernamesManager.get(accountProfile.getUuid());
-    }
-
     return new Profile(accountProfile.getProfileName(),
                        accountProfile.getAvatar(),
                        accountProfile.getIdentityKey(),

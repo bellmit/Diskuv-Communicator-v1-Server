@@ -201,6 +201,12 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
   }
 
   @Override
+  public String getProfileEmailAddress() {
+    // TODO
+    return null;
+  }
+
+  @Override
   public String getAvatar() {
     return null;
   }

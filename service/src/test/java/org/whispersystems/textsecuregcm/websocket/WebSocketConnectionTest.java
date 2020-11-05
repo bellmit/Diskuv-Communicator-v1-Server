@@ -519,8 +519,9 @@ public class WebSocketConnectionTest {
     final WebSocketClient client = mock(WebSocketClient.class);
     final WebSocketConnection connection = new WebSocketConnection(receiptSender, messagesManager, account, device, client);
 
-    when(account.getNumber()).thenReturn("+18005551234");
-    when(account.getUuid()).thenReturn(UUID.randomUUID());
+    UUID accountUuid = UUID.randomUUID();
+    when(account.getNumber()).thenReturn(accountUuid.toString());
+    when(account.getUuid()).thenReturn(accountUuid);
     when(device.getId()).thenReturn(1L);
     when(client.getUserAgent()).thenReturn("Test-UA");
 
