@@ -158,7 +158,7 @@ public class FaultTolerantRedisCluster {
 
     private void recordCommandTimeout(final RedisCommandTimeoutException e) {
         commandTimeoutMeter.mark();
-        log.warn("Command timeout exception ({})", this.name, e);
+        log.warn("[{}] Command timeout exception ({})", Thread.currentThread().getName(), this.name, e);
 
         if (wroteThreadDump.compareAndSet(false, true)) {
             ThreadDumpUtil.writeThreadDump();
