@@ -114,6 +114,7 @@ import org.whispersystems.textsecuregcm.metrics.FreeMemoryGauge;
 import org.whispersystems.textsecuregcm.metrics.GarbageCollectionGauges;
 import org.whispersystems.textsecuregcm.metrics.MaxFileDescriptorGauge;
 import org.whispersystems.textsecuregcm.metrics.MetricsApplicationEventListener;
+import org.whispersystems.textsecuregcm.metrics.MicrometerLettuceCommandLatencyRecorder;
 import org.whispersystems.textsecuregcm.metrics.NetworkReceivedGauge;
 import org.whispersystems.textsecuregcm.metrics.NetworkSentGauge;
 import org.whispersystems.textsecuregcm.metrics.OperatingSystemMemoryGauge;
@@ -308,7 +309,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     ReplicatedJedisPool pubsubClient        = pubSubClientFactory.getRedisClientPool();
     ReplicatedJedisPool pushSchedulerClient = pushSchedulerClientFactory.getRedisClientPool();
 
-    ClientResources redisClusterClientResources = ClientResources.builder().build();
+    ClientResources redisClusterClientResources = ClientResources.builder().commandLatencyRecorder(new MicrometerLettuceCommandLatencyRecorder()).build();
     ConnectionEventLogger.logConnectionEvents(redisClusterClientResources);
 
     FaultTolerantRedisCluster cacheCluster         = new FaultTolerantRedisCluster("main_cache_cluster", config.getCacheClusterConfiguration(), redisClusterClientResources);
