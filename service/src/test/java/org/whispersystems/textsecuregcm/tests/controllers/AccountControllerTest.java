@@ -1261,7 +1261,7 @@ public class AccountControllerTest {
   }
 
   @Test
-  public void testSetAccountAttributes() {
+  public void testSetAccountAttributesNoDiscoverabilityChange() {
     Response response =
             resources.getJerseyTest()
                     .target("/v1/accounts/attributes/")

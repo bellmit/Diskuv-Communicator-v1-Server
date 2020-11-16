@@ -507,6 +507,8 @@ public class AccountController {
 
     setAccountRegistrationLockFromAttributes(account, attributes);
 
+    final boolean hasDiscoverabilityChange = (account.isDiscoverableByPhoneNumber() != attributes.isDiscoverableByPhoneNumber());
+
     account.setUnidentifiedAccessKey(attributes.getUnidentifiedAccessKey());
     account.setUnrestrictedUnidentifiedAccess(attributes.isUnrestrictedUnidentifiedAccess());
     account.setPayments(attributes.getPayments());
