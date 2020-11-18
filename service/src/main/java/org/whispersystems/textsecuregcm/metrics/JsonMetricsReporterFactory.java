@@ -26,6 +26,7 @@ public class JsonMetricsReporterFactory extends BaseReporterFactory {
                                 .convertRatesTo(getRateUnit())
                                 .convertDurationsTo(getDurationUnit())
                                 .filter(getFilter())
+                                .disabledMetricAttributes(getDisabledAttributes())
                                 .build();
     } catch (UnknownHostException e) {
       throw new IllegalArgumentException(e);
