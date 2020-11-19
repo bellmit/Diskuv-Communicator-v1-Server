@@ -21,6 +21,8 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.Util;
 
@@ -32,6 +34,8 @@ import java.util.concurrent.TimeUnit;
 import static com.codahale.metrics.MetricRegistry.name;
 
 public class AccountCleaner extends AccountDatabaseCrawlerListener {
+
+  private static final Logger log = LoggerFactory.getLogger(AccountCleaner.class);
 
   private static final MetricRegistry metricRegistry            = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
   private static final Meter          expiredAccountsMeter      = metricRegistry.meter(name(AccountCleaner.class, "expiredAccounts"));
@@ -68,8 +72,12 @@ public class AccountCleaner extends AccountDatabaseCrawlerListener {
         expiredAccountsMeter.mark();
 
         if (accountUpdateCount < MAX_ACCOUNT_UPDATES_PER_CHUNK) {
-          accountsManager.delete(account, AccountsManager.DeletionReason.EXPIRED);
-          accountUpdateCount++;
+          try {
+            accountsManager.delete(account, AccountsManager.DeletionReason.EXPIRED);
+            accountUpdateCount++;
+          } catch (final Exception e) {
+            log.warn("Failed to delete account {}", account.getUuid(), e);
+          }
         }
       }
     }
