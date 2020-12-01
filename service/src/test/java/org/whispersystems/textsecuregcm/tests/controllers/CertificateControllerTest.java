@@ -1,6 +1,8 @@
 package org.whispersystems.textsecuregcm.tests.controllers;
 
 import com.google.common.collect.ImmutableSet;
+import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
+import io.dropwizard.testing.junit.ResourceTestRule;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
@@ -32,14 +34,9 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Arrays;
 
-import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
-import io.dropwizard.testing.junit.ResourceTestRule;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_BEARER_TOKEN;
 
 public class CertificateControllerTest {
 
@@ -91,9 +88,10 @@ public class CertificateControllerTest {
     assertTrue(Curve.verifySignature(Curve.decodePoint(serverCertificate.getKey().toByteArray(), 0), certificateHolder.getCertificate().toByteArray(), certificateHolder.getSignature().toByteArray()));
     assertTrue(Curve.verifySignature(Curve.decodePoint(Base64.decode(caPublicKey), 0), serverCertificateHolder.getCertificate().toByteArray(), serverCertificateHolder.getSignature().toByteArray()));
 
-    assertFalse(certificate.hasSender()); // WAS: assertEquals(certificate.getSender(), AuthHelper.VALID_NUMBER);
+    junit.framework.TestCase.assertFalse(certificate.hasSender()); // WAS: assertEquals(certificate.getSender(), AuthHelper.VALID_NUMBER);
     assertEquals(certificate.getSenderDevice(), 1L);
-    assertEquals(certificate.getSenderUuid(), AuthHelper.VALID_UUID.toString()); // WAS: assertFalse(certificate.hasSenderUuid());
+    assertTrue(certificate.hasSenderUuid());
+    assertEquals(AuthHelper.VALID_UUID.toString(), certificate.getSenderUuid());
     assertTrue(Arrays.equals(certificate.getIdentityKey().toByteArray(), Base64.decode(AuthHelper.VALID_IDENTITY)));
   }
 
@@ -119,7 +117,7 @@ public class CertificateControllerTest {
     assertTrue(Curve.verifySignature(Curve.decodePoint(serverCertificate.getKey().toByteArray(), 0), certificateHolder.getCertificate().toByteArray(), certificateHolder.getSignature().toByteArray()));
     assertTrue(Curve.verifySignature(Curve.decodePoint(Base64.decode(caPublicKey), 0), serverCertificateHolder.getCertificate().toByteArray(), serverCertificateHolder.getSignature().toByteArray()));
 
-    assertFalse(certificate.hasSender());
+    junit.framework.TestCase.assertFalse(certificate.hasSender());
     assertEquals(certificate.getSenderDevice(), 1L);
     assertEquals(certificate.getSenderUuid(), AuthHelper.VALID_UUID.toString());
     assertTrue(Arrays.equals(certificate.getIdentityKey().toByteArray(), Base64.decode(AuthHelper.VALID_IDENTITY)));
@@ -153,20 +151,6 @@ public class CertificateControllerTest {
   }
 
   @org.junit.Ignore("Certificates in Diskuv must include UUID")
-  @Test
-  public void testValidCertificateWithNoUuidNoE164() throws Exception {
-    Response response = resources.getJerseyTest()
-                                 .target("/v1/certificate/delivery")
-                                 .queryParam("includeUuid", "false")
-                                 .queryParam("includeE164", "false")
-                                 .request()
-                                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
-                                 .get();
-
-    assertEquals(response.getStatus(), 400);
-  }
-
   @Test
   public void testBadAuthentication() throws Exception {
     Response response = resources.getJerseyTest()

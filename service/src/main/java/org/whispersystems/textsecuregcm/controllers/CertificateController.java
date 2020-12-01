@@ -1,6 +1,7 @@
 package org.whispersystems.textsecuregcm.controllers;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dropwizard.auth.Auth;
 import org.signal.zkgroup.auth.ServerZkAuthOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +24,6 @@ import java.security.InvalidKeyException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-
-import io.dropwizard.auth.Auth;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/v1/certificate")
@@ -51,10 +50,8 @@ public class CertificateController {
   public DeliveryCertificate getDeliveryCertificate(@Auth Account account)
       throws IOException, InvalidKeyException
   {
-    if (!account.getAuthenticatedDevice().isPresent()) throw new AssertionError();
-
-    if (Util.isEmpty(account.getIdentityKey())) {
-      throw new WebApplicationException(Response.Status.BAD_REQUEST);
+    if (account.getAuthenticatedDevice().isEmpty()) {
+      throw new AssertionError();
     }
 
     return new DeliveryCertificate(certificateGenerator.createFor(account, account.getAuthenticatedDevice().get(), true));
