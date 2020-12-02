@@ -176,7 +176,7 @@ public class DeviceController {
     } catch (InvalidAuthorizationHeaderException e) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
-    byte[] devicePassword      = deviceHeader.getDevicePassword();
+    byte[] password      = deviceHeader.getDevicePassword();
     UUID accountUuid = deviceHeader.getAccountId();
     String accountId = accountUuid.toString();
 
@@ -200,13 +200,14 @@ public class DeviceController {
 
     Device device = new Device();
     device.setName(accountAttributes.getName());
-    device.setAuthenticationCredentials(new AuthenticationCredentials(devicePassword));
+    device.setAuthenticationCredentials(new AuthenticationCredentials(password));
     device.setSignalingKey(accountAttributes.getSignalingKey());
     device.setFetchesMessages(accountAttributes.getFetchesMessages());
     device.setId(account.get().getNextDeviceId());
     device.setRegistrationId(accountAttributes.getRegistrationId());
     device.setLastSeen(Util.todayInMillis());
     device.setCreated(System.currentTimeMillis());
+    device.setCapabilities(accountAttributes.getCapabilities());
 
     account.get().addDevice(device);
     messages.clear(accountId, account.get().getUuid(), device.getId());
