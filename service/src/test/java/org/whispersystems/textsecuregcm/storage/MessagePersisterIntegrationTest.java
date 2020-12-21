@@ -66,7 +66,7 @@ public class MessagePersisterIntegrationTest extends AbstractRedisClusterTest {
 
         account = mock(Account.class);
 
-        final UUID accountUuid = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress("test@example.com");
+        final UUID accountUuid = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress(new java.util.Random().nextLong() + "@example.com");
 
         when(account.getNumber()).thenReturn(accountUuid.toString());
         when(account.getUuid()).thenReturn(accountUuid);
