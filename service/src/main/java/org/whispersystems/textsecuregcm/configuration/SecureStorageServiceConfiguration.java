@@ -19,6 +19,10 @@ public class SecureStorageServiceConfiguration {
   @JsonProperty
   private String uri;
 
+  @NotBlank
+  @JsonProperty
+  private String storageCaCertificate;
+
   @NotNull
   @Valid
   @JsonProperty
@@ -40,6 +44,15 @@ public class SecureStorageServiceConfiguration {
 
   public String getUri() {
     return uri;
+  }
+
+  @VisibleForTesting
+  public void setStorageCaCertificate(final String certificatePem) {
+    this.storageCaCertificate = certificatePem;
+  }
+
+  public String getStorageCaCertificate() {
+    return storageCaCertificate;
   }
 
   public CircuitBreakerConfiguration getCircuitBreakerConfiguration() {
