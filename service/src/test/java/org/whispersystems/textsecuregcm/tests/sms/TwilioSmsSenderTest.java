@@ -1,7 +1,6 @@
 package org.whispersystems.textsecuregcm.tests.sms;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.whispersystems.textsecuregcm.configuration.TwilioConfiguration;
@@ -210,7 +209,6 @@ public class TwilioSmsSenderTest {
             .withRequestBody(equalTo(expectedRequestBody)));
   }
 
-  @Ignore
   @Test
   public void testSendAlphaIdByCountryCode() {
     runSenderIdTest("+85278675309", "SIGNAL", () -> {
@@ -223,7 +221,6 @@ public class TwilioSmsSenderTest {
     });
   }
 
-  @Ignore
   @Test
   public void testDefaultSenderId() {
     runSenderIdTest("+14098675309", "SIGNALFOO", () -> {
@@ -233,7 +230,6 @@ public class TwilioSmsSenderTest {
     });
   }
 
-  @Ignore
   @Test
   public void testDefaultSenderIdWithDisabledCountry() {
     final Supplier<TwilioSenderIdConfiguration> senderIdConfigurationSupplier = () -> {
@@ -246,7 +242,6 @@ public class TwilioSmsSenderTest {
     runSenderIdTest("+447911123456", "SIGNALBAR", senderIdConfigurationSupplier);
   }
 
-  @Ignore
   @Test
   public void testDefaultSenderIdWithOverriddenCountry() {
     final Supplier<TwilioSenderIdConfiguration> senderIdConfigurationSupplier = () -> {
@@ -262,7 +257,6 @@ public class TwilioSmsSenderTest {
     runSenderIdTest("+6433456789", "JUSTREADTHEINSTRUCTIONS", senderIdConfigurationSupplier);
   }
 
-  @Ignore
   @Test
   public void testSenderIdWithAllFieldsPopulated() {
     final Supplier<TwilioSenderIdConfiguration> senderIdConfigurationSupplier = () -> {
@@ -305,7 +299,6 @@ public class TwilioSmsSenderTest {
             .withRequestBody(equalTo("MessagingServiceSid=test_messaging_services_id&To=%2B14153333333&Body=%3C%23%3E+Verify+on+AndroidNg%3A+123-456%0A%0Acharacters")));
   }
 
-  @Ignore
   @Test
   public void testRetrySmsOnUnreachableErrorCodeSkipsSenderIdSecondTime() {
     wireMockRule.stubFor(post(urlEqualTo("/2010-04-01/Accounts/" + ACCOUNT_ID + "/Messages.json"))
