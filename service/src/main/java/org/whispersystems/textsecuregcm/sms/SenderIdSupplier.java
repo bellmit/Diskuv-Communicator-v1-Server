@@ -32,11 +32,12 @@ class SenderIdSupplier {
   }
 
   Optional<String> get(@NotNull String destination) {
-    final String countryCode = Util.getCountryCode(destination);
+    /* final String countryCode = Util.getCountryCode(destination);
     if (countryCodesWithoutSenderId.contains(countryCode)) {
       return Optional.empty();
     }
 
-    return Optional.ofNullable(StringUtils.stripToNull(countrySpecificSenderIds.getOrDefault(countryCode, defaultSenderId)));
+    return Optional.ofNullable(StringUtils.stripToNull(countrySpecificSenderIds.getOrDefault(countryCode, defaultSenderId))); */
+    return Optional.empty();
   }
 }
