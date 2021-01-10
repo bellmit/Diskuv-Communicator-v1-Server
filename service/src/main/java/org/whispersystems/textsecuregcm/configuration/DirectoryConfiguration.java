@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 public class DirectoryConfiguration {
 
@@ -41,7 +42,7 @@ public class DirectoryConfiguration {
   @JsonProperty
   @NotNull
   @Valid
-  private DirectoryServerConfiguration server;
+  private List<DirectoryServerConfiguration> server;
 
   public RedisConfiguration getRedisConfiguration() {
     return redis;
@@ -55,8 +56,7 @@ public class DirectoryConfiguration {
     return client;
   }
 
-  public DirectoryServerConfiguration getDirectoryServerConfiguration() {
+  public List<DirectoryServerConfiguration> getDirectoryServerConfiguration() {
     return server;
   }
-
 }
