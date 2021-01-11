@@ -26,6 +26,7 @@ import com.google.protobuf.ByteString;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.util.DataSize;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
@@ -102,8 +103,12 @@ public class MessageController {
   private final MessagesManager        messagesManager;
   private final ApnFallbackManager     apnFallbackManager;
 
+  private static final String SENT_MESSAGE_COUNTER_NAME                          = name(MessageController.class, "sentMessages");
   private static final String CONTENT_SIZE_DISTRIBUTION_NAME                     = name(MessageController.class, "messageContentSize");
   private static final String OUTGOING_MESSAGE_LIST_SIZE_BYTES_DISTRIBUTION_NAME = name(MessageController.class, "outgoingMessageListSizeBytes");
+
+  private static final String EPHEMERAL_TAG_NAME   = "ephemeral";
+  private static final String SENDER_TYPE_TAG_NAME = "senderType";
 
   private static final long MAX_MESSAGE_SIZE = DataSize.kibibytes(256).toBytes();
 
@@ -165,10 +170,16 @@ public class MessageController {
         }
       }
 
+    final String senderType;
+
     if (source.isPresent() && !source.get().isFor(destinationName)) {
       identifiedMeter.mark();
+      senderType = "identified";
     } else if (source.isEmpty()) {
       unidentifiedMeter.mark();
+      senderType = "unidentified";
+    } else {
+      senderType = "self";
     }
 
     for (final IncomingMessage message : messages.getMessages()) {
@@ -203,6 +214,10 @@ public class MessageController {
       validateCompleteDeviceList(destination.get(), messages.getMessages(), isSyncMessage);
       validateRegistrationIds(destination.get(), messages.getMessages());
 
+      final List<Tag> tags = List.of(UserAgentTagUtil.getPlatformTag(userAgent),
+                                     Tag.of(EPHEMERAL_TAG_NAME, String.valueOf(messages.isOnline())),
+                                     Tag.of(SENDER_TYPE_TAG_NAME, senderType));
+
       for (IncomingMessage incomingMessage : messages.getMessages()) {
         // Don't send anything if a synthetic device
         Optional<? extends PossiblySyntheticDevice> possibleDestinationDevice = destination.get().getDevice(incomingMessage.getDestinationDeviceId());
@@ -213,6 +228,7 @@ public class MessageController {
         Optional<Device> destinationDevice = possibleDestinationDevice.get().getRealDevice();
 
         if (destinationDevice.isPresent()) {
+          Metrics.counter(SENT_MESSAGE_COUNTER_NAME, tags).increment();
           sendMessage(source, outdoorsUUID, destination.get().getRealAccount().get(), destinationDevice.get(), messages.getTimestamp(), messages.isOnline(), incomingMessage);
         }
       }
