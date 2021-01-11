@@ -94,7 +94,6 @@ public class AccountsManager {
     try (Timer.Context ignored = createTimer.time()) {
       boolean freshUser = databaseCreate(account);
       redisSet(account);
-      updateDirectory(account);
 
       return freshUser;
     }
@@ -104,7 +103,6 @@ public class AccountsManager {
     try (Timer.Context ignored = updateTimer.time()) {
       redisSet(account);
       databaseUpdate(account);
-      updateDirectory(account);
     }
   }
 
@@ -153,11 +151,6 @@ public class AccountsManager {
     Metrics.counter(DELETE_COUNTER_NAME,
                     DELETION_REASON_TAG_NAME, deletionReason.tagValue)
            .increment();
-  }
-
-  private void updateDirectory(Account account) {
-    // DISKUV: We have disabled the Contact Directory Service
-    return;
   }
 
   private String getAccountMapKey(String number) {

@@ -1,9 +1,7 @@
 package org.whispersystems.textsecuregcm.tests.entities;
 
 import org.junit.Test;
-import org.whispersystems.textsecuregcm.entities.ClientContact;
 import org.whispersystems.textsecuregcm.entities.PreKey;
-import org.whispersystems.textsecuregcm.util.Util;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
