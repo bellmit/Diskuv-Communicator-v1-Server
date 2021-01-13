@@ -16,7 +16,7 @@ public class CreateProfileRequest {
   private String version;
 
   @JsonProperty
-  @ExactlySize({108})
+  @ExactlySize({108, 380})
   private String name;
 
   @JsonProperty
