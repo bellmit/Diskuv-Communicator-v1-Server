@@ -84,7 +84,7 @@ public class DeleteUserCommand extends EnvironmentCommand<WhisperServerConfigura
       Usernames                 usernames            = new Usernames(accountDatabase);
       Profiles                  profiles             = new Profiles(accountDatabase);
       ReservedUsernames         reservedUsernames    = new ReservedUsernames(accountDatabase);
-      Keys                      keys                 = new Keys(accountDatabase);
+      Keys                      keys                 = new Keys(accountDatabase, configuration.getAccountsDatabaseConfiguration().getKeyOperationRetryConfiguration());
       Messages                  messages             = new Messages(messageDatabase);
       FaultTolerantRedisCluster messagesCacheCluster = new FaultTolerantRedisCluster("messages_cluster", configuration.getMessageCacheConfiguration().getRedisClusterConfiguration(), redisClusterClientResources);
       FaultTolerantRedisCluster metricsCluster       = new FaultTolerantRedisCluster("metrics_cluster", configuration.getMetricsClusterConfiguration(), redisClusterClientResources);

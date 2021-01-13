@@ -14,6 +14,7 @@ import org.whispersystems.textsecuregcm.storage.Messages;
 
 import io.dropwizard.cli.ConfiguredCommand;
 import io.dropwizard.setup.Bootstrap;
+import org.whispersystems.textsecuregcm.storage.PendingAccounts;
 
 
 public class VacuumCommand extends ConfiguredCommand<WhisperServerConfiguration> {
@@ -40,12 +41,16 @@ public class VacuumCommand extends ConfiguredCommand<WhisperServerConfiguration>
     FaultTolerantDatabase messageDatabase = new FaultTolerantDatabase("message_database_vacuum", messageJdbi, messageDbConfig.getCircuitBreakerConfiguration());
 
     Accounts        accounts        = new Accounts(accountDatabase);
-    Keys            keys            = new Keys(accountDatabase);
+    Keys            keys            = new Keys(accountDatabase, config.getAccountsDatabaseConfiguration().getKeyOperationRetryConfiguration());
+    PendingAccounts pendingAccounts = new PendingAccounts(accountDatabase);
     Messages        messages        = new Messages(messageDatabase);
     FeatureFlags    featureFlags    = new FeatureFlags(accountDatabase);
 
     logger.info("Vacuuming accounts...");
     accounts.vacuum();
+
+    logger.info("Vacuuming pending_accounts...");
+    pendingAccounts.vacuum();
 
     logger.info("Vacuuming keys...");
     keys.vacuum();

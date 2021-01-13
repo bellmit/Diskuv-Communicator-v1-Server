@@ -29,6 +29,7 @@ import org.whispersystems.textsecuregcm.configuration.FeatureFlagConfiguration;
 import org.whispersystems.textsecuregcm.configuration.GcmConfiguration;
 import org.whispersystems.textsecuregcm.configuration.GcpAttachmentsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.JwtKeysConfiguration;
+import org.whispersystems.textsecuregcm.configuration.AccountsDatabaseConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MaxDeviceConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MessageCacheConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MicrometerConfiguration;
@@ -142,7 +143,7 @@ public class WhisperServerConfiguration extends Configuration {
   @Valid
   @NotNull
   @JsonProperty
-  private DatabaseConfiguration accountsDatabase;
+  private AccountsDatabaseConfiguration accountsDatabase;
 
   @Valid
   @NotNull
@@ -299,7 +300,7 @@ public class WhisperServerConfiguration extends Configuration {
     return abuseDatabase;
   }
 
-  public DatabaseConfiguration getAccountsDatabaseConfiguration() {
+  public AccountsDatabaseConfiguration getAccountsDatabaseConfiguration() {
     return accountsDatabase;
   }
 
