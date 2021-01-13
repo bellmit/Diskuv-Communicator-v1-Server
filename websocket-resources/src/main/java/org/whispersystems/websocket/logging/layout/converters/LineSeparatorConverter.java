@@ -2,13 +2,15 @@ package org.whispersystems.websocket.logging.layout.converters;
 
 import org.whispersystems.websocket.logging.WebsocketEvent;
 
-import ch.qos.logback.core.CoreConstants;
-
 public class LineSeparatorConverter extends WebSocketEventConverter {
   public LineSeparatorConverter() {
   }
 
   public String convert(WebsocketEvent event) {
-    return CoreConstants.LINE_SEPARATOR;
+    // The conventional protocol for Signal servers is newline, because Signal servers
+    // run on UNIX and "\n" is the value of ch.qos.logback.core.CoreConstants.LINE_SEPARATOR.
+    // Shouldn't care about UNIX vs Windows in a network protocol, so we will be explicit.
+    // The unit tests agree.
+    return "\n";
   }
 }
