@@ -31,7 +31,7 @@
     </parent>
 
 
-    <groupId>org.whispersystems.textsecure</groupId>
+    <groupId>com.diskuv.communicator</groupId>
     <artifactId>TextSecureServer</artifactId>
     <version>1.0</version>
 

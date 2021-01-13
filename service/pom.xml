@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>TextSecureServer</artifactId>
-        <groupId>org.whispersystems.textsecure</groupId>
+        <groupId>com.diskuv.communicator</groupId>
         <version>1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -18,17 +18,17 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.whispersystems.textsecure</groupId>
+            <groupId>com.diskuv.communicator</groupId>
             <artifactId>redis-dispatch</artifactId>
             <version>${TextSecureServer.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.whispersystems.textsecure</groupId>
+            <groupId>com.diskuv.communicator</groupId>
             <artifactId>websocket-resources</artifactId>
             <version>${TextSecureServer.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.whispersystems.textsecure</groupId>
+            <groupId>com.diskuv.communicator</groupId>
             <artifactId>gcm-sender-async</artifactId>
             <version>${TextSecureServer.version}</version>
             <exclusions>
