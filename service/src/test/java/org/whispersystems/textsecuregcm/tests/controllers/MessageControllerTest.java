@@ -7,6 +7,7 @@ import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -65,6 +66,7 @@ import static org.whispersystems.textsecuregcm.tests.util.JsonHelpers.asJson;
 import static org.whispersystems.textsecuregcm.tests.util.JsonHelpers.jsonFixture;
 import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.*;
 
+@Ignore
 public class MessageControllerTest {
   private static final String EMPTY_SOURCE            = "";
   private static final UUID   SINGLE_DEVICE_UUID      = UUID_BOB;
