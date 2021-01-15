@@ -66,7 +66,7 @@ public class MessagePersisterTest extends AbstractRedisClusterTest {
         when(account.getUuid()).thenReturn(DESTINATION_ACCOUNT_UUID);
 
         notificationExecutorService = Executors.newSingleThreadExecutor();
-        messagesCache               = new MessagesCache(getRedisCluster(), notificationExecutorService);
+        messagesCache               = new MessagesCache(getRedisCluster(), getRedisCluster(), notificationExecutorService);
         messagePersister            = new MessagePersister(messagesCache, messagesManager, accountsManager, PERSIST_DELAY);
 
         doAnswer(invocation -> {
