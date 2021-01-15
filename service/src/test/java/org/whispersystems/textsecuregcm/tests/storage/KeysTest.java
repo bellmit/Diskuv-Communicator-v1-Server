@@ -12,6 +12,7 @@ import org.jdbi.v3.core.transaction.SerializableTransactionRunner;
 import org.jdbi.v3.core.transaction.TransactionException;
 import org.jdbi.v3.core.transaction.TransactionIsolationLevel;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.whispersystems.textsecuregcm.configuration.CircuitBreakerConfiguration;
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.when;
 import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE_STRING;
 import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_BOB_STRING;
 
+@Ignore
 public class KeysTest {
 
   @Rule

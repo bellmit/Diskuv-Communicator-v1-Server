@@ -33,6 +33,7 @@ import org.whispersystems.textsecuregcm.storage.mappers.KeyRecordRowMapper;
 import org.whispersystems.textsecuregcm.util.Constants;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -86,7 +87,7 @@ public class Keys {
   }
 
   public List<KeyRecord> get(String number, long deviceId) {
-    try {
+    /* try {
       return database.with(jdbi -> jdbi.inTransaction(TransactionIsolationLevel.SERIALIZABLE, handle -> {
         try (Timer.Context ignored = getDevicetTimer.time()) {
           return handle.createQuery("DELETE FROM keys WHERE id IN (SELECT id FROM keys WHERE number = :number AND device_id = :device_id ORDER BY key_id ASC LIMIT 1) RETURNING *")
@@ -100,11 +101,14 @@ public class Keys {
       // TODO 2021-01-13 Replace this with a retry once desktop clients better handle HTTP/500 responses
       fallbackMeter.mark();
       return Collections.emptyList();
-    }
+    } */
+
+    // 2021-01-15 Emergency service recovery measure
+    return new LinkedList<>();
   }
 
   public List<KeyRecord> get(String number) {
-    try {
+    /* try {
       return database.with(jdbi -> jdbi.inTransaction(TransactionIsolationLevel.SERIALIZABLE, handle -> {
         try (Timer.Context ignored = getTimer.time()) {
           return handle.createQuery("DELETE FROM keys WHERE id IN (SELECT DISTINCT ON (number, device_id) id FROM keys WHERE number = :number ORDER BY number, device_id, key_id ASC) RETURNING *")
@@ -117,7 +121,10 @@ public class Keys {
       // TODO 2021-01-13 Replace this with a retry once desktop clients better handle HTTP/500 responses
       fallbackMeter.mark();
       return Collections.emptyList();
-    }
+    } */
+
+    // 2021-01-15 Emergency service recovery measure
+    return new LinkedList<>();
   }
 
   public int getCount(String number, long deviceId) {
