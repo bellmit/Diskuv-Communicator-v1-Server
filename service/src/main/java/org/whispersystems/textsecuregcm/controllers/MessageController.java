@@ -104,7 +104,6 @@ public class MessageController {
   private final ApnFallbackManager     apnFallbackManager;
 
   private final FeatureFlagsManager featureFlagsManager;
-  private final Random random = new Random();
 
   private static final String CONTENT_SIZE_DISTRIBUTION_NAME                     = name(MessageController.class, "messageContentSize");
   private static final String OUTGOING_MESSAGE_LIST_SIZE_BYTES_DISTRIBUTION_NAME = name(MessageController.class, "outgoingMessageListSizeBytes");
