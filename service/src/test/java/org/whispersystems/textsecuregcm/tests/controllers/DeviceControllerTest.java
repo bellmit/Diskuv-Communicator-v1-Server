@@ -63,7 +63,7 @@ public class DeviceControllerTest {
                                             RateLimiters rateLimiters,
                                             Map<String, Integer> deviceConfiguration)
     {
-      super(pendingDevices, accounts, messages, cdsSender, rateLimiters, deviceConfiguration);
+      super(pendingDevices, accounts, messages, rateLimiters, deviceConfiguration);
     }
 
     @Override

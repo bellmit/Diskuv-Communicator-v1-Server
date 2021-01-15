@@ -1,6 +1,25 @@
 Signal-Server
 =================
 
+Signal is a messaging app for simple private communication with friends.  
+Diskuv Communicator is a fork of the Signal messaging app, customized for the needs of the Diskuv community.
+
+Pronunciation: "Diskuv" sounds just like "discover", without the "er".
+
+Goals
+-----
+
+We at Diskuv won't be perfect, but we strive for:
+
+- Safety. Let Diskuv survivors have safe communities comprised of other survivors and vetted counseling and advocacy staff
+- Trust. Give Diskuv survivors a high level of assurance that Diskuv does not have access to the communities' conversations beyond what its members explicitly give it
+- Kindness. Diskuv survivors should find communicating easy, friendly to use and above all helpful as they manage their lives
+
+Anti Goals
+----------
+
+- Anonymity. Instead, Diskuv survivors should have a high degree of confidence that they are talking to a) other survivors in general, and/or b) other survivors specifically from their counseling or advocacy groups
+
 Documentation
 -------------
 

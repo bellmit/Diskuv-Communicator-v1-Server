@@ -66,7 +66,6 @@ public class KeyControllerTest {
 
   private final Keys            keys           = mock(Keys.class           );
   private final AccountsManager accounts       = mock(AccountsManager.class);
-  private final DirectoryQueue  directoryQueue = mock(DirectoryQueue.class);
   private final Account         existsAccount  = mock(Account.class        );
 
   private RateLimiters          rateLimiters  = mock(RateLimiters.class);
@@ -77,7 +76,7 @@ public class KeyControllerTest {
                                                             .addProvider(AuthHelper.getAuthFilter())
                                                             .addProvider(new PolymorphicAuthValueFactoryProvider.Binder<>(ImmutableSet.of(Account.class, DisabledPermittedAccount.class)))
                                                             .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
-                                                            .addResource(new KeysController(rateLimiters, keys, accounts, directoryQueue))
+                                                            .addResource(new KeysController(rateLimiters, keys, accounts))
                                                             .build();
 
   @Before

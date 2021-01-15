@@ -48,7 +48,6 @@ import org.whispersystems.textsecuregcm.push.GCMSender;
 import org.whispersystems.textsecuregcm.push.GcmMessage;
 import org.whispersystems.textsecuregcm.recaptcha.RecaptchaClient;
 import org.whispersystems.textsecuregcm.sms.SmsSender;
-import org.whispersystems.textsecuregcm.sqs.DirectoryQueue;
 import org.whispersystems.textsecuregcm.storage.AbusiveHostRule;
 import org.whispersystems.textsecuregcm.storage.AbusiveHostRules;
 import org.whispersystems.textsecuregcm.storage.Account;
@@ -106,7 +105,6 @@ public class AccountController {
   private final AbusiveHostRules                   abusiveHostRules;
   private final RateLimiters                       rateLimiters;
   private final SmsSender                          smsSender;
-  private final DirectoryQueue                     directoryQueue;
   private final MessagesManager                    messagesManager;
   private final TurnTokenGenerator                 turnTokenGenerator;
   private final Map<String, Integer>               testDevices;
@@ -121,7 +119,6 @@ public class AccountController {
                            AbusiveHostRules abusiveHostRules,
                            RateLimiters rateLimiters,
                            SmsSender smsSenderFactory,
-                           DirectoryQueue directoryQueue,
                            MessagesManager messagesManager,
                            TurnTokenGenerator turnTokenGenerator,
                            Map<String, Integer> testDevices,
@@ -136,7 +133,6 @@ public class AccountController {
     this.abusiveHostRules                  = abusiveHostRules;
     this.rateLimiters                      = rateLimiters;
     this.smsSender                         = smsSenderFactory;
-    this.directoryQueue                    = directoryQueue;
     this.messagesManager                   = messagesManager;
     this.testDevices                       = testDevices;
     this.turnTokenGenerator                = turnTokenGenerator;
@@ -336,10 +332,6 @@ public class AccountController {
     device.setFetchesMessages(false);
 
     accounts.update(account);
-
-    if (!wasAccountEnabled && account.isEnabled()) {
-      directoryQueue.addRegisteredUser(account.getUuid(), account.getNumber());
-    }
   }
 
   @Timed
@@ -352,10 +344,6 @@ public class AccountController {
     device.setFetchesMessages(false);
 
     accounts.update(account);
-
-    if (!account.isEnabled()) {
-      directoryQueue.deleteRegisteredUser(account.getUuid(), account.getNumber());
-    }
   }
 
   @Timed
@@ -372,10 +360,6 @@ public class AccountController {
     device.setGcmId(null);
     device.setFetchesMessages(false);
     accounts.update(account);
-
-    if (!wasAccountEnabled && account.isEnabled()) {
-      directoryQueue.addRegisteredUser(account.getUuid(), account.getNumber());
-    }
   }
 
   @Timed
@@ -388,10 +372,6 @@ public class AccountController {
     device.setFetchesMessages(false);
 
     accounts.update(account);
-
-    if (!account.isEnabled()) {
-      directoryQueue.deleteRegisteredUser(account.getUuid(), account.getNumber());
-    }
   }
 
   @Timed
@@ -611,12 +591,6 @@ public class AccountController {
 
     if (accounts.create(account)) {
       newUserMeter.mark();
-    }
-
-    if (account.isEnabled()) {
-      directoryQueue.addRegisteredUser(account.getUuid(), number);
-    } else {
-      directoryQueue.deleteRegisteredUser(account.getUuid(), number);
     }
 
     messagesManager.clear(number);

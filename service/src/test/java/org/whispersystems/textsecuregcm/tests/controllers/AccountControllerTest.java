@@ -104,7 +104,6 @@ public class AccountControllerTest {
   private        RateLimiter            autoBlockLimiter       = mock(RateLimiter.class);
   private        RateLimiter            usernameSetLimiter     = mock(RateLimiter.class);
   private        SmsSender              smsSender              = mock(SmsSender.class             );
-  private        DirectoryQueue         directoryQueue         = mock(DirectoryQueue.class);
   private        MessagesManager        storedMessages         = mock(MessagesManager.class       );
   private        TimeProvider           timeProvider           = mock(TimeProvider.class          );
   private        TurnTokenGenerator     turnTokenGenerator     = mock(TurnTokenGenerator.class);
@@ -132,8 +131,7 @@ public class AccountControllerTest {
                                                                                                abusiveHostRules,
                                                                                                rateLimiters,
                                                                                                smsSender,
-                                                                                               directoryQueue,
-                                                                                               storedMessages,
+                                                                    storedMessages,
                                                                                                turnTokenGenerator,
                                                                                                new HashMap<>(),
                                                                                                recaptchaClient,
@@ -505,7 +503,6 @@ public class AccountControllerTest {
     assertThat(result.isStorageCapable()).isFalse();
 
     verify(accountsManager, times(1)).create(isA(Account.class));
-    verify(directoryQueue, times(1)).deleteRegisteredUser(notNull(), eq(SENDER));
   }
 
   @Test
@@ -522,7 +519,6 @@ public class AccountControllerTest {
     assertThat(result.isStorageCapable()).isTrue();
 
     verify(accountsManager, times(1)).create(isA(Account.class));
-    verify(directoryQueue, times(1)).deleteRegisteredUser(notNull(), eq(SENDER_HAS_STORAGE));
   }
 
   @Test

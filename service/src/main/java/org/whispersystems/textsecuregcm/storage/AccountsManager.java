@@ -56,12 +56,10 @@ public class AccountsManager {
 
   private final Accounts            accounts;
   private final ReplicatedJedisPool cacheClient;
-  private final DirectoryManager    directory;
   private final ObjectMapper        mapper;
 
-  public AccountsManager(Accounts accounts, DirectoryManager directory, ReplicatedJedisPool cacheClient) {
+  public AccountsManager(Accounts accounts, ReplicatedJedisPool cacheClient) {
     this.accounts    = accounts;
-    this.directory   = directory;
     this.cacheClient = cacheClient;
     this.mapper      = SystemMapper.getMapper();
   }
@@ -126,13 +124,8 @@ public class AccountsManager {
   }
 
   private void updateDirectory(Account account) {
-    if (account.isEnabled()) {
-      byte[]        token         = Util.getContactToken(account.getNumber());
-      ClientContact clientContact = new ClientContact(token, null, true, true);
-      directory.add(clientContact);
-    } else {
-      directory.remove(account.getNumber());
-    }
+    // DISKUV: We have disabled the Contact Directory Service
+    return;
   }
 
   private String getAccountMapKey(String number) {

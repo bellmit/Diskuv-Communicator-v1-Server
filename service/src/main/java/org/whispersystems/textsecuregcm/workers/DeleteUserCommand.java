@@ -68,10 +68,7 @@ public class DeleteUserCommand extends EnvironmentCommand<WhisperServerConfigura
 
       Accounts            accounts        = new Accounts(accountDatabase);
       ReplicatedJedisPool cacheClient     = new RedisClientFactory("main_cache_delete_command", configuration.getCacheConfiguration().getUrl(), configuration.getCacheConfiguration().getReplicaUrls(), configuration.getCacheConfiguration().getCircuitBreakerConfiguration()).getRedisClientPool();
-      ReplicatedJedisPool redisClient     = new RedisClientFactory("directory_cache_delete_command", configuration.getDirectoryConfiguration().getRedisConfiguration().getUrl(), configuration.getDirectoryConfiguration().getRedisConfiguration().getReplicaUrls(), configuration.getDirectoryConfiguration().getRedisConfiguration().getCircuitBreakerConfiguration()).getRedisClientPool();
-      DirectoryQueue      directoryQueue  = new DirectoryQueue  (configuration.getDirectoryConfiguration().getSqsConfiguration());
-      DirectoryManager    directory       = new DirectoryManager(redisClient                                                    );
-      AccountsManager     accountsManager = new AccountsManager(accounts, directory, cacheClient);
+      AccountsManager     accountsManager = new AccountsManager(accounts, cacheClient);
 
       for (String user: users) {
         Optional<Account> account = accountsManager.get(user);
@@ -88,7 +85,6 @@ public class DeleteUserCommand extends EnvironmentCommand<WhisperServerConfigura
             device.get().setAuthenticationCredentials(new AuthenticationCredentials(Base64.encodeBytes(random)));
 
             accountsManager.update(account.get());
-            directoryQueue.deleteRegisteredUser(account.get().getUuid(), account.get().getNumber());
 
             logger.warn("Removed " + account.get().getNumber());
           } else {

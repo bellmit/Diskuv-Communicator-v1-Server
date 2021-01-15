@@ -21,11 +21,9 @@ public class PushFeedbackProcessor extends AccountDatabaseCrawlerListener {
   private final Meter          recovered      = metricRegistry.meter(name(getClass(), "unregistered", "recovered"));
 
   private final AccountsManager accountsManager;
-  private final DirectoryQueue  directoryQueue;
 
-  public PushFeedbackProcessor(AccountsManager accountsManager, DirectoryQueue directoryQueue) {
+  public PushFeedbackProcessor(AccountsManager accountsManager) {
     this.accountsManager = accountsManager;
-    this.directoryQueue  = directoryQueue;
   }
 
   @Override
@@ -60,10 +58,6 @@ public class PushFeedbackProcessor extends AccountDatabaseCrawlerListener {
 
       if (update) {
         accountsManager.update(account);
-
-        if (!account.isEnabled()) {
-          directoryQueue.deleteRegisteredUser(account.getUuid(), account.getNumber());
-        }
       }
     }
   }

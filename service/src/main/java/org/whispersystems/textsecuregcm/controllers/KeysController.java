@@ -30,7 +30,6 @@ import org.whispersystems.textsecuregcm.entities.PreKeyResponseItem;
 import org.whispersystems.textsecuregcm.entities.PreKeyState;
 import org.whispersystems.textsecuregcm.entities.SignedPreKey;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
-import org.whispersystems.textsecuregcm.sqs.DirectoryQueue;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
@@ -63,13 +62,11 @@ public class KeysController {
   private final RateLimiters    rateLimiters;
   private final Keys            keys;
   private final AccountsManager accounts;
-  private final DirectoryQueue  directoryQueue;
 
-  public KeysController(RateLimiters rateLimiters, Keys keys, AccountsManager accounts, DirectoryQueue directoryQueue) {
+  public KeysController(RateLimiters rateLimiters, Keys keys, AccountsManager accounts) {
     this.rateLimiters   = rateLimiters;
     this.keys           = keys;
     this.accounts       = accounts;
-    this.directoryQueue = directoryQueue;
   }
 
   @GET
@@ -90,7 +87,6 @@ public class KeysController {
   public void setKeys(@Auth DisabledPermittedAccount disabledPermittedAccount, @Valid PreKeyState preKeys)  {
     Account account           = disabledPermittedAccount.getAccount();
     Device  device            = account.getAuthenticatedDevice().get();
-    boolean wasAccountEnabled = account.isEnabled();
     boolean updateAccount     = false;
 
     if (!preKeys.getSignedPreKey().equals(device.getSignedPreKey())) {
@@ -105,10 +101,6 @@ public class KeysController {
 
     if (updateAccount) {
       accounts.update(account);
-
-      if (!wasAccountEnabled && account.isEnabled()) {
-        directoryQueue.addRegisteredUser(account.getUuid(), account.getNumber());
-      }
     }
 
     keys.store(account.getNumber(), device.getId(), preKeys.getPreKeys());
@@ -167,14 +159,9 @@ public class KeysController {
   @Consumes(MediaType.APPLICATION_JSON)
   public void setSignedKey(@Auth Account account, @Valid SignedPreKey signedPreKey) {
     Device  device            = account.getAuthenticatedDevice().get();
-    boolean wasAccountEnabled = account.isEnabled();
 
     device.setSignedPreKey(signedPreKey);
     accounts.update(account);
-
-    if (!wasAccountEnabled && account.isEnabled()) {
-      directoryQueue.addRegisteredUser(account.getUuid(), account.getNumber());
-    }
   }
 
   @Timed

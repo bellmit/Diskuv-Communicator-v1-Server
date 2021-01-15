@@ -71,11 +71,6 @@ public class WhisperServerConfiguration extends Configuration {
   @NotNull
   @Valid
   @JsonProperty
-  private DirectoryConfiguration directory;
-
-  @NotNull
-  @Valid
-  @JsonProperty
   private AccountDatabaseCrawlerConfiguration accountDatabaseCrawler;
 
   @NotNull
@@ -218,10 +213,6 @@ public class WhisperServerConfiguration extends Configuration {
 
   public RedisConfiguration getPubsubCacheConfiguration() {
     return pubsub;
-  }
-
-  public DirectoryConfiguration getDirectoryConfiguration() {
-    return directory;
   }
 
   public SecureStorageServiceConfiguration getSecureStorageServiceConfiguration() {

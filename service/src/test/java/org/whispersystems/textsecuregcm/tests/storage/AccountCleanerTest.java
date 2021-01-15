@@ -44,7 +44,6 @@ import static org.mockito.Mockito.*;
 public class AccountCleanerTest {
 
   private final AccountsManager accountsManager = mock(AccountsManager.class);
-  private final DirectoryQueue  directoryQueue  = mock(DirectoryQueue.class);
 
   private final Account deletedDisabledAccount   = mock(Account.class);
   private final Account undeletedDisabledAccount = mock(Account.class);
@@ -87,7 +86,7 @@ public class AccountCleanerTest {
 
   @Test
   public void testAccounts() throws AccountDatabaseCrawlerRestartException {
-    AccountCleaner accountCleaner = new AccountCleaner(accountsManager, directoryQueue);
+    AccountCleaner accountCleaner = new AccountCleaner(accountsManager);
     accountCleaner.onCrawlStart();
     accountCleaner.timeAndProcessCrawlChunk(Optional.empty(), Arrays.asList(deletedDisabledAccount, undeletedDisabledAccount, undeletedEnabledAccount));
     accountCleaner.onCrawlEnd(Optional.empty());
@@ -98,7 +97,6 @@ public class AccountCleanerTest {
     verify(deletedDisabledDevice, never()).setFetchesMessages(anyBoolean());
 
     verify(accountsManager, never()).update(eq(deletedDisabledAccount));
-    verify(directoryQueue, never()).deleteRegisteredUser(notNull(), eq("+14151231234"));
 
 
     verify(undeletedDisabledDevice, times(1)).setGcmId(isNull());
@@ -107,7 +105,6 @@ public class AccountCleanerTest {
     verify(undeletedDisabledDevice, times(1)).setFetchesMessages(eq(false));
 
     verify(accountsManager, times(1)).update(eq(undeletedDisabledAccount));
-    verify(directoryQueue, times(1)).deleteRegisteredUser(notNull(), eq("+14152222222"));
 
     verify(undeletedEnabledDevice, never()).setGcmId(any());
     verify(undeletedEnabledDevice, never()).setApnId(any());
@@ -115,10 +112,8 @@ public class AccountCleanerTest {
     verify(undeletedEnabledDevice, never()).setFetchesMessages(anyBoolean());
 
     verify(accountsManager, never()).update(eq(undeletedEnabledAccount));
-    verify(directoryQueue, never()).deleteRegisteredUser(notNull(), eq("+14153333333"));
 
     verifyNoMoreInteractions(accountsManager);
-    verifyNoMoreInteractions(directoryQueue);
   }
 
   @Test
@@ -133,7 +128,7 @@ public class AccountCleanerTest {
 
     accounts.add(deletedDisabledAccount);
 
-    AccountCleaner accountCleaner = new AccountCleaner(accountsManager, directoryQueue);
+    AccountCleaner accountCleaner = new AccountCleaner(accountsManager);
     accountCleaner.onCrawlStart();
     accountCleaner.timeAndProcessCrawlChunk(Optional.empty(), accounts);
     accountCleaner.onCrawlEnd(Optional.empty());
@@ -144,7 +139,6 @@ public class AccountCleanerTest {
     verify(undeletedDisabledDevice, times(AccountCleaner.MAX_ACCOUNT_UPDATES_PER_CHUNK)).setFetchesMessages(eq(false));
 
     verify(accountsManager, times(AccountCleaner.MAX_ACCOUNT_UPDATES_PER_CHUNK)).update(eq(undeletedDisabledAccount));
-    verify(directoryQueue, times(AccountCleaner.MAX_ACCOUNT_UPDATES_PER_CHUNK)).deleteRegisteredUser(notNull(), eq("+14152222222"));
 
     verify(deletedDisabledDevice, never()).setGcmId(any());
     verify(deletedDisabledDevice, never()).setApnId(any());
@@ -156,7 +150,6 @@ public class AccountCleanerTest {
     verify(undeletedEnabledDevice, never()).setFetchesMessages(anyBoolean());
 
     verifyNoMoreInteractions(accountsManager);
-    verifyNoMoreInteractions(directoryQueue);
   }
 
 }

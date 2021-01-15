@@ -63,16 +63,15 @@ public class PushFeedbackProcessorTest {
 
   @Test
   public void testEmpty() throws AccountDatabaseCrawlerRestartException {
-    PushFeedbackProcessor processor = new PushFeedbackProcessor(accountsManager, directoryQueue);
+    PushFeedbackProcessor processor = new PushFeedbackProcessor(accountsManager);
     processor.timeAndProcessCrawlChunk(Optional.of(UUID.randomUUID()), Collections.emptyList());
 
     verifyZeroInteractions(accountsManager);
-    verifyZeroInteractions(directoryQueue);
   }
 
   @Test
   public void testUpdate() throws AccountDatabaseCrawlerRestartException {
-    PushFeedbackProcessor processor = new PushFeedbackProcessor(accountsManager, directoryQueue);
+    PushFeedbackProcessor processor = new PushFeedbackProcessor(accountsManager);
     processor.timeAndProcessCrawlChunk(Optional.of(UUID.randomUUID()), List.of(uninstalledAccount, mixedAccount, stillActiveAccount, freshAccount, cleanAccount));
 
     verify(uninstalledDevice).setApnId(isNull());

@@ -71,19 +71,16 @@ public class DeviceController {
   private final MessagesManager       messages;
   private final RateLimiters          rateLimiters;
   private final Map<String, Integer>  maxDeviceConfiguration;
-  private final DirectoryQueue        directoryQueue;
 
   public DeviceController(PendingDevicesManager pendingDevices,
                           AccountsManager accounts,
                           MessagesManager messages,
-                          DirectoryQueue directoryQueue,
                           RateLimiters rateLimiters,
                           Map<String, Integer> maxDeviceConfiguration)
   {
     this.pendingDevices         = pendingDevices;
     this.accounts               = accounts;
     this.messages               = messages;
-    this.directoryQueue         = directoryQueue;
     this.rateLimiters           = rateLimiters;
     this.maxDeviceConfiguration = maxDeviceConfiguration;
   }
@@ -112,10 +109,6 @@ public class DeviceController {
 
     account.removeDevice(deviceId);
     accounts.update(account);
-
-    if (!account.isEnabled()) {
-      directoryQueue.deleteRegisteredUser(account.getUuid(), account.getNumber());
-    }
 
     messages.clear(account.getNumber(), deviceId);
   }

@@ -40,11 +40,9 @@ public class AccountCleaner extends AccountDatabaseCrawlerListener {
   public static final int MAX_ACCOUNT_UPDATES_PER_CHUNK = 40;
 
   private final AccountsManager accountsManager;
-  private final DirectoryQueue  directoryQueue;
 
-  public AccountCleaner(AccountsManager accountsManager, DirectoryQueue directoryQueue) {
+  public AccountCleaner(AccountsManager accountsManager) {
     this.accountsManager = accountsManager;
-    this.directoryQueue  = directoryQueue;
   }
 
   @Override
@@ -71,8 +69,6 @@ public class AccountCleaner extends AccountDatabaseCrawlerListener {
 
           accountUpdateCount++;
           accountsManager.update(account);
-
-          directoryQueue.deleteRegisteredUser(account.getUuid(), account.getNumber());
         }
       }
     }
