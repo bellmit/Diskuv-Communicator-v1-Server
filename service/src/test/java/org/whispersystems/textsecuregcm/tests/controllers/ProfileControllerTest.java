@@ -123,6 +123,8 @@ public class ProfileControllerTest {
     when((Optional<SyntheticVersionedProfile>)profilesManager.get(eq(AuthHelper.VALID_UUID), eq("someversion"))).     thenReturn(Optional.of(new SyntheticVersionedProfile(new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES], AuthHelper.VALID_UUID)));
     when((Optional<VersionedProfile>)         profilesManager.get(eq(AuthHelper.VALID_UUID_TWO), eq("validversion"))).thenReturn(Optional.of(new VersionedProfile("validversion", "validname", "profiles/validavatar", "profiles/validemail", "validcommitmnet".getBytes())));
 
+    when(accountsManager.get(AuthHelper.VALID_UUID)).thenReturn(Optional.of(capabilitiesAccount));
+
     clearInvocations(rateLimiter);
     clearInvocations(accountsManager);
     clearInvocations(usernamesManager);

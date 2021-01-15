@@ -48,6 +48,7 @@ import org.whispersystems.textsecuregcm.redis.RedisOperation;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
+import org.whispersystems.textsecuregcm.storage.FeatureFlagsManager;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
@@ -76,6 +77,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
@@ -101,6 +103,9 @@ public class MessageController {
   private final MessagesManager        messagesManager;
   private final ApnFallbackManager     apnFallbackManager;
 
+  private final FeatureFlagsManager featureFlagsManager;
+  private final Random random = new Random();
+
   private static final String CONTENT_SIZE_DISTRIBUTION_NAME                     = name(MessageController.class, "messageContentSize");
   private static final String OUTGOING_MESSAGE_LIST_SIZE_BYTES_DISTRIBUTION_NAME = name(MessageController.class, "outgoingMessageListSizeBytes");
 
@@ -112,7 +117,8 @@ public class MessageController {
                            ReceiptSender receiptSender,
                            PossiblySyntheticAccountsManager accountsManager,
                            MessagesManager messagesManager,
-                           ApnFallbackManager apnFallbackManager)
+                           ApnFallbackManager apnFallbackManager,
+                           FeatureFlagsManager featureFlagsManager)
   {
     this.jwtAuthentication      = jwtAuthentication;
     this.rateLimiters           = rateLimiters;
@@ -121,6 +127,7 @@ public class MessageController {
     this.accountsManager        = accountsManager;
     this.messagesManager        = messagesManager;
     this.apnFallbackManager     = apnFallbackManager;
+    this.featureFlagsManager    = featureFlagsManager;
   }
 
   @Timed
@@ -158,53 +165,54 @@ public class MessageController {
       rateLimiters.getMessagesLimiter().validate(source.get().getNumber() + "__" + destinationName);
     }
 
-    if (source.isPresent() && !source.get().isFor(destinationName)) {
-      identifiedMeter.mark();
-    } else if (!source.isPresent()) {
-      unidentifiedMeter.mark();
-    }
-
-    for (final IncomingMessage message : messages.getMessages()) {
-      int contentLength = 0;
-
-      if (!Util.isEmpty(message.getContent())) {
-        contentLength += message.getContent().length();
+      if (source.isPresent() && !source.get().isFor(destinationName)) {
+        identifiedMeter.mark();
+      } else if (!source.isPresent()) {
+        unidentifiedMeter.mark();
       }
 
-      if (!Util.isEmpty(message.getBody())) {
-        contentLength += message.getBody().length();
-      }
+      for (final IncomingMessage message : messages.getMessages()) {
+        int contentLength = 0;
 
-      Metrics.summary(CONTENT_SIZE_DISTRIBUTION_NAME, UserAgentTagUtil.getUserAgentTags(userAgent)).record(contentLength);
+        if (!Util.isEmpty(message.getContent())) {
+          contentLength += message.getContent().length();
+        }
 
-      if (contentLength > MAX_MESSAGE_SIZE) {
-        // TODO Reject the request
-        rejectOversizeMessageMeter.mark();
-      }
-    }
+        if (!Util.isEmpty(message.getBody())) {
+          contentLength += message.getBody().length();
+        }
 
-    try {
-      final boolean isSyncMessage = source.isPresent() && source.get().isFor(destinationName);
+        Metrics.summary(CONTENT_SIZE_DISTRIBUTION_NAME, UserAgentTagUtil.getUserAgentTags(userAgent)).record(contentLength);
 
-      PossiblySyntheticAccount destination;
-
-      if (!isSyncMessage) destination = accountsManager.get(destinationName.getUuid());
-      else                destination = source.get();
-
-      OptionalAccess.verify(source, accessKey, destination);
-
-      validateCompleteDeviceList(destination, messages.getMessages(), isSyncMessage);
-      validateRegistrationIds(destination, messages.getMessages());
-
-      if (destination.getRealAccount().isPresent()) {
-        for (IncomingMessage incomingMessage : messages.getMessages()) {
-          Optional<? extends PossiblySyntheticDevice> destinationDevice = destination.getDevice(incomingMessage.getDestinationDeviceId());
-
-          if (destinationDevice.isPresent() && destinationDevice.get().getRealDevice().isPresent()) {
-            sendMessage(source, outdoorsUUID, destination.getRealAccount().get(), destinationDevice.get().getRealDevice().get(), messages.getTimestamp(), messages.isOnline(), incomingMessage);
-          }
+        if (contentLength > MAX_MESSAGE_SIZE) {
+          // TODO Reject the request
+          rejectOversizeMessageMeter.mark();
         }
       }
+
+      try {
+        boolean isSyncMessage = source.isPresent() && source.get().isFor(destinationName);
+
+        Optional<PossiblySyntheticAccount> destination;
+
+        if (!isSyncMessage) destination = destinationName.hasUuid() ? Optional.of(accountsManager.get(destinationName.getUuid())) : Optional.empty();
+        else                destination = source.isPresent() ? Optional.of(source.get()) : Optional.empty();
+
+        OptionalAccess.verify(source, accessKey, destination.get());
+        assert(destination.isPresent());
+
+        validateCompleteDeviceList(destination.get(), messages.getMessages(), isSyncMessage);
+        validateRegistrationIds(destination.get(), messages.getMessages());
+
+        if (destination.isPresent() && destination.get().getRealAccount().isPresent()) {
+          for (IncomingMessage incomingMessage : messages.getMessages()) {
+            Optional<? extends PossiblySyntheticDevice> destinationDevice = destination.get().getDevice(incomingMessage.getDestinationDeviceId());
+
+            if (destinationDevice.isPresent() && destinationDevice.get().getRealDevice().isPresent()) {
+              sendMessage(source, outdoorsUUID, destination.get().getRealAccount().get(), destinationDevice.get().getRealDevice().get(), messages.getTimestamp(), messages.isOnline(), incomingMessage);
+            }
+          }
+        }
 
       return new SendMessageResponse(!isSyncMessage && source.isPresent() && source.get().getEnabledDeviceCount() > 1);
     } catch (NoSuchUserException e) {

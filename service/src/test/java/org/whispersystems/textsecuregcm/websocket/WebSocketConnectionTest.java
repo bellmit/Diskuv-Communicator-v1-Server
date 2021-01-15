@@ -530,7 +530,7 @@ public class WebSocketConnectionTest {
     final List<OutgoingMessageEntity> messages = List.of(createMessage(1L, false, "senderE164", senderUuid, 1111L, false, "message the first"));
     final OutgoingMessageEntityList firstPage = new OutgoingMessageEntityList(messages, false);
 
-    when(messagesManager.getMessagesForDevice(account.getNumber(), account.getUuid(), 1L, client.getUserAgent(), false)).thenReturn(firstPage);
+    when(messagesManager.getMessagesForDevice(account.getUuid().toString(), account.getUuid(), 1L, client.getUserAgent(), false)).thenReturn(firstPage);
 
     final WebSocketResponseMessage successResponse = mock(WebSocketResponseMessage.class);
     when(successResponse.getStatus()).thenReturn(200);
@@ -739,7 +739,7 @@ public class WebSocketConnectionTest {
 
     String userAgent = "Signal-Desktop/1.2.3";
 
-    when(storedMessages.getMessagesForDevice(account.getNumber(), account.getUuid(), device.getId(), userAgent, false))
+    when(storedMessages.getMessagesForDevice(account.getUuid().toString(), account.getUuid(), device.getId(), userAgent, false))
             .thenReturn(outgoingMessagesList);
 
     final List<CompletableFuture<WebSocketResponseMessage>> futures = new LinkedList<>();
@@ -813,7 +813,7 @@ public class WebSocketConnectionTest {
 
     String userAgent = "Signal-Android/4.68.3";
 
-    when(storedMessages.getMessagesForDevice(account.getNumber(), account.getUuid(), device.getId(), userAgent, false))
+    when(storedMessages.getMessagesForDevice(account.getUuid().toString(), account.getUuid(), device.getId(), userAgent, false))
             .thenReturn(outgoingMessagesList);
 
     final List<CompletableFuture<WebSocketResponseMessage>> futures = new LinkedList<>();

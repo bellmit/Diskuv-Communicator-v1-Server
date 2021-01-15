@@ -10,6 +10,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
 import org.whispersystems.textsecuregcm.configuration.CircuitBreakerConfiguration;
+import org.whispersystems.textsecuregcm.configuration.RetryConfiguration;
 import org.whispersystems.textsecuregcm.controllers.KeysController;
 import org.whispersystems.textsecuregcm.controllers.RateLimitExceededException;
 import org.whispersystems.textsecuregcm.entities.PreKeyCount;
@@ -58,7 +59,7 @@ public class KeysControllerDiskuvThreatModel0bTest {
     CircuitBreakerConfiguration circuitBreakerConfiguration = new CircuitBreakerConfiguration();
     FaultTolerantDatabase faultTolerantDatabase =
         new FaultTolerantDatabase(getClass().getName(), database, circuitBreakerConfiguration);
-    Keys keys = new Keys(faultTolerantDatabase);
+    Keys keys = new Keys(faultTolerantDatabase, new RetryConfiguration());
 
     // mock the accounts
     AccountsManager accounts = mock(AccountsManager.class);
