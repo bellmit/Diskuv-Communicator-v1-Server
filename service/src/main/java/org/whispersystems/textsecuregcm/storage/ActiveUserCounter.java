@@ -68,25 +68,30 @@ public class ActiveUserCounter extends AccountDatabaseCrawlerListener {
     MetricRegistry      metrics           = new MetricRegistry();
     long                intervalTallies[] = new long[INTERVALS.length];
     ActiveUserTally     activeUserTally   = getFinalTallies();
-    Map<String, long[]> platforms         = activeUserTally.getPlatforms();
 
-    platforms.forEach((platform, platformTallies) -> {
-      for (int i = 0; i < INTERVALS.length; i++) {
-        final long tally = platformTallies[i];
-        metrics.register(metricKey(platform, INTERVALS[i]),
-                         (Gauge<Long>) () -> tally);
-        intervalTallies[i] += tally;
-      }
-    });
+    // If and only if we have users, register metrics and sum up
+    // within each interval.
+    if (activeUserTally != null) {
+      Map<String, long[]> platforms = activeUserTally.getPlatforms();
 
-    Map<String, long[]> countries = activeUserTally.getCountries();
-    countries.forEach((country, countryTallies) -> {
-      for (int i = 0; i < INTERVALS.length; i++) {
-        final long tally = countryTallies[i];
-        metrics.register(metricKey(country, INTERVALS[i]),
-                         (Gauge<Long>) () -> tally);
-      }
-    });
+      platforms.forEach((platform, platformTallies) -> {
+        for (int i = 0; i < INTERVALS.length; i++) {
+          final long tally = platformTallies[i];
+          metrics.register(metricKey(platform, INTERVALS[i]),
+                  (Gauge<Long>) () -> tally);
+          intervalTallies[i] += tally;
+        }
+      });
+
+      Map<String, long[]> countries = activeUserTally.getCountries();
+      countries.forEach((country, countryTallies) -> {
+        for (int i = 0; i < INTERVALS.length; i++) {
+          final long tally = countryTallies[i];
+          metrics.register(metricKey(country, INTERVALS[i]),
+                  (Gauge<Long>) () -> tally);
+        }
+      });
+    }
 
     for (int i = 0; i < INTERVALS.length; i++) {
       final long intervalTotal = intervalTallies[i];
@@ -197,7 +202,11 @@ public class ActiveUserCounter extends AccountDatabaseCrawlerListener {
 
   private ActiveUserTally getFinalTallies() {
     try (Jedis jedis = jedisPool.getReadResource()) {
-      return mapper.readValue(jedis.get(TALLY_KEY), ActiveUserTally.class);
+      String tally = jedis.get(TALLY_KEY);
+      if (tally == null) {
+        return null;
+      }
+      return mapper.readValue(tally, ActiveUserTally.class);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
