@@ -143,4 +143,8 @@
         <addNotNullConstraint tableName="messages" columnName="source_outdoors_uuid" />
     </changeSet>
 
+    <changeSet runInTransaction="false" id="14" author="ehren">
+        <sql>DROP INDEX CONCURRENTLY IF EXISTS public.destination_index;</sql>
+    </changeSet>
+
 </databaseChangeLog>
