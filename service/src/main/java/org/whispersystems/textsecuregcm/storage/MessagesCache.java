@@ -122,6 +122,8 @@ public class MessagesCache extends RedisClusterPubSubAdapter<String, String> imp
     }
 
     private void resubscribeAll() {
+        logger.info("Got topology change event, resubscribing all keyspace notifications");
+
         final Set<String> queueNames;
 
         synchronized (messageListenersByQueueName) {
