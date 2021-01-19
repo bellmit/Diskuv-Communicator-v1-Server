@@ -118,6 +118,11 @@ public class WhisperServerConfiguration extends Configuration {
   @NotNull
   @Valid
   @JsonProperty
+  private RedisClusterConfiguration pushSchedulerCluster;
+
+  @NotNull
+  @Valid
+  @JsonProperty
   private MessageCacheConfiguration messageCache;
 
   @NotNull
@@ -299,6 +304,10 @@ public class WhisperServerConfiguration extends Configuration {
 
   public RedisConfiguration getPushScheduler() {
     return pushScheduler;
+  }
+
+  public RedisClusterConfiguration getPushSchedulerCluster() {
+    return pushSchedulerCluster;
   }
 
   public DatabaseConfiguration getMessageStoreConfiguration() {

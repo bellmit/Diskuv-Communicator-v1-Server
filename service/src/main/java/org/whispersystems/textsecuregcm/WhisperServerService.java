@@ -315,10 +315,11 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     ReplicatedJedisPool pubsubClient        = pubSubClientFactory.getRedisClientPool();
     ReplicatedJedisPool pushSchedulerClient = pushSchedulerClientFactory.getRedisClientPool();
 
-    ClientResources generalCacheClientResources = ClientResources.builder().build();
-    ClientResources messageCacheClientResources = ClientResources.builder().build();
-    ClientResources presenceClientResources     = ClientResources.builder().build();
-    ClientResources metricsCacheClientResources = ClientResources.builder().build();
+    ClientResources generalCacheClientResources       = ClientResources.builder().build();
+    ClientResources messageCacheClientResources       = ClientResources.builder().build();
+    ClientResources presenceClientResources           = ClientResources.builder().build();
+    ClientResources metricsCacheClientResources       = ClientResources.builder().build();
+    ClientResources pushSchedulerCacheClientResources = ClientResources.builder().ioThreadPoolSize(4).build();
 
     ConnectionEventLogger.logConnectionEvents(generalCacheClientResources);
     ConnectionEventLogger.logConnectionEvents(messageCacheClientResources);
@@ -329,6 +330,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     FaultTolerantRedisCluster messagesCluster          = new FaultTolerantRedisCluster("message_insert_cluster", config.getMessageCacheConfiguration().getRedisClusterConfiguration(), messageCacheClientResources);
     FaultTolerantRedisCluster clientPresenceCluster    = new FaultTolerantRedisCluster("client_presence_cluster", config.getClientPresenceClusterConfiguration(), presenceClientResources);
     FaultTolerantRedisCluster metricsCluster           = new FaultTolerantRedisCluster("metrics_cluster", config.getMetricsClusterConfiguration(), metricsCacheClientResources);
+    FaultTolerantRedisCluster pushSchedulerCluster     = new FaultTolerantRedisCluster("push_scheduler", config.getPushSchedulerCluster(), pushSchedulerCacheClientResources);
 
     BlockingQueue<Runnable> keyspaceNotificationDispatchQueue = new ArrayBlockingQueue<>(10_000);
     Metrics.gaugeCollectionSize(name(getClass(), "keyspaceNotificationDispatchQueueSize"), Collections.emptyList(), keyspaceNotificationDispatchQueue);
@@ -367,7 +369,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     ExternalServiceCredentialGenerator backupCredentialsGenerator    = new ExternalServiceCredentialGenerator(config.getSecureBackupServiceConfiguration().getUserAuthenticationTokenSharedSecret(), new byte[0], false);
     ExternalServiceCredentialGenerator paymentsCredentialsGenerator  = new ExternalServiceCredentialGenerator(config.getPaymentsServiceConfiguration().getUserAuthenticationTokenSharedSecret(), new byte[0], false);
 
-    ApnFallbackManager       apnFallbackManager = new ApnFallbackManager(pushSchedulerClient, apnSender, accountsManager);
+    ApnFallbackManager       apnFallbackManager = new ApnFallbackManager(pushSchedulerClient, pushSchedulerCluster, apnSender, accountsManager);
     TwilioSmsSender          twilioSmsSender    = new TwilioSmsSender(config.getTwilioConfiguration());
     SmsSender                smsSender          = new SmsSender(twilioSmsSender);
     MessageSender            messageSender      = new MessageSender(apnFallbackManager, clientPresenceManager, messagesManager, gcmSender, apnSender, pushLatencyManager);
