@@ -3,6 +3,7 @@ package org.whispersystems.textsecuregcm.entities;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.signal.zkgroup.profiles.ProfileKeyCommitment;
 import org.whispersystems.textsecuregcm.util.ExactlySize;
@@ -26,6 +27,13 @@ public class CreateProfileRequest {
   @ExactlySize({464})
   private String emailAddress;
 
+  @ExactlySize({0, 80})
+  private String aboutEmoji;
+
+  @JsonProperty
+  @ExactlySize({0, 208, 376, 720})
+  private String about;
+
   @JsonProperty
   @NotNull
   @JsonDeserialize(using = ProfileKeyCommitmentAdapter.Deserializing.class)
@@ -34,12 +42,14 @@ public class CreateProfileRequest {
 
   public CreateProfileRequest() {}
 
-  public CreateProfileRequest(ProfileKeyCommitment commitment, String version, String name, boolean wantsAvatar, String emailAddress) {
+  public CreateProfileRequest(ProfileKeyCommitment commitment, String version, String name, String emailAddress, String aboutEmoji, String about, boolean wantsAvatar) {
     this.commitment = commitment;
     this.version    = version;
     this.name       = name;
-    this.avatar     = wantsAvatar;
     this.emailAddress = emailAddress;
+    this.aboutEmoji = aboutEmoji;
+    this.about      = about;
+    this.avatar     = wantsAvatar;
   }
 
   public ProfileKeyCommitment getCommitment() {
@@ -60,5 +70,13 @@ public class CreateProfileRequest {
 
   public String getEmailAddress() {
     return emailAddress;
+  }
+
+  public String getAboutEmoji() {
+    return StringUtils.stripToNull(aboutEmoji);
+  }
+
+  public String getAbout() {
+    return StringUtils.stripToNull(about);
   }
 }

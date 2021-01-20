@@ -66,7 +66,9 @@ public class AuthHelper {
   public static final UUID   DISABLED_UUID             = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress(DISABLED_EMAIL);
   public static final String DISABLED_PASSWORD         = "poof";
 
+  public static final String UNDISCOVERABLE_BEARER_TOKEN     = "blinky";
   public static final long   UNDISCOVERABLE_DEVICE_ID = 1L;
+  public static final String UNDISCOVERABLE_EMAIL            = "undiscoverable@test.com";
   public static final String UNDISCOVERABLE_NUMBER   = "+18005551234";
   public static final UUID   UNDISCOVERABLE_UUID     = UUID.randomUUID();
   public static final String UNDISCOVERABLE_PASSWORD = "IT'S A SECRET TO EVERYBODY.";
@@ -94,6 +96,7 @@ public class AuthHelper {
     when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN)).thenReturn(VALID_EMAIL);
     when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN_TWO)).thenReturn(VALID_EMAIL_TWO);
     when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(DISABLED_BEARER_TOKEN)).thenReturn(DISABLED_EMAIL);
+    when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(UNDISCOVERABLE_BEARER_TOKEN)).thenReturn(UNDISCOVERABLE_EMAIL);
 
     when(VALID_CREDENTIALS.verify(VALID_PASSWORD)).thenReturn(true);
     when(VALID_CREDENTIALS_TWO.verify(VALID_PASSWORD_TWO)).thenReturn(true);

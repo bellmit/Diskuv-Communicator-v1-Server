@@ -3,7 +3,6 @@ package org.whispersystems.textsecuregcm.storage;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.whispersystems.textsecuregcm.entities.DeliveryCertificate;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticVersionedProfile;
 import org.whispersystems.textsecuregcm.util.ByteArrayAdapter;
 
@@ -24,17 +23,25 @@ public class VersionedProfile implements PossiblySyntheticVersionedProfile  {
   private String emailAddress;
 
   @JsonProperty
+  private String aboutEmoji;
+
+  @JsonProperty
+  private String about;
+
+  @JsonProperty
   @JsonSerialize(using = ByteArrayAdapter.Serializing.class)
   @JsonDeserialize(using = ByteArrayAdapter.Deserializing.class)
   private byte[] commitment;
 
   public VersionedProfile() {}
 
-  public VersionedProfile(String version, String name, String avatar, String emailAddress, byte[] commitment) {
+  public VersionedProfile(String version, String name, String avatar, String emailAddress, String aboutEmoji, String about, byte[] commitment) {
     this.version    = version;
     this.name       = name;
     this.avatar     = avatar;
     this.emailAddress = emailAddress;
+    this.aboutEmoji = aboutEmoji;
+    this.about      = about;
     this.commitment = commitment;
   }
 
@@ -57,6 +64,14 @@ public class VersionedProfile implements PossiblySyntheticVersionedProfile  {
 
   public String getEmailAddress() {
     return emailAddress;
+  }
+
+  public String getAboutEmoji() {
+    return aboutEmoji;
+  }
+
+  public String getAbout() {
+    return about;
   }
 
   public byte[] getCommitment() {

@@ -33,6 +33,6 @@ public class CertificateGeneratorTest {
 
         assertTrue(certificateGenerator.createFor(account, device, true).length > 0);
 
-        assertThrows(IllegalArgumentException.class, () -> certificateGenerator.createFor(account, device, false));
+        org.junit.Assert.assertThrows(IllegalArgumentException.class, () -> certificateGenerator.createFor(account, device, false));
     }
 }

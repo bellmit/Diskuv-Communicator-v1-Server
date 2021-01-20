@@ -16,7 +16,6 @@ import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
 import org.signal.zkgroup.profiles.ProfileKeyCommitment;
 import org.signal.zkgroup.profiles.ServerZkProfileOperations;
-import com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
 import org.whispersystems.textsecuregcm.controllers.ProfileController;
 import org.whispersystems.textsecuregcm.controllers.RateLimitExceededException;
@@ -30,12 +29,10 @@ import org.whispersystems.textsecuregcm.s3.PostPolicyGenerator;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.PaymentAddress;
-import org.whispersystems.textsecuregcm.storage.ProfilesManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.storage.VersionedProfile;
 import org.whispersystems.textsecuregcm.synthetic.HmacDrbg;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
-import org.whispersystems.textsecuregcm.synthetic.SyntheticVersionedProfile;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
 import org.whispersystems.textsecuregcm.util.SystemMapper;
 
@@ -48,7 +45,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -60,7 +56,7 @@ import static org.mockito.Mockito.when;
 
 public class ProfileControllerTest {
 
-  private static AccountsManager  accountsManager     = mock(AccountsManager.class );
+  private static AccountsManager accountsManager     = mock(AccountsManager.class );
   private static PossiblySyntheticAccountsManager  possiblySyntheticAccountsManager     = new PossiblySyntheticAccountsManager(accountsManager, new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES]);
   private static org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager  profilesManager     = mock(org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager.class);
   private static UsernamesManager usernamesManager    = mock(UsernamesManager.class);
@@ -124,8 +120,8 @@ public class ProfileControllerTest {
     when(usernamesManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of("n00bkiller"));
     when(usernamesManager.get("n00bkiller")).thenReturn(Optional.of(AuthHelper.VALID_UUID_TWO));
 
-    when((Optional<SyntheticVersionedProfile>)profilesManager.get(eq(AuthHelper.VALID_UUID), eq("someversion"))).     thenReturn(Optional.of(new SyntheticVersionedProfile(new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES], AuthHelper.VALID_UUID)));
-    when((Optional<VersionedProfile>)         profilesManager.get(eq(AuthHelper.VALID_UUID_TWO), eq("validversion"))).thenReturn(Optional.of(new VersionedProfile("validversion", "validname", "profiles/validavatar", "profiles/validemail", "validcommitmnet".getBytes())));
+    when(profilesManager.get(eq(AuthHelper.VALID_UUID), eq("someversion"))).thenReturn(Optional.empty());
+    when(profilesManager.get(eq(AuthHelper.VALID_UUID_TWO), eq("validversion"))).thenReturn(Optional.of(new VersionedProfile("validversion", "validname", "profiles/validavatar", "profiles/validemail", "emoji", "about", "validcommitmnet".getBytes())));
 
     when(accountsManager.get(AuthHelper.VALID_UUID)).thenReturn(Optional.of(capabilitiesAccount));
 
@@ -142,7 +138,7 @@ public class ProfileControllerTest {
                               .target("/v1/profile/" + AuthHelper.VALID_UUID_TWO)
                               .request()
                               .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
-                              .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                              .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
                               .get(Profile.class);
 
     assertThat(profile.getIdentityKey()).isEqualTo("bar");
@@ -163,7 +159,7 @@ public class ProfileControllerTest {
                               .target("/v1/profile/" + AuthHelper.VALID_NUMBER_TWO)
                               .request()
                               .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                              .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                              .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                               .get(Profile.class);
 
     assertThat(profile.getIdentityKey()).isEqualTo("bar");
@@ -185,7 +181,7 @@ public class ProfileControllerTest {
               .target("/v1/profile/username/n00bkiller")
               .request()
               .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-              .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+              .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
               .get(Profile.class);
     });
   }
@@ -217,7 +213,7 @@ public class ProfileControllerTest {
                               .target("/v1/profile/username/n00bkillerzzzzz")
                               .request()
                               .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                              .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                              .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                               .get();
 
     // Diskuv Change: Do not allow profile retrieval by username, since no access control on profile retrieval
@@ -232,7 +228,7 @@ public class ProfileControllerTest {
                                  .target("/v1/profile/" + AuthHelper.VALID_UUID_TWO)
                                  .request()
                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
-                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
+                                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                                  .get();
 
     assertThat(response.getStatus()).isEqualTo(401);
@@ -245,7 +241,7 @@ public class ProfileControllerTest {
                               .target("/v1/profile/" + AuthHelper.VALID_UUID)
                               .request()
                               .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                              .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                              .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                               .get(Profile.class);
 
     assertThat(profile.getCapabilities().isGv2()).isTrue();
@@ -259,7 +255,7 @@ public class ProfileControllerTest {
                                  .target("/v1/profile/name/123456789012345678901234567890123456789012345678901234567890123456789012")
                                  .request()
                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .put(Entity.text(""));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -274,7 +270,7 @@ public class ProfileControllerTest {
                                  .target("/v1/profile/name/123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678")
                                  .request()
                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .put(Entity.text(""));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -289,7 +285,7 @@ public class ProfileControllerTest {
                                  .target("/v1/profile/name/1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
                                  .request()
                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .put(Entity.text(""));
 
     assertThat(response.getStatus()).isEqualTo(400);
@@ -306,8 +302,8 @@ public class ProfileControllerTest {
                                                               .target("/v1/profile/")
                                                               .request()
                                                               .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                                                              .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
-                                                              .put(Entity.entity(new CreateProfileRequest(commitment, "someversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", true, someEmail), MediaType.APPLICATION_JSON_TYPE), ProfileAvatarUploadAttributes.class);
+                                                              .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                                              .put(Entity.entity(new CreateProfileRequest(commitment, "someversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", someEmail, null, null, true), MediaType.APPLICATION_JSON_TYPE), ProfileAvatarUploadAttributes.class);
 
     ArgumentCaptor<VersionedProfile> profileArgumentCaptor = ArgumentCaptor.forClass(VersionedProfile.class);
 
@@ -321,7 +317,8 @@ public class ProfileControllerTest {
     assertThat(profileArgumentCaptor.getValue().getVersion()).isEqualTo("someversion");
     assertThat(profileArgumentCaptor.getValue().getName()).isEqualTo("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678");
     assertThat(profileArgumentCaptor.getValue().getEmailAddress()).isEqualTo(someEmail);
-  }
+    assertThat(profileArgumentCaptor.getValue().getAboutEmoji()).isNull();
+    assertThat(profileArgumentCaptor.getValue().getAbout()).isNull();  }
 
   @Test
   public void testSetProfileWantAvatarUploadWithBadProfileSize() throws InvalidInputException {
@@ -331,8 +328,8 @@ public class ProfileControllerTest {
                                  .target("/v1/profile/")
                                  .request()
                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
-                                 .put(Entity.entity(new CreateProfileRequest(commitment, "someversion", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", true, "someemail"), MediaType.APPLICATION_JSON_TYPE));
+                                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                 .put(Entity.entity(new CreateProfileRequest(commitment, "someversion", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", "someemail", null, null, true), MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(422);
   }
@@ -347,8 +344,8 @@ public class ProfileControllerTest {
                                  .target("/v1/profile/")
                                  .request()
                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
-                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
-                                 .put(Entity.entity(new CreateProfileRequest(commitment, "anotherversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", false, someEmail), MediaType.APPLICATION_JSON_TYPE));
+                                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                                 .put(Entity.entity(new CreateProfileRequest(commitment, "anotherversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", someEmail, null, null, false), MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.hasEntity()).isFalse();
@@ -368,18 +365,19 @@ public class ProfileControllerTest {
     assertThat(profileArgumentCaptor.getValue().getVersion()).isEqualTo("anotherversion");
     assertThat(profileArgumentCaptor.getValue().getName()).isEqualTo("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678");
     assertThat(profileArgumentCaptor.getValue().getEmailAddress()).isEqualTo(someEmail);
-  }
+    assertThat(profileArgumentCaptor.getValue().getAboutEmoji()).isNull();
+    assertThat(profileArgumentCaptor.getValue().getAbout()).isNull();  }
 
   @Test
-  public void testSetProvfileWithAvatarUploadAndPreviousAvatar() throws InvalidInputException {
+  public void testSetProfileWithAvatarUploadAndPreviousAvatar() throws InvalidInputException {
     ProfileKeyCommitment commitment = new ProfileKey(new byte[32]).getCommitment(AuthHelper.VALID_UUID_TWO);
 
     ProfileAvatarUploadAttributes uploadAttributes= resources.getJerseyTest()
                                                              .target("/v1/profile/")
                                                              .request()
                                                              .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
-                                                             .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
-                                                             .put(Entity.entity(new CreateProfileRequest(commitment, "validversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", true, someEmail), MediaType.APPLICATION_JSON_TYPE), ProfileAvatarUploadAttributes.class);
+                                                             .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                                                             .put(Entity.entity(new CreateProfileRequest(commitment, "validversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", someEmail, null, null, true), MediaType.APPLICATION_JSON_TYPE), ProfileAvatarUploadAttributes.class);
 
     ArgumentCaptor<VersionedProfile> profileArgumentCaptor = ArgumentCaptor.forClass(VersionedProfile.class);
 
@@ -392,19 +390,22 @@ public class ProfileControllerTest {
     assertThat(profileArgumentCaptor.getValue().getVersion()).isEqualTo("validversion");
     assertThat(profileArgumentCaptor.getValue().getName()).isEqualTo("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678");
     assertThat(profileArgumentCaptor.getValue().getEmailAddress()).isEqualTo(someEmail);
-  }
+    assertThat(profileArgumentCaptor.getValue().getAboutEmoji()).isNull();
+    assertThat(profileArgumentCaptor.getValue().getAbout()).isNull();  }
 
   @Test
   public void testSetProfileExtendedName() throws InvalidInputException {
     ProfileKeyCommitment commitment = new ProfileKey(new byte[32]).getCommitment(AuthHelper.VALID_UUID_TWO);
 
     final String name = RandomStringUtils.randomAlphabetic(380);
+    final String email = RandomStringUtils.randomAlphabetic(464);
 
     resources.getJerseyTest()
             .target("/v1/profile/")
             .request()
-            .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER_TWO, AuthHelper.VALID_PASSWORD_TWO))
-            .put(Entity.entity(new CreateProfileRequest(commitment, "validversion", name, true), MediaType.APPLICATION_JSON_TYPE), ProfileAvatarUploadAttributes.class);
+             .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+             .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+             .put(Entity.entity(new CreateProfileRequest(commitment, "validversion", name, email, "", "", true), MediaType.APPLICATION_JSON_TYPE), ProfileAvatarUploadAttributes.class);
 
     ArgumentCaptor<VersionedProfile> profileArgumentCaptor = ArgumentCaptor.forClass(VersionedProfile.class);
 
@@ -416,6 +417,47 @@ public class ProfileControllerTest {
     assertThat(profileArgumentCaptor.getValue().getAvatar()).startsWith("profiles/");
     assertThat(profileArgumentCaptor.getValue().getVersion()).isEqualTo("validversion");
     assertThat(profileArgumentCaptor.getValue().getName()).isEqualTo(name);
+    assertThat(profileArgumentCaptor.getValue().getAboutEmoji()).isNull();
+    assertThat(profileArgumentCaptor.getValue().getAbout()).isNull();
+  }
+
+  @Test
+  public void testSetProfileEmojiAndBioText() throws InvalidInputException {
+    ProfileKeyCommitment commitment = new ProfileKey(new byte[32]).getCommitment(AuthHelper.VALID_UUID);
+
+    clearInvocations(AuthHelper.VALID_ACCOUNT_TWO);
+
+    final String name = RandomStringUtils.randomAlphabetic(380);
+    final String email = RandomStringUtils.randomAlphabetic(464);
+    final String emoji = RandomStringUtils.randomAlphanumeric(80);
+    final String text = RandomStringUtils.randomAlphanumeric(720);
+
+    Response response = resources.getJerseyTest()
+            .target("/v1/profile/")
+            .request()
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+            .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+            .put(Entity.entity(new CreateProfileRequest(commitment, "anotherversion", name, email, emoji, text, false), MediaType.APPLICATION_JSON_TYPE));
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.hasEntity()).isFalse();
+
+    ArgumentCaptor<VersionedProfile> profileArgumentCaptor = ArgumentCaptor.forClass(VersionedProfile.class);
+
+    verify(profilesManager, times(1)).get(eq(AuthHelper.VALID_UUID_TWO), eq("anotherversion"));
+    verify(profilesManager, times(1)).set(eq(AuthHelper.VALID_UUID_TWO), profileArgumentCaptor.capture());
+
+    verify(AuthHelper.VALID_ACCOUNT_TWO).setProfileName(name);
+    verify(AuthHelper.VALID_ACCOUNT_TWO).setAvatar(null);
+
+    verifyNoMoreInteractions(s3client);
+
+    assertThat(profileArgumentCaptor.getValue().getCommitment()).isEqualTo(commitment.serialize());
+    assertThat(profileArgumentCaptor.getValue().getAvatar()).isNull();
+    assertThat(profileArgumentCaptor.getValue().getVersion()).isEqualTo("anotherversion");
+    assertThat(profileArgumentCaptor.getValue().getName()).isEqualTo(name);
+    assertThat(profileArgumentCaptor.getValue().getAboutEmoji()).isEqualTo(emoji);
+    assertThat(profileArgumentCaptor.getValue().getAbout()).isEqualTo(text);
   }
 
   @Test
@@ -424,11 +466,13 @@ public class ProfileControllerTest {
                                .target("/v1/profile/" + AuthHelper.VALID_UUID_TWO + "/validversion")
                                .request()
                                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                               .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                               .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                .get(Profile.class);
 
     assertThat(profile.getIdentityKey()).isEqualTo("bar");
     assertThat(profile.getName()).isEqualTo("validname");
+    assertThat(profile.getAbout()).isEqualTo("about");
+    assertThat(profile.getAboutEmoji()).isEqualTo("emoji");
     assertThat(profile.getAvatar()).isEqualTo("profiles/validavatar");
     assertThat(profile.getCapabilities().isGv2()).isFalse();
     assertThat(profile.getCapabilities().isGv1Migration()).isFalse();

@@ -47,6 +47,16 @@ public class SyntheticProfileState {
   // org.whispersystems.signalservice.api.DiskuvSignalServiceAccountManagerAdjunct#EMAIL_ADDRESS_PADDED_LENGTH
   private static final int EMAIL_ADDRESS_PADDED_LENGTH = 320;
 
+  // org.whispersystems.signalservice.api.crypto.ProfileCipher#ABOUT_PADDED_LENGTH_1
+  private static final int ABOUT_PADDED_LENGTH_1 = 128;
+  // org.whispersystems.signalservice.api.crypto.ProfileCipher#ABOUT_PADDED_LENGTH_2
+  private static final int ABOUT_PADDED_LENGTH_2 = 254;
+  // org.whispersystems.signalservice.api.crypto.ProfileCipher#ABOUT_PADDED_LENGTH_3
+  private static final int ABOUT_PADDED_LENGTH_3 = 512;
+
+  // org.whispersystems.signalservice.api.crypto.ProfileCipher#EMOJI_PADDED_LENGTH
+  private static final int EMOJI_PADDED_LENGTH = 32;
+
   // A profile name is Concat(required first name | 0x00 | optional last name).
   private static final double AVERAGE_PROFILE_NAME_LENGTH = 14;
   private static final int MINIMUM_PROFILE_NAME_LENGTH = 2;
@@ -54,6 +64,9 @@ public class SyntheticProfileState {
   // https://www.freshaddress.com/blog/long-email-addresses/
   private static final double AVERAGE_PROFILE_EMAIL_ADDRESS_LENGTH = 22;
   private static final int MINIMUM_PROFILE_EMAIL_ADDRESS_LENGTH = 10;
+
+  private static final double AVERAGE_PROFILE_ABOUT_LENGTH = 10;
+  private static final int MINIMUM_PROFILE_ABOUT_LENGTH = 0;
 
   private static final float PERCENT_OF_PROFILES_HAVING_AVATAR = 0.3f;
 
@@ -64,10 +77,13 @@ public class SyntheticProfileState {
   private final byte[] commitment;
   private final PoissonDistribution profileNameLengthDistribution;
   private final PoissonDistribution profileEmailAddressLengthDistribution;
+  private final PoissonDistribution profileAboutLengthDistribution;
   private final RandomStringGenerator unicodeGenerator;
   private final String name;
   private final String emailAddress;
   private final String avatar;
+  private final String about;
+  private final String aboutEmoji;
 
   public SyntheticProfileState(byte[] sharedEntropyInput, UUID accountUuid) {
     // Random number sequences loosely following NIST SP 800-90A Rev. 1:
@@ -83,6 +99,11 @@ public class SyntheticProfileState {
     byte[] personalizationString = makePersonalizationString(accountUuid);
     HmacDrbg drbg = new HmacDrbg(sharedEntropyInput, personalizationString);
     this.random = new HmacDrbgRandom(drbg);
+
+    // !!!!!!!!!!!!!!!!!!!!!!
+    // The order below matters!
+    // Place new fields at the bottom so that the existing profiles are not disturbed.
+    // !!!!!!!!!!!!!!!!!!!!!!
 
     // Make profile key
     ProfileKey profileKey = makeProfileKey();
@@ -103,6 +124,12 @@ public class SyntheticProfileState {
             AVERAGE_PROFILE_EMAIL_ADDRESS_LENGTH,
             DEFAULT_EPSILON,
             DEFAULT_MAX_ITERATIONS);
+    profileAboutLengthDistribution =
+        new PoissonDistribution(
+            RandomGeneratorFactory.createRandomGenerator(random),
+            AVERAGE_PROFILE_ABOUT_LENGTH,
+            DEFAULT_EPSILON,
+            DEFAULT_MAX_ITERATIONS);
     unicodeGenerator = new RandomStringGenerator.Builder().usingRandom(random::nextInt).build();
 
     // Make encrypted profile name
@@ -113,6 +140,10 @@ public class SyntheticProfileState {
 
     // Make reference to avatar
     this.avatar = makeAvatar();
+
+    // Make about/emoji
+    this.about = makeAbout();
+    this.aboutEmoji = makeAboutEmoji();
   }
 
   public UUID getAccountUuid() {
@@ -133,6 +164,14 @@ public class SyntheticProfileState {
 
   public String getEmailAddress() {
     return emailAddress;
+  }
+
+  public String getAbout() {
+    return about;
+  }
+
+  public String getAboutEmoji() {
+    return aboutEmoji;
   }
 
   public String getAvatar() {
@@ -173,6 +212,19 @@ public class SyntheticProfileState {
     return encryptProfileField(input, EMAIL_ADDRESS_PADDED_LENGTH);
   }
 
+  private String makeAbout() {
+    int length = Math.max(MINIMUM_PROFILE_ABOUT_LENGTH, profileAboutLengthDistribution.sample());
+    byte[] input = unicodeGenerator.generate(length).getBytes(StandardCharsets.UTF_8);
+
+    final int paddedLength = getProfileAboutPaddedLength(input);
+    return encryptProfileField(input, paddedLength);
+  }
+
+  private String makeAboutEmoji() {
+    byte[] input = new byte[0];
+    return encryptProfileField(input, EMOJI_PADDED_LENGTH);
+  }
+
   private String makeAvatar() {
     // Make a synthetic avatar. To actually return an avatar, you either have to get the avatar
     // uploaded -or-
@@ -205,6 +257,18 @@ public class SyntheticProfileState {
       paddedLength = NAME_PADDED_LENGTH_2;
     }
     return paddedLength;
+  }
+
+  private int getProfileAboutPaddedLength(byte[] input) {
+    // borrowed from
+    // org.whispersystems.signalservice.api.crypto.ProfileCipher#getTargetAboutLength
+    if (input.length <= ABOUT_PADDED_LENGTH_1) {
+      return ABOUT_PADDED_LENGTH_1;
+    } else if (input.length < ABOUT_PADDED_LENGTH_2){
+      return ABOUT_PADDED_LENGTH_2;
+    } else {
+      return ABOUT_PADDED_LENGTH_3;
+    }
   }
 
   private String encryptProfileField(byte[] input, int paddedLength) {

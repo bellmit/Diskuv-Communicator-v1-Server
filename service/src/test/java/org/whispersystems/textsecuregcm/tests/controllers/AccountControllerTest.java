@@ -915,6 +915,7 @@ public class AccountControllerTest {
     assertThat(pinCapture.getValue().length()).isEqualTo(40);
   }
 
+  @Ignore("Diskuv does not do payments")
   @Test
   public void testSetPayments() {
     PaymentAddress paymentAddress = new PaymentAddress("some address", "V15Pf5JsFcQF6AtlM3vo3OhGEgFwTh8G3iDDvShpr8QzoJmFQ+a2xb3PoXRmGF60DLq1RR2o8Fgw+f953mKvNA==");
@@ -962,6 +963,7 @@ public class AccountControllerTest {
     assertThat(response.getStatus()).isEqualTo(422);
   }
 
+  @Ignore("Diskuv does not do payments")
   @Test
   public void testSetPaymentsEmptyAddress() {
     PaymentAddress paymentAddress = new PaymentAddress(null, "V15Pf5JsFcQF6AtlM3vo3OhGEgFwTh8G3iDDvShpr8QzoJmFQ+a2xb3PoXRmGF60DLq1RR2o8Fgw+f953mKvNA==");

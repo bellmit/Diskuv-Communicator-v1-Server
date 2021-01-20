@@ -25,6 +25,6 @@ public class PaymentsController {
   @Path("/auth")
   @Produces(MediaType.APPLICATION_JSON)
   public ExternalServiceCredentials getAuth(@Auth Account account) {
-    return paymentsServiceCredentialGenerator.generateFor(account.getUuid().toString());
+    throw new javax.ws.rs.WebApplicationException(javax.ws.rs.core.Response.Status.NOT_FOUND);
   }
 }

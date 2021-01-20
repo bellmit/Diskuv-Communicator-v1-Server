@@ -20,6 +20,12 @@ public class Profile {
   private String name;
 
   @JsonProperty
+  private String about;
+
+  @JsonProperty
+  private String aboutEmoji;
+
+  @JsonProperty
   private String avatar;
 
   @JsonProperty
@@ -50,7 +56,7 @@ public class Profile {
 
   public Profile() {}
 
-  public Profile(String name, String avatar, String identityKey,
+  public Profile(String name, String about, String aboutEmoji, String avatar, String identityKey,
                  String unidentifiedAccess, boolean unrestrictedUnidentifiedAccess,
                  UserCapabilities capabilities, String username, UUID uuid,
                  String emailAddress,
@@ -58,6 +64,8 @@ public class Profile {
                  List<PaymentAddress> payments)
   {
     this.name                           = name;
+    this.about                          = about;
+    this.aboutEmoji                     = aboutEmoji;
     this.avatar                         = avatar;
     this.identityKey                    = identityKey;
     this.unidentifiedAccess             = unidentifiedAccess;
@@ -78,6 +86,14 @@ public class Profile {
   @VisibleForTesting
   public String getName() {
     return name;
+  }
+
+  public String getAbout() {
+    return about;
+  }
+
+  public String getAboutEmoji() {
+    return aboutEmoji;
   }
 
   @VisibleForTesting

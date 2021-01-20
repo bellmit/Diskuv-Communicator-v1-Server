@@ -13,5 +13,9 @@ public interface PossiblySyntheticVersionedProfile {
 
   String getEmailAddress();
 
+  String getAboutEmoji();
+
+  String getAbout();
+
   byte[] getCommitment();
 }

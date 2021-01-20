@@ -402,7 +402,7 @@ public class KeysTest {
   }
 
   @Test
-  public void testGetKeysWithException() {
+  public void testGetKeysWithException() throws Exception {
     Jdbi jdbi = mock(Jdbi.class);
     when(jdbi.getConfig(any())).thenReturn(mock(SerializableTransactionRunner.Configuration.class));
 

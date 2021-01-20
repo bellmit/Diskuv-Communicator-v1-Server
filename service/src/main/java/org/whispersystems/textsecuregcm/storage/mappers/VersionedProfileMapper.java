@@ -16,6 +16,8 @@ public class VersionedProfileMapper implements RowMapper<VersionedProfile> {
                                 resultSet.getString(Profiles.NAME),
                                 resultSet.getString(Profiles.AVATAR),
                                 resultSet.getString(Profiles.EMAIL_ADDRESS),
+                                resultSet.getString(Profiles.ABOUT_EMOJI),
+                                resultSet.getString(Profiles.ABOUT),
                                 resultSet.getBytes(Profiles.COMMITMENT));
   }
 }

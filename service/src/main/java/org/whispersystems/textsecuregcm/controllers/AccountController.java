@@ -567,8 +567,7 @@ public class AccountController {
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   public void setPayments(@Auth Account account, @Valid PaymentAddressList payments) {
-    account.setPayments(payments.getPayments());
-    accounts.update(account);
+    throw new javax.ws.rs.WebApplicationException(javax.ws.rs.core.Response.Status.NOT_FOUND);
   }
 
   private CaptchaRequirement requiresCaptcha(String accountId,

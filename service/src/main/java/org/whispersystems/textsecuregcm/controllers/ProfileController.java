@@ -107,7 +107,7 @@ public class ProfileController {
     String                                  avatar         = request.isAvatar() ? generateAvatarObjectName() : null;
     Optional<ProfileAvatarUploadAttributes> response       = Optional.empty();
 
-    profilesManager.set(account.getUuid(), new VersionedProfile(request.getVersion(), request.getName(), avatar, request.getEmailAddress(), request.getCommitment().serialize()));
+    profilesManager.set(account.getUuid(), new VersionedProfile(request.getVersion(), request.getName(), avatar, request.getEmailAddress(), request.getAboutEmoji(), request.getAbout(), request.getCommitment().serialize()));
 
     if (request.isAvatar()) {
       Optional<String> currentAvatar = Optional.empty();
@@ -198,13 +198,17 @@ public class ProfileController {
       Optional<String>                                      username = usernamesManager.get(accountProfile.getUuid());
       Optional<? extends PossiblySyntheticVersionedProfile> profile  = profilesManager.get(uuid, version);
 
-      String           name         = profile.map(PossiblySyntheticVersionedProfile::getName).orElse(accountProfile.getProfileName());
-      String           emailAddress = profile.map(PossiblySyntheticVersionedProfile::getEmailAddress).orElse(accountProfile.getProfileEmailAddress());
-      String           avatar       = profile.map(PossiblySyntheticVersionedProfile::getAvatar).orElse(accountProfile.getAvatar());
-
+      String                   name         = profile.map(PossiblySyntheticVersionedProfile::getName).orElse(accountProfile.getProfileName());
+      String                   emailAddress = profile.map(PossiblySyntheticVersionedProfile::getEmailAddress).orElse(accountProfile.getProfileEmailAddress());
+      String                   about        = profile.map(PossiblySyntheticVersionedProfile::getAbout).orElse(null);
+      String                   aboutEmoji   = profile.map(PossiblySyntheticVersionedProfile::getAboutEmoji).orElse(null);
+      String                   avatar       = profile.map(PossiblySyntheticVersionedProfile::getAvatar).orElse(accountProfile.getAvatar());
+      
       Optional<ProfileKeyCredentialResponse> credential = getProfileCredential(credentialRequest, profile, uuid);
 
       return Optional.of(new Profile(name,
+                                     about,
+                                     aboutEmoji,
                                      avatar,
                                      accountProfile.getIdentityKey(),
                                      UnidentifiedAccessChecksum.generateFor(accountProfile.getUnidentifiedAccessKey()),
@@ -245,6 +249,8 @@ public class ProfileController {
     }
 
     return new Profile(accountProfile.get().getProfileName(),
+                       null,
+                       null,
                        accountProfile.get().getAvatar(),
                        accountProfile.get().getIdentityKey(),
                        UnidentifiedAccessChecksum.generateFor(accountProfile.get().getUnidentifiedAccessKey()),
@@ -315,6 +321,8 @@ public class ProfileController {
     Optional<String> username = usernamesManager.get(accountProfile.getUuid());
 
     return new Profile(accountProfile.getProfileName(),
+                       null,
+                       null,
                        accountProfile.getAvatar(),
                        accountProfile.getIdentityKey(),
                        UnidentifiedAccessChecksum.generateFor(accountProfile.getUnidentifiedAccessKey()),

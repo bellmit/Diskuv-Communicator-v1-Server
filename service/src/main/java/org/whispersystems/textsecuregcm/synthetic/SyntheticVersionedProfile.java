@@ -33,6 +33,16 @@ public class SyntheticVersionedProfile implements PossiblySyntheticVersionedProf
   }
 
   @Override
+  public String getAboutEmoji() {
+    return profileState.getAboutEmoji();
+  }
+
+  @Override
+  public String getAbout() {
+    return profileState.getAbout();
+  }
+
+  @Override
   public byte[] getCommitment() {
     return profileState.getCommitment();
   }

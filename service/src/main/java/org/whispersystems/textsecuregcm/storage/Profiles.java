@@ -19,6 +19,8 @@ public class Profiles {
   public static final String NAME          = "name";
   public static final String AVATAR        = "avatar";
   public static final String EMAIL_ADDRESS = "email_address";
+  public static final String ABOUT_EMOJI   = "about_emoji";
+  public static final String ABOUT         = "about";
   public static final String COMMITMENT    = "commitment";
 
   private final MetricRegistry metricRegistry = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
@@ -43,6 +45,8 @@ public class Profiles {
               .bind("name", profile.getName())
               .bind("avatar", profile.getAvatar())
               .bind("email_address", profile.getEmailAddress())
+              .bind("about_emoji", profile.getAboutEmoji())
+              .bind("about", profile.getAbout())
               .bind("commitment", profile.getCommitment())
               .execute();
       }

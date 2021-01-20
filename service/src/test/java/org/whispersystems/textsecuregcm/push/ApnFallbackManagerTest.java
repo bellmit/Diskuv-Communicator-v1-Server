@@ -72,6 +72,7 @@ public class ApnFallbackManagerTest extends AbstractRedisClusterTest {
         final String redisUrl = String.format("redis://127.0.0.1:%d", redisServer.ports().get(0));
 
         final ReplicatedJedisPool replicatedJedisPool = new RedisClientFactory("test-pool",
+                5_000,
                 redisUrl,
                 List.of(redisUrl),
                 new CircuitBreakerConfiguration()).getRedisClientPool();

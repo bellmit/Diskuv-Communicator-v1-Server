@@ -16,10 +16,10 @@ public class PossiblySyntheticProfilesManager {
     this.sharedEntropyInput = sharedEntropyInput;
   }
 
-  public Optional<? extends PossiblySyntheticVersionedProfile> get(UUID accountUuid, String version) {
+  public Optional<PossiblySyntheticVersionedProfile> get(UUID accountUuid, String version) {
     Optional<VersionedProfile> profile = profilesManager.get(accountUuid, version);
     if (profile.isPresent()) {
-      return profile;
+      return Optional.of(profile.get());
     }
     SyntheticVersionedProfile syntheticProfile = new SyntheticVersionedProfile(sharedEntropyInput, accountUuid);
     if (syntheticProfile.getKeyVersion().equals(version)) {
