@@ -18,6 +18,7 @@ import org.whispersystems.textsecuregcm.entities.SignedPreKey;
 import org.whispersystems.textsecuregcm.limits.RateLimiter;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.storage.Account;
+import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.KeyRecord;
 import org.whispersystems.textsecuregcm.storage.Keys;
@@ -44,7 +45,7 @@ import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_BEARE
 import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
 import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_MISSING;
 
-public class KeyControllerTest {
+public class KeysControllerTest {
 
   private static final UUID   EXISTS_UUID   = UUID_ALICE;
   private static final String EXISTS_STRING = EXISTS_UUID.toString();
@@ -68,9 +69,9 @@ public class KeyControllerTest {
   private final SignedPreKey VALID_DEVICE_SIGNED_KEY = new SignedPreKey(89898, "zoofarb", "sigvalid");
 
   private final Keys                             keys                     = mock(Keys.class           );
-  private final PossiblySyntheticAccountsManager accounts                 = mock(PossiblySyntheticAccountsManager.class);
+  private final AccountsManager                  accounts                 = mock(AccountsManager.class);
+  private final PossiblySyntheticAccountsManager syntheticAccountsManager = new PossiblySyntheticAccountsManager(accounts, new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES]);
   private final Account                          existsAccount            = mock(Account.class        );
-  private final SyntheticAccount                 notExistSyntheticAccount = new SyntheticAccount(new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES], NOT_EXISTS_UUID);
 
   private RateLimiters          rateLimiters  = mock(RateLimiters.class);
   private RateLimiter           rateLimiter   = mock(RateLimiter.class );
@@ -80,7 +81,7 @@ public class KeyControllerTest {
                                                             .addProvider(AuthHelper.getAuthFilter())
                                                             .addProvider(new PolymorphicAuthValueFactoryProvider.Binder<>(ImmutableSet.of(Account.class, DisabledPermittedAccount.class)))
                                                             .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
-                                                            .addResource(new KeysController(rateLimiters, keys, accounts))
+                                                            .addResource(new KeysController(rateLimiters, keys, syntheticAccountsManager))
                                                             .build();
 
   @Before
@@ -114,6 +115,7 @@ public class KeyControllerTest {
     when(sampleDevice3.getId()).thenReturn(3L);
     when(sampleDevice4.getId()).thenReturn(4L);
 
+    when(existsAccount.getRealAccount()).thenReturn(Optional.of(existsAccount));
     when(existsAccount.getDevice(1L)).thenReturn(Optional.of(sampleDevice));
     when(existsAccount.getDevice(2L)).thenReturn(Optional.of(sampleDevice2));
     when(existsAccount.getDevice(3L)).thenReturn(Optional.of(sampleDevice3));
@@ -125,25 +127,22 @@ public class KeyControllerTest {
     when(existsAccount.getUuid()).thenReturn(EXISTS_UUID);
     when(existsAccount.getUnidentifiedAccessKey()).thenReturn(Optional.of("1337".getBytes()));
 
-    when(accounts.get(EXISTS_UUID)).thenReturn(existsAccount);
-    when(accounts.get(NOT_EXISTS_UUID)).thenReturn(notExistSyntheticAccount);
+    when(accounts.get(EXISTS_UUID)).thenReturn(Optional.of(existsAccount));
 
     when(rateLimiters.getPreKeysLimiter()).thenReturn(rateLimiter);
 
     List<KeyRecord> singleDevice = new LinkedList<>();
     singleDevice.add(SAMPLE_KEY);
-    when(keys.get(eq(EXISTS_STRING), eq(1L))).thenReturn(singleDevice);
-
-    when(keys.get(eq(NOT_EXISTS_STRING), eq(1L))).thenReturn(new LinkedList<>());
+    when(keys.take(eq(existsAccount), eq(1L))).thenReturn(singleDevice);
 
     List<KeyRecord> multiDevice = new LinkedList<>();
     multiDevice.add(SAMPLE_KEY);
     multiDevice.add(SAMPLE_KEY2);
     multiDevice.add(SAMPLE_KEY3);
     multiDevice.add(SAMPLE_KEY4);
-    when(keys.get(EXISTS_STRING)).thenReturn(multiDevice);
+    when(keys.take(existsAccount)).thenReturn(multiDevice);
 
-    when(keys.getCount(eq(AuthHelper.VALID_NUMBER), eq(1L))).thenReturn(5);
+    when(keys.getCount(eq(AuthHelper.VALID_ACCOUNT), eq(1L))).thenReturn(5);
 
     when(AuthHelper.VALID_DEVICE.getSignedPreKey()).thenReturn(VALID_DEVICE_SIGNED_KEY);
     when(AuthHelper.VALID_ACCOUNT.getIdentityKey()).thenReturn(null);
@@ -160,7 +159,7 @@ public class KeyControllerTest {
 
     assertThat(result.getCount()).isEqualTo(4);
 
-    verify(keys).getCount(eq(AuthHelper.VALID_NUMBER), eq(1L));
+    verify(keys).getCount(eq(AuthHelper.VALID_ACCOUNT), eq(1L));
   }
 
   @Test
@@ -174,7 +173,7 @@ public class KeyControllerTest {
 
     assertThat(result.getCount()).isEqualTo(4);
 
-    verify(keys).getCount(eq(AuthHelper.VALID_NUMBER), eq(1L));
+    verify(keys).getCount(eq(AuthHelper.VALID_ACCOUNT), eq(1L));
   }
 
 
@@ -281,7 +280,7 @@ public class KeyControllerTest {
     assertThat(result.getDevice(1).getPreKey().getPublicKey()).isEqualTo(SAMPLE_KEY.getPublicKey());
     assertThat(result.getDevice(1).getSignedPreKey()).isEqualTo(existsAccount.getDevice(1).get().getSignedPreKey());
 
-    verify(keys).get(eq(EXISTS_STRING), eq(1L));
+    verify(keys).take(eq(existsAccount), eq(1L));
     verifyNoMoreInteractions(keys);
   }
 
@@ -300,7 +299,7 @@ public class KeyControllerTest {
     assertThat(result.getDevice(1).getPreKey().getPublicKey()).isEqualTo(SAMPLE_KEY.getPublicKey());
     assertThat(result.getDevice(1).getSignedPreKey()).isEqualTo(existsAccount.getDevice(1).get().getSignedPreKey());
 
-    verify(keys).get(eq(EXISTS_STRING), eq(1L));
+    verify(keys).take(eq(existsAccount), eq(1L));
     verifyNoMoreInteractions(keys);
   }
 
@@ -321,7 +320,7 @@ public class KeyControllerTest {
     assertThat(result.getDevice(1).getPreKey().getPublicKey()).isEqualTo(SAMPLE_KEY.getPublicKey());
     assertThat(result.getDevice(1).getSignedPreKey()).isEqualTo(existsAccount.getDevice(1).get().getSignedPreKey());
 
-    verify(keys).get(eq(EXISTS_STRING), eq(1L));
+    verify(keys).take(eq(existsAccount), eq(1L));
     verifyNoMoreInteractions(keys);
   }
 
@@ -341,7 +340,7 @@ public class KeyControllerTest {
     assertThat(result.getDevice(1).getPreKey().getPublicKey()).isEqualTo(SAMPLE_KEY.getPublicKey());
     assertThat(result.getDevice(1).getSignedPreKey()).isEqualTo(existsAccount.getDevice(1).get().getSignedPreKey());
 
-    verify(keys).get(eq(EXISTS_STRING), eq(1L));
+    verify(keys).take(eq(existsAccount), eq(1L));
     verifyNoMoreInteractions(keys);
   }
 
@@ -418,7 +417,7 @@ public class KeyControllerTest {
     assertThat(signedPreKey).isNull();
     assertThat(deviceId).isEqualTo(4);
 
-    verify(keys).get(eq(EXISTS_STRING));
+    verify(keys).take(eq(existsAccount));
     verifyNoMoreInteractions(keys);
   }
 
@@ -469,7 +468,7 @@ public class KeyControllerTest {
     assertThat(signedPreKey).isNull();
     assertThat(deviceId).isEqualTo(4);
 
-    verify(keys).get(eq(EXISTS_STRING));
+    verify(keys).take(eq(existsAccount));
     verifyNoMoreInteractions(keys);
   }
 
@@ -543,7 +542,7 @@ public class KeyControllerTest {
     assertThat(response.getStatus()).isEqualTo(204);
 
     ArgumentCaptor<List> listCaptor = ArgumentCaptor.forClass(List.class);
-    verify(keys).store(eq(AuthHelper.VALID_NUMBER), eq(1L), listCaptor.capture());
+    verify(keys).store(eq(AuthHelper.VALID_ACCOUNT), eq(1L), listCaptor.capture());
 
     List<PreKey> capturedList = listCaptor.getValue();
     assertThat(capturedList.size()).isEqualTo(1);
@@ -578,7 +577,7 @@ public class KeyControllerTest {
     assertThat(response.getStatus()).isEqualTo(204);
 
     ArgumentCaptor<List> listCaptor = ArgumentCaptor.forClass(List.class);
-    verify(keys).store(eq(AuthHelper.DISABLED_NUMBER), eq(1L), listCaptor.capture());
+    verify(keys).store(eq(AuthHelper.DISABLED_ACCOUNT), eq(1L), listCaptor.capture());
 
     List<PreKey> capturedList = listCaptor.getValue();
     assertThat(capturedList.size()).isEqualTo(1);

@@ -26,6 +26,7 @@ import org.whispersystems.textsecuregcm.configuration.AppConfigConfiguration;
 import org.whispersystems.textsecuregcm.configuration.AwsAttachmentsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.CdnConfiguration;
 import org.whispersystems.textsecuregcm.configuration.DatabaseConfiguration;
+import org.whispersystems.textsecuregcm.configuration.DynamoDbConfiguration;
 import org.whispersystems.textsecuregcm.configuration.GcmConfiguration;
 import org.whispersystems.textsecuregcm.configuration.GcpAttachmentsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.JwtKeysConfiguration;
@@ -135,6 +136,11 @@ public class WhisperServerConfiguration extends Configuration {
   @NotNull
   @JsonProperty
   private MessageDynamoDbConfiguration messageDynamoDb;
+
+  @Valid
+  @NotNull
+  @JsonProperty
+  private DynamoDbConfiguration keysDynamoDb;
 
   @Valid
   @NotNull
@@ -318,6 +324,10 @@ public class WhisperServerConfiguration extends Configuration {
 
   public MessageDynamoDbConfiguration getMessageDynamoDbConfiguration() {
     return messageDynamoDb;
+  }
+
+  public DynamoDbConfiguration getKeysDynamoDbConfiguration() {
+    return keysDynamoDb;
   }
 
   public DatabaseConfiguration getMessageStoreConfiguration() {

@@ -52,7 +52,9 @@ public class KeysControllerDiskuvThreatModel0bTest {
     RateLimiter rateLimiter = mock(RateLimiter.class);
     doNothing().when(rateLimiter).validate(anyString());
     doNothing().when(rateLimiter).validate(anyString(), anyInt());
-    RateLimiters rateLimiters = new RateLimiters(rateLimiter);
+
+    RateLimiters rateLimiters = mock(RateLimiters.class);
+    when(rateLimiters.getPreKeysLimiter()).thenReturn(rateLimiter);
 
     // real key database
     Jdbi database = Jdbi.create(accountsDb.getTestDatabase());

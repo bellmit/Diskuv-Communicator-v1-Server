@@ -19,6 +19,7 @@ import org.whispersystems.textsecuregcm.configuration.CircuitBreakerConfiguratio
 import org.whispersystems.textsecuregcm.configuration.AccountsDatabaseConfiguration;
 import org.whispersystems.textsecuregcm.configuration.RetryConfiguration;
 import org.whispersystems.textsecuregcm.entities.PreKey;
+import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.FaultTolerantDatabase;
 import org.whispersystems.textsecuregcm.storage.KeyRecord;
 import org.whispersystems.textsecuregcm.storage.Keys;
@@ -38,13 +39,14 @@ import static org.mockito.Mockito.when;
 import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE_STRING;
 import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_BOB_STRING;
 
-@Ignore
 public class KeysTest {
 
   @Rule
   public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(LiquibasePreparer.forClasspathLocation("accountsdb.xml"));
 
-  private Keys keys;
+  private Account firstAccount;
+  private Account secondAccount;
+  private Keys    keys;
 
   @Before
   public void setup() {
@@ -53,6 +55,12 @@ public class KeysTest {
                                                                             new CircuitBreakerConfiguration());
 
     this.keys = new Keys(faultTolerantDatabase, new RetryConfiguration());
+
+    this.firstAccount  = mock(Account.class);
+    this.secondAccount = mock(Account.class);
+
+    when(firstAccount.getNumber()).thenReturn(UUID_ALICE_STRING);
+    when(secondAccount.getNumber()).thenReturn(UUID_BOB_STRING);
   }
 
 
@@ -76,18 +84,18 @@ public class KeysTest {
       anotherDeviceTwoPreKeys.add(new PreKey(i, UUID_BOB_STRING + "Device2PublicKey" + i));
     }
 
-    keys.store(UUID_ALICE_STRING, 1, deviceOnePreKeys);
-    keys.store(UUID_ALICE_STRING, 2, deviceTwoPreKeys);
+    keys.store(firstAccount, 1, deviceOnePreKeys);
+    keys.store(firstAccount, 2, deviceTwoPreKeys);
 
-    keys.store(UUID_BOB_STRING, 1, oldAnotherDeviceOnePrKeys);
-    keys.store(UUID_BOB_STRING, 1, anotherDeviceOnePreKeys);
-    keys.store(UUID_BOB_STRING, 2, anotherDeviceTwoPreKeys);
+    keys.store(secondAccount, 1, oldAnotherDeviceOnePrKeys);
+    keys.store(secondAccount, 1, anotherDeviceOnePreKeys);
+    keys.store(secondAccount, 2, anotherDeviceTwoPreKeys);
 
     PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM keys WHERE number = ? AND device_id = ? ORDER BY key_id");
-    verifyStoredState(statement, UUID_ALICE_STRING, 1);
-    verifyStoredState(statement, UUID_ALICE_STRING, 2);
-    verifyStoredState(statement, UUID_BOB_STRING, 1);
-    verifyStoredState(statement, UUID_BOB_STRING, 2);
+    verifyStoredState(statement, firstAccount, 1);
+    verifyStoredState(statement, firstAccount, 2);
+    verifyStoredState(statement, secondAccount, 1);
+    verifyStoredState(statement, secondAccount, 2);
   }
 
   @Test
@@ -99,11 +107,12 @@ public class KeysTest {
     }
 
 
-    keys.store(UUID_ALICE_STRING, 1, deviceOnePreKeys);
+    keys.store(firstAccount, 1, deviceOnePreKeys);
 
-    assertThat(keys.getCount(UUID_ALICE_STRING, 1)).isEqualTo(100);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(100);
   }
 
+  @Ignore
   @Test
   public void testGetForDevice() {
     List<PreKey> deviceOnePreKeys = new LinkedList<>();
@@ -122,45 +131,46 @@ public class KeysTest {
       anotherDeviceTwoPreKeys.add(new PreKey(i, "+14151111111Device2PublicKey" + i));
     }
 
-    keys.store(UUID_ALICE_STRING, 1, deviceOnePreKeys);
-    keys.store(UUID_ALICE_STRING, 2, deviceTwoPreKeys);
+    keys.store(firstAccount, 1, deviceOnePreKeys);
+    keys.store(firstAccount, 2, deviceTwoPreKeys);
 
-    keys.store(UUID_BOB_STRING, 1, anotherDeviceOnePreKeys);
-    keys.store(UUID_BOB_STRING, 2, anotherDeviceTwoPreKeys);
+    keys.store(secondAccount, 1, anotherDeviceOnePreKeys);
+    keys.store(secondAccount, 2, anotherDeviceTwoPreKeys);
 
 
-    assertThat(keys.getCount(UUID_ALICE_STRING, 1)).isEqualTo(100);
-    List<KeyRecord> records = keys.get(UUID_ALICE_STRING, 1);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(100);
+    List<KeyRecord> records = keys.take(firstAccount, 1);
 
     assertThat(records.size()).isEqualTo(1);
     assertThat(records.get(0).getKeyId()).isEqualTo(1);
     assertThat(records.get(0).getPublicKey()).isEqualTo("+14152222222Device1PublicKey1");
-    assertThat(keys.getCount(UUID_ALICE_STRING, 1)).isEqualTo(99);
-    assertThat(keys.getCount(UUID_ALICE_STRING, 2)).isEqualTo(100);
-    assertThat(keys.getCount(UUID_BOB_STRING, 1)).isEqualTo(100);
-    assertThat(keys.getCount(UUID_BOB_STRING, 2)).isEqualTo(100);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(99);
+    assertThat(keys.getCount(firstAccount, 2)).isEqualTo(100);
+    assertThat(keys.getCount(secondAccount, 1)).isEqualTo(100);
+    assertThat(keys.getCount(secondAccount, 2)).isEqualTo(100);
 
-    records = keys.get(UUID_ALICE_STRING, 1);
+    records = keys.take(firstAccount, 1);
 
     assertThat(records.size()).isEqualTo(1);
     assertThat(records.get(0).getKeyId()).isEqualTo(2);
     assertThat(records.get(0).getPublicKey()).isEqualTo("+14152222222Device1PublicKey2");
-    assertThat(keys.getCount(UUID_ALICE_STRING, 1)).isEqualTo(98);
-    assertThat(keys.getCount(UUID_ALICE_STRING, 2)).isEqualTo(100);
-    assertThat(keys.getCount(UUID_BOB_STRING, 1)).isEqualTo(100);
-    assertThat(keys.getCount(UUID_BOB_STRING, 2)).isEqualTo(100);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(98);
+    assertThat(keys.getCount(firstAccount, 2)).isEqualTo(100);
+    assertThat(keys.getCount(secondAccount, 1)).isEqualTo(100);
+    assertThat(keys.getCount(secondAccount, 2)).isEqualTo(100);
 
-    records = keys.get(UUID_ALICE_STRING, 2);
+    records = keys.take(firstAccount, 2);
 
     assertThat(records.size()).isEqualTo(1);
     assertThat(records.get(0).getKeyId()).isEqualTo(1);
     assertThat(records.get(0).getPublicKey()).isEqualTo("+14152222222Device2PublicKey1");
-    assertThat(keys.getCount(UUID_ALICE_STRING, 1)).isEqualTo(98);
-    assertThat(keys.getCount(UUID_ALICE_STRING, 2)).isEqualTo(99);
-    assertThat(keys.getCount(UUID_BOB_STRING, 1)).isEqualTo(100);
-    assertThat(keys.getCount(UUID_BOB_STRING, 2)).isEqualTo(100);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(98);
+    assertThat(keys.getCount(firstAccount, 2)).isEqualTo(99);
+    assertThat(keys.getCount(secondAccount, 1)).isEqualTo(100);
+    assertThat(keys.getCount(secondAccount, 2)).isEqualTo(100);
   }
 
+  @Ignore
   @Test
   public void testGetForAllDevices() {
     List<PreKey> deviceOnePreKeys = new LinkedList<>();
@@ -181,18 +191,18 @@ public class KeysTest {
       anotherDeviceThreePreKeys.add(new PreKey(i, "+14151111111Device3PublicKey" + i));
     }
 
-    keys.store(UUID_ALICE_STRING, 1, deviceOnePreKeys);
-    keys.store(UUID_ALICE_STRING, 2, deviceTwoPreKeys);
+    keys.store(firstAccount, 1, deviceOnePreKeys);
+    keys.store(firstAccount, 2, deviceTwoPreKeys);
 
-    keys.store(UUID_BOB_STRING, 1, anotherDeviceOnePreKeys);
-    keys.store(UUID_BOB_STRING, 2, anotherDeviceTwoPreKeys);
-    keys.store(UUID_BOB_STRING, 3, anotherDeviceThreePreKeys);
+    keys.store(secondAccount, 1, anotherDeviceOnePreKeys);
+    keys.store(secondAccount, 2, anotherDeviceTwoPreKeys);
+    keys.store(secondAccount, 3, anotherDeviceThreePreKeys);
 
 
-    assertThat(keys.getCount(UUID_ALICE_STRING, 1)).isEqualTo(100);
-    assertThat(keys.getCount(UUID_ALICE_STRING, 2)).isEqualTo(100);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(100);
+    assertThat(keys.getCount(firstAccount, 2)).isEqualTo(100);
 
-    List<KeyRecord> records = keys.get(UUID_ALICE_STRING);
+    List<KeyRecord> records = keys.take(firstAccount);
 
     assertThat(records.size()).isEqualTo(2);
     assertThat(records.get(0).getKeyId()).isEqualTo(1);
@@ -201,10 +211,10 @@ public class KeysTest {
     assertThat(records.stream().anyMatch(record -> record.getPublicKey().equals("+14152222222Device1PublicKey1"))).isTrue();
     assertThat(records.stream().anyMatch(record -> record.getPublicKey().equals("+14152222222Device2PublicKey1"))).isTrue();
 
-    assertThat(keys.getCount(UUID_ALICE_STRING, 1)).isEqualTo(99);
-    assertThat(keys.getCount(UUID_ALICE_STRING, 2)).isEqualTo(99);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(99);
+    assertThat(keys.getCount(firstAccount, 2)).isEqualTo(99);
 
-    records = keys.get(UUID_ALICE_STRING);
+    records = keys.take(firstAccount);
 
     assertThat(records.size()).isEqualTo(2);
     assertThat(records.get(0).getKeyId()).isEqualTo(2);
@@ -213,11 +223,11 @@ public class KeysTest {
     assertThat(records.stream().anyMatch(record -> record.getPublicKey().equals("+14152222222Device1PublicKey2"))).isTrue();
     assertThat(records.stream().anyMatch(record -> record.getPublicKey().equals("+14152222222Device2PublicKey2"))).isTrue();
 
-    assertThat(keys.getCount(UUID_ALICE_STRING, 1)).isEqualTo(98);
-    assertThat(keys.getCount(UUID_ALICE_STRING, 2)).isEqualTo(98);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(98);
+    assertThat(keys.getCount(firstAccount, 2)).isEqualTo(98);
 
 
-    records = keys.get(UUID_BOB_STRING);
+    records = keys.take(secondAccount);
 
     assertThat(records.size()).isEqualTo(3);
     assertThat(records.get(0).getKeyId()).isEqualTo(1);
@@ -228,11 +238,12 @@ public class KeysTest {
     assertThat(records.stream().anyMatch(record -> record.getPublicKey().equals("+14151111111Device2PublicKey1"))).isTrue();
     assertThat(records.stream().anyMatch(record -> record.getPublicKey().equals("+14151111111Device3PublicKey1"))).isTrue();
 
-    assertThat(keys.getCount(UUID_BOB_STRING, 1)).isEqualTo(99);
-    assertThat(keys.getCount(UUID_BOB_STRING, 2)).isEqualTo(99);
-    assertThat(keys.getCount(UUID_BOB_STRING, 3)).isEqualTo(99);
+    assertThat(keys.getCount(secondAccount, 1)).isEqualTo(99);
+    assertThat(keys.getCount(secondAccount, 2)).isEqualTo(99);
+    assertThat(keys.getCount(secondAccount, 3)).isEqualTo(99);
   }
 
+  @Ignore
   @Test
   public void testGetForAllDevicesParallel() throws InterruptedException {
     List<PreKey> deviceOnePreKeys = new LinkedList<>();
@@ -243,11 +254,11 @@ public class KeysTest {
       deviceTwoPreKeys.add(new PreKey(i, "+14152222222Device2PublicKey" + i));
     }
 
-    keys.store(UUID_ALICE_STRING, 1, deviceOnePreKeys);
-    keys.store(UUID_ALICE_STRING, 2, deviceTwoPreKeys);
+    keys.store(firstAccount, 1, deviceOnePreKeys);
+    keys.store(firstAccount, 2, deviceTwoPreKeys);
 
-    assertThat(keys.getCount(UUID_ALICE_STRING, 1)).isEqualTo(100);
-    assertThat(keys.getCount(UUID_ALICE_STRING, 2)).isEqualTo(100);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(100);
+    assertThat(keys.getCount(firstAccount, 2)).isEqualTo(100);
 
     List<Thread> threads = new LinkedList<>();
 
@@ -257,7 +268,7 @@ public class KeysTest {
         final int MAX_RETRIES = 5;
         for (int retryAttempt = 0; results == null && retryAttempt < MAX_RETRIES; ++retryAttempt) {
           try {
-            results = keys.get(UUID_ALICE_STRING);
+            results = keys.take(firstAccount);
           } catch (UnableToExecuteStatementException e) {
             if (retryAttempt == MAX_RETRIES - 1) {
               throw e;
@@ -275,8 +286,8 @@ public class KeysTest {
       thread.join();
     }
 
-    assertThat(keys.getCount(UUID_ALICE_STRING, 1)).isEqualTo(80);
-    assertThat(keys.getCount(UUID_ALICE_STRING,2)).isEqualTo(80);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(80);
+    assertThat(keys.getCount(firstAccount,2)).isEqualTo(80);
   }
 
   @Test
@@ -299,32 +310,32 @@ public class KeysTest {
       anotherDeviceThreePreKeys.add(new PreKey(i, "+14151111111Device3PublicKey" + i));
     }
 
-    keys.store("+14152222222", 1, deviceOnePreKeys);
-    keys.store("+14152222222", 2, deviceTwoPreKeys);
+    keys.store(firstAccount, 1, deviceOnePreKeys);
+    keys.store(firstAccount, 2, deviceTwoPreKeys);
 
-    keys.store("+14151111111", 1, anotherDeviceOnePreKeys);
-    keys.store("+14151111111", 2, anotherDeviceTwoPreKeys);
-    keys.store("+14151111111", 3, anotherDeviceThreePreKeys);
+    keys.store(secondAccount, 1, anotherDeviceOnePreKeys);
+    keys.store(secondAccount, 2, anotherDeviceTwoPreKeys);
+    keys.store(secondAccount, 3, anotherDeviceThreePreKeys);
 
 
-    assertThat(keys.getCount("+14152222222", 1)).isEqualTo(100);
-    assertThat(keys.getCount("+14152222222", 2)).isEqualTo(100);
-    assertThat(keys.getCount("+14151111111", 1)).isEqualTo(100);
-    assertThat(keys.getCount("+14151111111", 2)).isEqualTo(100);
-    assertThat(keys.getCount("+14151111111", 3)).isEqualTo(100);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(100);
+    assertThat(keys.getCount(firstAccount, 2)).isEqualTo(100);
+    assertThat(keys.getCount(secondAccount, 1)).isEqualTo(100);
+    assertThat(keys.getCount(secondAccount, 2)).isEqualTo(100);
+    assertThat(keys.getCount(secondAccount, 3)).isEqualTo(100);
 
-    keys.delete("+14152222222");
+    keys.delete(firstAccount);
 
-    assertThat(keys.getCount("+14152222222", 1)).isEqualTo(0);
-    assertThat(keys.getCount("+14152222222", 2)).isEqualTo(0);
-    assertThat(keys.getCount("+14151111111", 1)).isEqualTo(100);
-    assertThat(keys.getCount("+14151111111", 2)).isEqualTo(100);
-    assertThat(keys.getCount("+14151111111", 3)).isEqualTo(100);
+    assertThat(keys.getCount(firstAccount, 1)).isEqualTo(0);
+    assertThat(keys.getCount(firstAccount, 2)).isEqualTo(0);
+    assertThat(keys.getCount(secondAccount, 1)).isEqualTo(100);
+    assertThat(keys.getCount(secondAccount, 2)).isEqualTo(100);
+    assertThat(keys.getCount(secondAccount, 3)).isEqualTo(100);
   }
 
   @Test
   public void testEmptyKeyGet() {
-    List<KeyRecord> records = keys.get(UUID_ALICE_STRING);
+    List<KeyRecord> records = keys.take(firstAccount);
 
     assertThat(records.isEmpty()).isTrue();
   }
@@ -358,21 +369,21 @@ public class KeysTest {
     }
 
     try {
-      keys.store(UUID_ALICE_STRING, 1, deviceOnePreKeys);
+      keys.store(firstAccount, 1, deviceOnePreKeys);
       throw new AssertionError();
     } catch (TransactionException e) {
       // good
     }
 
     try {
-      keys.store(UUID_ALICE_STRING, 1, deviceOnePreKeys);
+      keys.store(firstAccount, 1, deviceOnePreKeys);
       throw new AssertionError();
     } catch (TransactionException e) {
       // good
     }
 
     try {
-      keys.store(UUID_ALICE_STRING, 1, deviceOnePreKeys);
+      keys.store(firstAccount, 1, deviceOnePreKeys);
       throw new AssertionError();
     } catch (CallNotPermittedException e) {
       // good
@@ -381,7 +392,7 @@ public class KeysTest {
     Thread.sleep(1100);
 
     try {
-      keys.store(UUID_ALICE_STRING, 1, deviceOnePreKeys);
+      keys.store(firstAccount, 1, deviceOnePreKeys);
       throw new AssertionError();
     } catch (TransactionException e) {
       // good
@@ -398,7 +409,10 @@ public class KeysTest {
     Keys keys = new Keys(new FaultTolerantDatabase("testBreaker", jdbi, new CircuitBreakerConfiguration()), new RetryConfiguration());
 
     // We're happy as long as nothing throws an exception
-    keys.store("+18005551234", 1, Collections.emptyList());
+    Account account = mock(Account.class);
+    when(account.getNumber()).thenReturn("+18005551234");
+
+    keys.store(account, 1, Collections.emptyList());
   }
 
   @Test
@@ -411,12 +425,15 @@ public class KeysTest {
 
     Keys keys = new Keys(new FaultTolerantDatabase("testBreaker", jdbi, new CircuitBreakerConfiguration()), new RetryConfiguration());
 
-    assertThat(keys.get("+18005551234")).isEqualTo(Collections.emptyList());
-    assertThat(keys.get("+18005551234", 1)).isEqualTo(Collections.emptyList());
+    Account account = mock(Account.class);
+    when(account.getNumber()).thenReturn("+18005551234");
+
+    assertThat(keys.take(account)).isEqualTo(Collections.emptyList());
+    assertThat(keys.take(account, 1)).isEqualTo(Collections.emptyList());
   }
 
-  private void verifyStoredState(PreparedStatement statement, String number, int deviceId) throws SQLException {
-    statement.setString(1, number);
+  private void verifyStoredState(PreparedStatement statement, Account account, int deviceId) throws SQLException {
+    statement.setString(1, account.getNumber());
     statement.setInt(2, deviceId);
 
     ResultSet resultSet = statement.executeQuery();
@@ -428,7 +445,7 @@ public class KeysTest {
 
 
       assertThat(keyId).isEqualTo(rowCount);
-      assertThat(publicKey).isEqualTo(number + "Device" + deviceId + "PublicKey" + rowCount);
+      assertThat(publicKey).isEqualTo(account.getNumber() + "Device" + deviceId + "PublicKey" + rowCount);
 
       rowCount++;
     }

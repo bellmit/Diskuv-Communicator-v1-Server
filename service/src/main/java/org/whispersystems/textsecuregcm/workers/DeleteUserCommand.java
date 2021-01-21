@@ -25,6 +25,7 @@ import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.DynamicConfigurationManager;
 import org.whispersystems.textsecuregcm.storage.FaultTolerantDatabase;
 import org.whispersystems.textsecuregcm.storage.Keys;
+import org.whispersystems.textsecuregcm.storage.KeysDynamoDb;
 import org.whispersystems.textsecuregcm.storage.Messages;
 import org.whispersystems.textsecuregcm.storage.MessagesCache;
 import org.whispersystems.textsecuregcm.storage.MessagesDynamoDb;
@@ -88,7 +89,16 @@ public class DeleteUserCommand extends EnvironmentCommand<WhisperServerConfigura
               .withClientConfiguration(new ClientConfiguration().withClientExecutionTimeout(((int) configuration.getMessageDynamoDbConfiguration().getClientExecutionTimeout().toMillis()))
                                                                 .withRequestTimeout((int) configuration.getMessageDynamoDbConfiguration().getClientRequestTimeout().toMillis()))
               .withCredentials(InstanceProfileCredentialsProvider.getInstance());
+
+      AmazonDynamoDBClientBuilder keysDynamoDbClientBuilder = AmazonDynamoDBClientBuilder
+              .standard()
+              .withRegion(configuration.getKeysDynamoDbConfiguration().getRegion())
+              .withClientConfiguration(new ClientConfiguration().withClientExecutionTimeout(((int) configuration.getKeysDynamoDbConfiguration().getClientExecutionTimeout().toMillis()))
+                                                                .withRequestTimeout((int) configuration.getKeysDynamoDbConfiguration().getClientRequestTimeout().toMillis()))
+              .withCredentials(InstanceProfileCredentialsProvider.getInstance());
+
       DynamoDB messageDynamoDb = new DynamoDB(clientBuilder.build());
+      DynamoDB preKeyDynamoDb  = new DynamoDB(keysDynamoDbClientBuilder.build());
 
       FaultTolerantRedisCluster cacheCluster = new FaultTolerantRedisCluster("main_cache_cluster", configuration.getCacheClusterConfiguration(), redisClusterClientResources);
 
@@ -102,6 +112,7 @@ public class DeleteUserCommand extends EnvironmentCommand<WhisperServerConfigura
       Profiles                  profiles             = new Profiles(accountDatabase);
       ReservedUsernames         reservedUsernames    = new ReservedUsernames(accountDatabase);
       Keys                      keys                 = new Keys(accountDatabase, configuration.getAccountsDatabaseConfiguration().getKeyOperationRetryConfiguration());
+      KeysDynamoDb              keysDynamoDb         = new KeysDynamoDb(messageDynamoDb, configuration.getKeysDynamoDbConfiguration().getTableName());
       Messages                  messages             = new Messages(messageDatabase);
       MessagesDynamoDb          messagesDynamoDb     = new MessagesDynamoDb(messageDynamoDb, configuration.getMessageDynamoDbConfiguration().getTableName(), configuration.getMessageDynamoDbConfiguration().getTimeToLive());
       FaultTolerantRedisCluster messageInsertCacheCluster = new FaultTolerantRedisCluster("message_insert_cluster", configuration.getMessageCacheConfiguration().getRedisClusterConfiguration(), redisClusterClientResources);
@@ -112,7 +123,7 @@ public class DeleteUserCommand extends EnvironmentCommand<WhisperServerConfigura
       UsernamesManager          usernamesManager     = new UsernamesManager(usernames, reservedUsernames, cacheCluster);
       ProfilesManager           profilesManager      = new ProfilesManager(profiles, cacheCluster);
       MessagesManager           messagesManager      = new MessagesManager(messages, messagesDynamoDb, messagesCache, pushLatencyManager, new ExperimentEnrollmentManager(dynamicConfigurationManager));
-      AccountsManager           accountsManager      = new AccountsManager(accounts, cacheCluster, keys, messagesManager, usernamesManager, profilesManager);
+      AccountsManager           accountsManager      = new AccountsManager(accounts, cacheCluster, keys, keysDynamoDb, messagesManager, usernamesManager, profilesManager);
 
       for (String user: users) {
         Optional<Account> account = accountsManager.get(user);
