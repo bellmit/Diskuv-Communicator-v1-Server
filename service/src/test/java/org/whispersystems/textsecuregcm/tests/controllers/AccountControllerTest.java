@@ -287,7 +287,7 @@ public class AccountControllerTest {
     assertThat(response.getStatus()).isEqualTo(200);
 
     verify(smsSender).deliverSmsVerification(eq(SENDER), eq(Optional.empty()), anyString());
-//    verify(abusiveHostRules).getAbusiveHostRulesFor(eq(NICE_HOST));
+    verify(abusiveHostRules).getAbusiveHostRulesFor(eq(NICE_HOST));
   }
 
   @Test
@@ -304,7 +304,7 @@ public class AccountControllerTest {
     assertThat(response.getStatus()).isEqualTo(200);
 
     verify(smsSender).deliverSmsVerification(eq(SENDER_PREAUTH), eq(Optional.empty()), anyString());
-//    verify(abusiveHostRules).getAbusiveHostRulesFor(eq(NICE_HOST));
+    verify(abusiveHostRules).getAbusiveHostRulesFor(eq(NICE_HOST));
   }
 
   @Test
@@ -337,7 +337,7 @@ public class AccountControllerTest {
     assertThat(response.getStatus()).isEqualTo(200);
 
     verify(smsSender).deliverSmsVerification(eq(SENDER_PREAUTH), eq(Optional.empty()), anyString());
-//    verify(abusiveHostRules).getAbusiveHostRulesFor(eq(NICE_HOST));
+    verify(abusiveHostRules).getAbusiveHostRulesFor(eq(NICE_HOST));
   }
 
 
