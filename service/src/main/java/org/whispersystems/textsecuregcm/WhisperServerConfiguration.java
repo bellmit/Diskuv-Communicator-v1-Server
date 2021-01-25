@@ -25,7 +25,6 @@ import org.whispersystems.textsecuregcm.configuration.ApnConfiguration;
 import org.whispersystems.textsecuregcm.configuration.AwsAttachmentsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.CdnConfiguration;
 import org.whispersystems.textsecuregcm.configuration.DatabaseConfiguration;
-import org.whispersystems.textsecuregcm.configuration.FeatureFlagConfiguration;
 import org.whispersystems.textsecuregcm.configuration.GcmConfiguration;
 import org.whispersystems.textsecuregcm.configuration.GcpAttachmentsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.JwtKeysConfiguration;
@@ -223,11 +222,6 @@ public class WhisperServerConfiguration extends Configuration {
   @Valid
   @NotNull
   @JsonProperty
-  private RemoteConfigConfiguration remoteConfig;
-
-  @Valid
-  @NotNull
-  @JsonProperty
   private org.whispersystems.textsecuregcm.configuration.JwtKeysConfiguration jwtKeys;
 
   @Valid
@@ -238,7 +232,7 @@ public class WhisperServerConfiguration extends Configuration {
   @Valid
   @NotNull
   @JsonProperty
-  private FeatureFlagConfiguration featureFlag;
+  private RemoteConfigConfiguration remoteConfig;
 
   private Map<String, String> transparentDataIndex = new HashMap<>();
 
@@ -388,10 +382,6 @@ public class WhisperServerConfiguration extends Configuration {
     return zkConfig;
   }
 
-  public RemoteConfigConfiguration getRemoteConfigConfiguration() {
-    return remoteConfig;
-  }
-
   public org.whispersystems.textsecuregcm.configuration.JwtKeysConfiguration getJwtKeys() {
     return jwtKeys;
   }
@@ -432,7 +422,7 @@ public class WhisperServerConfiguration extends Configuration {
 
   // [Diskuv Change] END: Groups configuration custom to Diskuv
 
-  public FeatureFlagConfiguration getFeatureFlagConfiguration() {
-    return featureFlag;
+  public RemoteConfigConfiguration getRemoteConfigConfiguration() {
+    return remoteConfig;
   }
 }
