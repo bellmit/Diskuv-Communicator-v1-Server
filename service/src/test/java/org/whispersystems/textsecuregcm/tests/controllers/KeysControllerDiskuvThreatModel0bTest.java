@@ -16,6 +16,7 @@ import org.whispersystems.textsecuregcm.controllers.RateLimitExceededException;
 import org.whispersystems.textsecuregcm.entities.PreKeyCount;
 import org.whispersystems.textsecuregcm.entities.PreKeyResponse;
 import org.whispersystems.textsecuregcm.entities.SignedPreKey;
+import org.whispersystems.textsecuregcm.experiment.ExperimentEnrollmentManager;
 import org.whispersystems.textsecuregcm.limits.RateLimiter;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.storage.Account;
@@ -23,6 +24,7 @@ import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.FaultTolerantDatabase;
 import org.whispersystems.textsecuregcm.storage.Keys;
+import org.whispersystems.textsecuregcm.storage.KeysDynamoDb;
 import org.whispersystems.textsecuregcm.synthetic.HmacDrbg;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
 import org.whispersystems.textsecuregcm.tests.util.UuidHelpers;
@@ -69,7 +71,9 @@ public class KeysControllerDiskuvThreatModel0bTest {
 
     PossiblySyntheticAccountsManager syntheticAccountsManager = new PossiblySyntheticAccountsManager(accounts, saltSharedSecret);
 
-    this.keysController = new KeysController(rateLimiters, keys, syntheticAccountsManager);
+    KeysDynamoDb                keysDynamoDb                = mock(KeysDynamoDb.class);
+    ExperimentEnrollmentManager experimentEnrollmentManager = mock(ExperimentEnrollmentManager.class);
+    this.keysController = new KeysController(rateLimiters, keys, keysDynamoDb, syntheticAccountsManager, experimentEnrollmentManager);
   }
 
   @Test
