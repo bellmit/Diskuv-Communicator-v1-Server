@@ -39,7 +39,7 @@ public class Profiles {
   public void set(UUID uuid, VersionedProfile profile) {
     database.use(jdbi -> jdbi.useHandle(handle -> {
       try (Timer.Context ignored = setTimer.time()) {
-        handle.createUpdate("INSERT INTO profiles (" + UID + ", " + VERSION + ", " + NAME + ", " + AVATAR + ", " + EMAIL_ADDRESS + ", " + COMMITMENT + ") VALUES (:uuid, :version, :name, :avatar, :email_address, :commitment) ON CONFLICT (" + UID + ", " + VERSION + ") DO UPDATE SET " + NAME + " = EXCLUDED." + NAME + ", " + AVATAR + " = EXCLUDED." + AVATAR + ", " + EMAIL_ADDRESS + " = EXCLUDED." + EMAIL_ADDRESS)
+        handle.createUpdate("INSERT INTO profiles (" + UID + ", " + VERSION + ", " + NAME + ", " + AVATAR + ", " + EMAIL_ADDRESS + ", " + ABOUT_EMOJI + ", " + ABOUT + ", " + COMMITMENT + ") VALUES (:uuid, :version, :name, :avatar, :email_address, :about_emoji, :about, :commitment) ON CONFLICT (" + UID + ", " + VERSION + ") DO UPDATE SET " + NAME + " = EXCLUDED." + NAME + ", " + AVATAR + " = EXCLUDED." + AVATAR + ", " + ABOUT + " = EXCLUDED." + ABOUT + ", " + ABOUT_EMOJI + " = EXCLUDED." + ABOUT_EMOJI)
               .bind("uuid", uuid)
               .bind("version", profile.getVersion())
               .bind("name", profile.getName())
