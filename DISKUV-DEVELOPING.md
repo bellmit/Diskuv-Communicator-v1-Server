@@ -1,4 +1,6 @@
-# Setup
+# Developing the Diskuv Communicator Server
+
+## Setup
 
 FIRST, install the following if you do not have them:
 
@@ -6,7 +8,7 @@ FIRST, install the following if you do not have them:
   It has been tested with Maven 3.6.3
 * Install JDK 11. It has been tested with [Amazon Coretto](https://aws.amazon.com/corretto/)
 * Install [Redis](https://redis.io/topics/quickstart), or have a Redis server accessible
-  from your local network (including cloud instances) 
+  from your local network (including cloud instances)
 * Install [PostgreSQL 9.4](https://www.postgresql.org/download/), or have a PostgreSQL server accessible
   from your local network (including cloud instances). *Optional*: Versions later than 9.4
   will likely work, but it is safest to use the PostgreSQL version
@@ -36,14 +38,15 @@ mvn -v
 
 which should look something like:
 
-```
+```text
 Apache Maven 3.6.3 (cecedd343002696d0abb50b32b541b8a6ba2883f)
 Maven home: C:\Program Files\apache-maven-3.6.3\bin\..
 Java version: 11.0.8, vendor: Amazon.com Inc., runtime: C:\Program Files\Amazon Corretto\jdk11.0.8_10
 Default locale: en_US, platform encoding: Cp1252
 OS name: "windows 10", version: "10.0", arch: "amd64", family: "windows"
 ```
-# Building
+
+## Building
 
 ```bash
 mvn package
@@ -55,9 +58,9 @@ On Windows, you must skip the unit tests with the following until the unit tests
 mvn package -DskipTests
 ```
 
-# Configuring
+## Configuring
 
-## Local Testing
+### Local Testing
 
 You will need to expose your
 local server to the Internet so that Twilio can call back your local server.
@@ -69,15 +72,15 @@ if you have node.js installed on your machine:
 npx localtunnel --port 8010
 ```
 
-or https://ngrok.com/ which is similar but requires you to sign-up (for free).
+or <https://ngrok.com/> which is similar but requires you to sign-up (for free).
 If you do this often, you will want the more permanent solution provided by
-(go-http-tunnel)[https://github.com/mmatczuk/go-http-tunnel#readme]
+[go-http-tunnel](https://github.com/mmatczuk/go-http-tunnel#readme)
 
-## Configuring Third-Party Vendors and Components
+### Configuring Third-Party Vendors and Components
 
-### Redis
+#### Redis
 
-You are required to have a Redis server and at least one replica. 
+You are required to have a Redis server and at least one replica.
 
 For clarity, this section documents local Ubuntu instructions. Cloud Redis servers need to be provisioned using
 their web consoles or CLIs.
@@ -115,7 +118,7 @@ messageCache:
       - localhost:7777
 ```
 
-### PostgreSQL
+#### PostgreSQL
 
 You'll need to create two databases and a user for each database.
 For cloud databases
@@ -163,7 +166,7 @@ messageStore:
 
 Change the URLs if you are using a cloud or network database, and change the passwords of course.
 
-### AWS S3
+#### AWS S3
 
 FIRST,
 
@@ -176,7 +179,7 @@ must be in that region.
 
 SECOND,
 
-Create an IAM user at https://console.aws.amazon.com/iam/home?#/users$new?step=details :
+Create an IAM user at <https://console.aws.amazon.com/iam/home?#/users$new?step=details> :
 
 * User name: `signal-server-s3` (anything)
 * Access type: `Programmatic access`
@@ -197,6 +200,7 @@ Create an IAM user at https://console.aws.amazon.com/iam/home?#/users$new?step=d
     ]
 }
 ```
+
 * Attach that policy to the IAM user, and finish creating the IAM user
 
 You will be given an Access key, and a Secret access key, which you can use in the YAML configuration:
@@ -209,26 +213,26 @@ cdn:
   region: us-east-1
 ```
 
-### AWS SQS
+#### AWS SQS
 
 SQS is used to communicate between the Signal Servers and the
 [Contact Discovery Service](https://github.com/signalapp/ContactDiscoveryService#readme).
 We are not using the Contact Discovery Service, so we've made a change to the
 code to disable the sending of messages to SQS.
 
-### Twilio
+#### Twilio
 
-#### Just Starting?
+##### Just Starting?
 
 1. You can sign up with Twilio for a free trial. You will see an
    `ACCOUNT SID` and a `AUTH TOKEN` on the Twilio dashboard. Those go
    into `twilio.accountId` and `twilio.accountToken`, respectively.
    Note: Twilio gives you free test credentials
-   
-2. On https://www.twilio.com/console, "Get a Trial Phone Number". This phone number
+
+2. On <https://www.twilio.com/console>, "Get a Trial Phone Number". This phone number
    will go into `twilio.number`
-   
-3. Create a "Messaging Service" at https://www.twilio.com/console/sms/services. You
+
+3. Create a "Messaging Service" at <https://www.twilio.com/console/sms/services>. You
    will be asked to create a Sender Pool; use a Sender Type = `Phone Number` and add
    the phone number you created in the last step.
    Place the "Messaging Service SID" as `twilio.messagingServicesId`.
@@ -242,17 +246,18 @@ limited.
 You will need a Twilio phone number with a [TwiML](https://www.twilio.com/docs/voice/twiml)
 URL. That URL will instruct Twilio what to do within each voice verification call.  
 
-
-# Understanding
+## Understanding
 
 Reading the following will help:
-* https://www.dropwizard.io/en/latest/getting-started.html
 
-# Running
+* <https://www.dropwizard.io/en/latest/getting-started.html>
 
-## Locally
+## Running
+
+### Locally
 
 Make sure you have started:
+
 * the Redis server and at least one replica
 * the PostgreSQL database
 
