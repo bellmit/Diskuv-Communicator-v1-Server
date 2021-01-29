@@ -137,6 +137,11 @@ CREATE USER signal_abuse_user WITH PASSWORD 'pick a password';
 CREATE USER signal_account_user WITH PASSWORD 'pick another password';
 CREATE USER signal_message_user WITH PASSWORD 'pick yet another password';
 
+-- Give yourself permissions to use these new users (mandatory for PostgreSQL 11; not mandatory PostgreSQL 9; other versions untested)
+GRANT signal_abuse_user TO current_user;
+GRANT signal_account_user TO current_user;
+GRANT signal_message_user TO current_user;
+
 CREATE DATABASE signal_abuse WITH OWNER signal_abuse_user ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8' TEMPLATE 'template0';
 CREATE DATABASE signal_account WITH OWNER signal_account_user ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8' TEMPLATE 'template0';
 CREATE DATABASE signal_message WITH OWNER signal_message_user ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8' TEMPLATE 'template0';
