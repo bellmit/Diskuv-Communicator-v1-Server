@@ -179,7 +179,9 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
   }
 
   public boolean isGv1MigrationSupported() {
-    return devices.stream().allMatch(device -> device.getCapabilities() != null && device.getCapabilities().isGv1Migration());
+    return devices.stream()
+                  .filter(Device::isEnabled)
+                  .allMatch(device -> device.getCapabilities() != null && device.getCapabilities().isGv1Migration());
   }
 
   public boolean isEnabled() {
