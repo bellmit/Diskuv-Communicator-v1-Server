@@ -242,6 +242,10 @@ code to disable the sending of messages to SQS.
    the phone number you created in the last step.
    Place the "Messaging Service SID" as `twilio.messagingServicesId`.
 
+4. Follow <https://www.twilio.com/docs/usage/tutorials/how-to-use-your-free-trial-account#verify-your-personal-phone-number>
+   to give Twilio permission to send SMS to your cell phone (in Trial mode you do not have permission
+   to SMS non-approved people)
+
 Theoretically, you may use the
 [test credentials](https://www.twilio.com/docs/iam/test-credentials) and
 the test phone number `+15005550006` for `twilio.accountId` and `twilio.accountToken`
@@ -249,7 +253,7 @@ and `twilio.number`. However, this has not been tested and functionality will be
 limited.
 
 You will need a Twilio phone number with a [TwiML](https://www.twilio.com/docs/voice/twiml)
-URL. That URL will instruct Twilio what to do within each voice verification call.  
+URL. That URL will instruct Twilio what to do within each voice verification call.
 
 ## Understanding
 
