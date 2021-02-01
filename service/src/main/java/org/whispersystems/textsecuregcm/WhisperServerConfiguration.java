@@ -22,6 +22,7 @@ import io.dropwizard.Configuration;
 import io.dropwizard.client.JerseyClientConfiguration;
 import org.whispersystems.textsecuregcm.configuration.AccountDatabaseCrawlerConfiguration;
 import org.whispersystems.textsecuregcm.configuration.ApnConfiguration;
+import org.whispersystems.textsecuregcm.configuration.AppConfigConfiguration;
 import org.whispersystems.textsecuregcm.configuration.AwsAttachmentsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.CdnConfiguration;
 import org.whispersystems.textsecuregcm.configuration.DatabaseConfiguration;
@@ -234,6 +235,11 @@ public class WhisperServerConfiguration extends Configuration {
   @JsonProperty
   private RemoteConfigConfiguration remoteConfig;
 
+  @Valid
+  @NotNull
+  @JsonProperty
+  private AppConfigConfiguration appConfig;
+
   private Map<String, String> transparentDataIndex = new HashMap<>();
 
   public RecaptchaConfiguration getRecaptchaConfiguration() {
@@ -424,5 +430,9 @@ public class WhisperServerConfiguration extends Configuration {
 
   public RemoteConfigConfiguration getRemoteConfigConfiguration() {
     return remoteConfig;
+  }
+
+  public AppConfigConfiguration getAppConfig() {
+    return appConfig;
   }
 }
