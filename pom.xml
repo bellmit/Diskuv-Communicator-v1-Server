@@ -13,6 +13,7 @@
         <module>websocket-resources</module>
         <module>gcm-sender-async</module>
         <module>service</module>
+        <module>configurator</module>
     </modules>
 
     <properties>

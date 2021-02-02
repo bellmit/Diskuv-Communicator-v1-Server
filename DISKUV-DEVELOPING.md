@@ -60,6 +60,18 @@ mvn package -DskipTests
 
 ## Configuring
 
+### YAML File
+
+You will need to generate a YAML file. Use:
+
+```bash
+java -jar configurator/target/configurator-*.jar
+```
+
+to run the `generate` command. Consult with its `--help` option.
+
+The YAML file should created as `local.yml`, or any `service/config/xxx.yml` file listed in the `.gitignore` file.
+
 ### Local Testing
 
 You will need to expose your
