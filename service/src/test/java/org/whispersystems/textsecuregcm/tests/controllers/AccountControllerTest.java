@@ -253,7 +253,28 @@ public class AccountControllerTest {
   }
 
   @Test
-  public void testGetApnPrereg() throws Exception {
+  @Ignore("Diskuv does use phone numbers in APIs, so a test for Ivory Coast phone numbers is irrelevant")
+  public void testGetFcmPreauthIvoryCoast() throws Exception {
+    Response response = resources.getJerseyTest()
+            .target("/v1/accounts/fcm/prereg/mytoken")
+            .request()
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .get();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+
+    ArgumentCaptor<GcmMessage> captor = ArgumentCaptor.forClass(GcmMessage.class);
+
+    verify(gcmSender, times(1)).sendMessage(captor.capture());
+    assertThat(captor.getValue().getGcmId()).isEqualTo("mytoken");
+    assertThat(captor.getValue().getData().isPresent()).isTrue();
+    assertThat(captor.getValue().getData().get().length()).isEqualTo(32);
+
+    verifyNoMoreInteractions(apnSender);
+  }
+
+  @Test
+  public void testGetApnPreauth() throws Exception {
     Response response = resources.getJerseyTest()
                                  .target("/v1/accounts/apn/prereg/"+org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_UUID+"/mytoken")
                                  .request()
