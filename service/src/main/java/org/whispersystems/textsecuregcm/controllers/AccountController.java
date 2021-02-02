@@ -599,6 +599,8 @@ public class AccountController {
       if (!pushChallenge.get().equals(storedPushChallenge.orElse(null))) {
         return new CaptchaRequirement(true, false);
       }
+    } else {
+      return new CaptchaRequirement(true, false);
     }
 
     // We don't have to carry many of Signal's abuse rules since additional
