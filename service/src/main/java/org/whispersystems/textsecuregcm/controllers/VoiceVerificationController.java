@@ -50,7 +50,7 @@ public class VoiceVerificationController {
     this.baseUrl          = baseUrl;
     this.supportedLocales = supportedLocales;
   }
-  
+
   @POST
   @Path("/description/{code}")
   @Produces(MediaType.APPLICATION_XML)
@@ -77,27 +77,27 @@ public class VoiceVerificationController {
 
     return Response.ok()
                    .entity(String.format(PLAY_TWIML,
-                                         path + "verification.mp3",
-                                         path + code.charAt(0) + "_middle.mp3",
-                                         path + code.charAt(1) + "_middle.mp3",
-                                         path + code.charAt(2) + "_middle.mp3",
-                                         path + code.charAt(3) + "_middle.mp3",
-                                         path + code.charAt(4) + "_middle.mp3",
-                                         path + code.charAt(5) + "_falling.mp3",
-                                         path + "verification.mp3",
-                                         path + code.charAt(0) + "_middle.mp3",
-                                         path + code.charAt(1) + "_middle.mp3",
-                                         path + code.charAt(2) + "_middle.mp3",
-                                         path + code.charAt(3) + "_middle.mp3",
-                                         path + code.charAt(4) + "_middle.mp3",
-                                         path + code.charAt(5) + "_falling.mp3",
-                                         path + "verification.mp3",
-                                         path + code.charAt(0) + "_middle.mp3",
-                                         path + code.charAt(1) + "_middle.mp3",
-                                         path + code.charAt(2) + "_middle.mp3",
-                                         path + code.charAt(3) + "_middle.mp3",
-                                         path + code.charAt(4) + "_middle.mp3",
-                                         path + code.charAt(5) + "_falling.mp3"))
+                                         path + "verification.wav",
+                                         path + code.charAt(0) + "_middle.wav",
+                                         path + code.charAt(1) + "_middle.wav",
+                                         path + code.charAt(2) + "_middle.wav",
+                                         path + code.charAt(3) + "_middle.wav",
+                                         path + code.charAt(4) + "_middle.wav",
+                                         path + code.charAt(5) + "_falling.wav",
+                                         path + "verification.wav",
+                                         path + code.charAt(0) + "_middle.wav",
+                                         path + code.charAt(1) + "_middle.wav",
+                                         path + code.charAt(2) + "_middle.wav",
+                                         path + code.charAt(3) + "_middle.wav",
+                                         path + code.charAt(4) + "_middle.wav",
+                                         path + code.charAt(5) + "_falling.wav",
+                                         path + "verification.wav",
+                                         path + code.charAt(0) + "_middle.wav",
+                                         path + code.charAt(1) + "_middle.wav",
+                                         path + code.charAt(2) + "_middle.wav",
+                                         path + code.charAt(3) + "_middle.wav",
+                                         path + code.charAt(4) + "_middle.wav",
+                                         path + code.charAt(5) + "_falling.wav"))
                    .build();
   }
 
