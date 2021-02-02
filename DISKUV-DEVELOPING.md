@@ -76,6 +76,18 @@ or <https://ngrok.com/> which is similar but requires you to sign-up (for free).
 If you do this often, you will want the more permanent solution provided by
 [go-http-tunnel](https://github.com/mmatczuk/go-http-tunnel#readme)
 
+---
+
+Here is a list of changes you will have to make to the source code in
+Diskuv-Communicator-Android (or Signal-Android):
+* `app/build.gradle` > android > productFlavors > staging > SIGNAL_URL
+* Follow the "Regenerating the trust store" section of Diskuv-Communicator-Android's
+  `DISKUV-DEVELOPING.md`. You will need to modify its `$localtunnels` variable before
+  executing the code snippet.
+
+The changes you will need to this project (Diskuv-Communicator-Server) are:
+* `local.yml` > twilio > localDomain
+
 ### Configuring Third-Party Vendors and Components
 
 #### Redis
