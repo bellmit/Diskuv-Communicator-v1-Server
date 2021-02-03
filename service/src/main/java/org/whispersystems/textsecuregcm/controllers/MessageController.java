@@ -91,7 +91,6 @@ public class MessageController {
   private final MetricRegistry metricRegistry                   = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
   private final Meter          unidentifiedMeter                = metricRegistry.meter(name(getClass(), "delivery", "unidentified"));
   private final Meter          identifiedMeter                  = metricRegistry.meter(name(getClass(), "delivery", "identified"  ));
-  private final Meter          rejectOversizeMessageMeter       = metricRegistry.meter(name(getClass(), "rejectOversizeMessage"));
   private final Meter          rejectOver256kibMessageMeter     = metricRegistry.meter(name(getClass(), "rejectOver256kibMessage"));
   private final Timer          sendMessageInternalTimer         = metricRegistry.timer(name(getClass(), "sendMessageInternal"));
   private final Histogram      outgoingMessageListSizeHistogram = metricRegistry.histogram(name(getClass(), "outgoingMessageListSize"));
@@ -109,8 +108,7 @@ public class MessageController {
   private static final String CONTENT_SIZE_DISTRIBUTION_NAME                     = name(MessageController.class, "messageContentSize");
   private static final String OUTGOING_MESSAGE_LIST_SIZE_BYTES_DISTRIBUTION_NAME = name(MessageController.class, "outgoingMessageListSizeBytes");
 
-  private static final long MAX_MESSAGE_SIZE = DataSize.mebibytes(1).toBytes();
-  private static final long SMALLER_MAX_MESSAGE_SIZE = DataSize.kibibytes(256).toBytes();
+  private static final long MAX_MESSAGE_SIZE = DataSize.kibibytes(256).toBytes();
 
   public MessageController(com.diskuv.communicatorservice.auth.JwtAuthentication jwtAuthentication,
                            RateLimiters rateLimiters,
@@ -186,12 +184,8 @@ public class MessageController {
         Metrics.summary(CONTENT_SIZE_DISTRIBUTION_NAME, UserAgentTagUtil.getUserAgentTags(userAgent)).record(contentLength);
 
         if (contentLength > MAX_MESSAGE_SIZE) {
-          // TODO Reject the request
-          rejectOversizeMessageMeter.mark();
-        }
-
-        if (contentLength > SMALLER_MAX_MESSAGE_SIZE) {
           rejectOver256kibMessageMeter.mark();
+          throw new WebApplicationException(Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE).build());
         }
       }
 

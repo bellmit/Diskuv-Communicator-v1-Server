@@ -32,6 +32,7 @@ import org.whispersystems.textsecuregcm.configuration.JwtKeysConfiguration;
 import org.whispersystems.textsecuregcm.configuration.AccountsDatabaseConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MaxDeviceConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MessageCacheConfiguration;
+import org.whispersystems.textsecuregcm.configuration.MessageDynamoDbConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MicrometerConfiguration;
 import org.whispersystems.textsecuregcm.configuration.PaymentsServiceConfiguration;
 import org.whispersystems.textsecuregcm.configuration.PushConfiguration;
@@ -129,6 +130,11 @@ public class WhisperServerConfiguration extends Configuration {
   @Valid
   @JsonProperty
   private RedisClusterConfiguration clientPresenceCluster;
+
+  @Valid
+  @NotNull
+  @JsonProperty
+  private MessageDynamoDbConfiguration messageDynamoDb;
 
   @Valid
   @NotNull
@@ -308,6 +314,10 @@ public class WhisperServerConfiguration extends Configuration {
 
   public RedisClusterConfiguration getPushSchedulerCluster() {
     return pushSchedulerCluster;
+  }
+
+  public MessageDynamoDbConfiguration getMessageDynamoDbConfiguration() {
+    return messageDynamoDb;
   }
 
   public DatabaseConfiguration getMessageStoreConfiguration() {
