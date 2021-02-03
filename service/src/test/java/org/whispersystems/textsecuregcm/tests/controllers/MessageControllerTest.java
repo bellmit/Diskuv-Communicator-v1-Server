@@ -90,7 +90,7 @@ public class MessageControllerTest {
                                                             .addProvider(new PolymorphicAuthValueFactoryProvider.Binder<>(ImmutableSet.of(Account.class, DisabledPermittedAccount.class)))
                                                             .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
                                                             .addResource(new MessageController(jwtAuthentication, rateLimiters, messageSender, receiptSender, accountsManager,
-                                                                                               messagesManager, apnFallbackManager, featureFlagsManager))
+                                                                                               messagesManager, apnFallbackManager))
                                                             .build();
 
 
@@ -116,10 +116,11 @@ public class MessageControllerTest {
     when(accountsManager.get(eq(SINGLE_DEVICE_UUID))).thenReturn(singleDeviceAccount);
     when(accountsManager.get(eq(MULTI_DEVICE_UUID))).thenReturn(multiDeviceAccount);
 
-    when(rateLimiters.getMessagesLimiter()).thenReturn(rateLimiter);
-
     when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(eq(AuthHelper.VALID_BEARER_TOKEN))).thenReturn(AuthHelper.VALID_EMAIL);
     when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(eq(AuthHelper.VALID_BEARER_TOKEN_TWO))).thenReturn(AuthHelper.VALID_EMAIL_TWO);
+
+    when(rateLimiters.getMessagesLimiter()).thenReturn(rateLimiter);
+    when(rateLimiters.getUnsealedSenderLimiter()).thenReturn(rateLimiter);
   }
 
   @Test
