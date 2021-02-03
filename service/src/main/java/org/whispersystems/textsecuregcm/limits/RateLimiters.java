@@ -17,9 +17,12 @@
 package org.whispersystems.textsecuregcm.limits;
 
 
-import com.google.common.annotations.VisibleForTesting;
 import org.whispersystems.textsecuregcm.configuration.RateLimitsConfiguration;
+import org.whispersystems.textsecuregcm.configuration.RateLimitsConfiguration.RateLimitConfiguration;
 import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
+import org.whispersystems.textsecuregcm.storage.DynamicConfigurationManager;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public class RateLimiters {
 
@@ -50,7 +53,16 @@ public class RateLimiters {
   private final RateLimiter connectWebSocketLimiter;
   private final RateLimiter sanctuaryLookupLimiter;
 
-  public RateLimiters(RateLimitsConfiguration config, FaultTolerantRedisCluster cacheCluster) {
+  private final AtomicReference<RateLimiter> unsealedSenderLimiter;
+  private final AtomicReference<RateLimiter> unsealedIpLimiter;
+
+  private final FaultTolerantRedisCluster   cacheCluster;
+  private final DynamicConfigurationManager dynamicConfig;
+
+  public RateLimiters(RateLimitsConfiguration config, DynamicConfigurationManager dynamicConfig, FaultTolerantRedisCluster cacheCluster) {
+    this.cacheCluster  = cacheCluster;
+    this.dynamicConfig = dynamicConfig;
+
     this.smsDestinationLimiter = new RateLimiter(cacheCluster, "smsDestination",
                                                  config.getSmsDestination().getBucketSize(),
                                                  config.getSmsDestination().getLeakRatePerMinute());
@@ -132,38 +144,39 @@ public class RateLimiters {
                                               config.getUsernameSet().getLeakRatePerMinute());
 
     this.connectWebSocketLimiter = new RateLimiter(cacheCluster, "connectWebSocket",
-                                                   config.getConnectWebSocket().getBucketSize(),
-                                                   config.getConnectWebSocket().getLeakRatePerMinute());
+                                              config.getConnectWebSocket().getBucketSize(),
+                                              config.getConnectWebSocket().getLeakRatePerMinute());
 
     this.sanctuaryLookupLimiter = new RateLimiter(cacheCluster, "sanctuaryLookup",
                                                    config.getSanctuaryLookup().getBucketSize(),
                                                    config.getSanctuaryLookup().getLeakRatePerMinute());
+
+    this.unsealedSenderLimiter = new AtomicReference<>(createUnsealedSenderLimiter(cacheCluster, dynamicConfig.getConfiguration().getLimits().getUnsealedSenderNumber()));
+    this.unsealedIpLimiter     = new AtomicReference<>(createUnsealedIpLimiter(cacheCluster, dynamicConfig.getConfiguration().getLimits().getUnsealedSenderIp()));
   }
 
-  @VisibleForTesting
-  public RateLimiters(RateLimiter rateLimiter) {
-    this.smsDestinationLimiter = rateLimiter;
-    this.voiceDestinationLimiter = rateLimiter;
-    this.voiceDestinationDailyLimiter = rateLimiter;
-    this.smsVoiceIpLimiter = rateLimiter;
-    this.smsVoicePrefixLimiter = rateLimiter;
-    this.autoBlockLimiter = rateLimiter;
-    this.verifyLimiter = rateLimiter;
-    this.pinLimiter = rateLimiter;
-    this.attachmentLimiter = rateLimiter;
-    this.contactsLimiter = rateLimiter;
-    this.contactsIpLimiter = rateLimiter;
-    this.preKeysLimiter = rateLimiter;
-    this.messagesLimiter = rateLimiter;
-    this.allocateDeviceLimiter = rateLimiter;
-    this.verifyDeviceLimiter = rateLimiter;
-    this.turnLimiter = rateLimiter;
-    this.profileLimiter = rateLimiter;
-    this.stickerPackLimiter = rateLimiter;
-    this.usernameLookupLimiter = rateLimiter;
-    this.usernameSetLimiter = rateLimiter;
-    this.connectWebSocketLimiter = rateLimiter;
-    this.sanctuaryLookupLimiter = rateLimiter;
+  public RateLimiter getUnsealedSenderLimiter() {
+    RateLimitConfiguration currentConfiguration = dynamicConfig.getConfiguration().getLimits().getUnsealedSenderNumber();
+
+    return this.unsealedSenderLimiter.updateAndGet(rateLimiter -> {
+      if (isLimiterConfigurationCurrent(rateLimiter, currentConfiguration)) {
+        return rateLimiter;
+      } else {
+        return createUnsealedSenderLimiter(cacheCluster, currentConfiguration);
+      }
+    });
+  }
+
+  public RateLimiter getUnsealedIpLimiter() {
+    RateLimitConfiguration currentConfiguration = dynamicConfig.getConfiguration().getLimits().getUnsealedSenderIp();
+
+    return this.unsealedIpLimiter.updateAndGet(rateLimiter -> {
+      if (isLimiterConfigurationCurrent(rateLimiter, currentConfiguration)) {
+        return rateLimiter;
+      } else {
+        return createUnsealedIpLimiter(cacheCluster, currentConfiguration);
+      }
+    });
   }
 
   public RateLimiter getAllocateDeviceLimiter() {
@@ -252,5 +265,27 @@ public class RateLimiters {
 
   public RateLimiter getSanctuaryLookupLimiter() {
     return sanctuaryLookupLimiter;
+  }
+
+  private RateLimiter createUnsealedSenderLimiter(FaultTolerantRedisCluster cacheCluster,
+                                                  RateLimitConfiguration configuration)
+  {
+    return createLimiter(cacheCluster, configuration, "unsealedSender");
+  }
+
+  private RateLimiter createUnsealedIpLimiter(FaultTolerantRedisCluster cacheCluster,
+                                              RateLimitConfiguration configuration)
+  {
+    return createLimiter(cacheCluster, configuration, "unsealedIp");
+  }
+
+  private RateLimiter createLimiter(FaultTolerantRedisCluster cacheCluster, RateLimitConfiguration configuration, String name) {
+    return new RateLimiter(cacheCluster, name,
+                           configuration.getBucketSize(),
+                           configuration.getLeakRatePerMinute());
+  }
+
+  private boolean isLimiterConfigurationCurrent(RateLimiter limiter, RateLimitConfiguration configuration) {
+    return limiter.getBucketSize() == configuration.getBucketSize() && limiter.getLeakRatePerMinute() == configuration.getLeakRatePerMinute();
   }
 }
