@@ -62,7 +62,6 @@ public class AccountsManager {
 
   private final Accounts                  accounts;
   private final FaultTolerantRedisCluster cacheCluster;
-  private final Keys                      keys;
   private final KeysDynamoDb              keysDynamoDb;
   private final MessagesManager           messagesManager;
   private final UsernamesManager          usernamesManager;
@@ -81,10 +80,9 @@ public class AccountsManager {
     }
   }
 
-  public AccountsManager(Accounts accounts, FaultTolerantRedisCluster cacheCluster, final Keys keys, final KeysDynamoDb keysDynamoDb, final MessagesManager messagesManager, final UsernamesManager usernamesManager, final ProfilesManager profilesManager) {
+  public AccountsManager(Accounts accounts, FaultTolerantRedisCluster cacheCluster, final KeysDynamoDb keysDynamoDb, final MessagesManager messagesManager, final UsernamesManager usernamesManager, final ProfilesManager profilesManager) {
     this.accounts         = accounts;
     this.cacheCluster     = cacheCluster;
-    this.keys             = keys;
     this.keysDynamoDb     = keysDynamoDb;
     this.messagesManager  = messagesManager;
     this.usernamesManager = usernamesManager;
@@ -146,7 +144,6 @@ public class AccountsManager {
     try (final Timer.Context ignored = deleteTimer.time()) {
       usernamesManager.delete(account.getUuid());
       profilesManager.deleteAll(account.getUuid());
-      keys.delete(account);
       keysDynamoDb.delete(account);
       messagesManager.clear(account.getNumber(), account.getUuid());
       redisDelete(account);

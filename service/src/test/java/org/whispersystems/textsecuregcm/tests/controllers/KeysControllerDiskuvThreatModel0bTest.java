@@ -1,38 +1,35 @@
 package org.whispersystems.textsecuregcm.tests.controllers;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.google.common.collect.ImmutableSet;
 import com.opentable.db.postgres.embedded.LiquibasePreparer;
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
 import com.opentable.db.postgres.junit.PreparedDbRule;
-import org.jdbi.v3.core.Jdbi;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
-import org.whispersystems.textsecuregcm.configuration.CircuitBreakerConfiguration;
-import org.whispersystems.textsecuregcm.configuration.RetryConfiguration;
 import org.whispersystems.textsecuregcm.controllers.KeysController;
 import org.whispersystems.textsecuregcm.controllers.RateLimitExceededException;
 import org.whispersystems.textsecuregcm.entities.PreKeyCount;
 import org.whispersystems.textsecuregcm.entities.PreKeyResponse;
 import org.whispersystems.textsecuregcm.entities.SignedPreKey;
-import org.whispersystems.textsecuregcm.experiment.ExperimentEnrollmentManager;
 import org.whispersystems.textsecuregcm.limits.RateLimiter;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
-import org.whispersystems.textsecuregcm.storage.FaultTolerantDatabase;
-import org.whispersystems.textsecuregcm.storage.Keys;
 import org.whispersystems.textsecuregcm.storage.KeysDynamoDb;
 import org.whispersystems.textsecuregcm.synthetic.HmacDrbg;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
 import org.whispersystems.textsecuregcm.tests.util.UuidHelpers;
-
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
 
 /**
  * Guard against threat TM0.b. Probing the API, whether through the Android/iOS client or directly,
@@ -58,13 +55,6 @@ public class KeysControllerDiskuvThreatModel0bTest {
     RateLimiters rateLimiters = mock(RateLimiters.class);
     when(rateLimiters.getPreKeysLimiter()).thenReturn(rateLimiter);
 
-    // real key database
-    Jdbi database = Jdbi.create(accountsDb.getTestDatabase());
-    CircuitBreakerConfiguration circuitBreakerConfiguration = new CircuitBreakerConfiguration();
-    FaultTolerantDatabase faultTolerantDatabase =
-        new FaultTolerantDatabase(getClass().getName(), database, circuitBreakerConfiguration);
-    Keys keys = new Keys(faultTolerantDatabase, new RetryConfiguration());
-
     // mock the accounts
     AccountsManager accounts = mock(AccountsManager.class);
     byte[] saltSharedSecret = new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES];
@@ -72,8 +62,7 @@ public class KeysControllerDiskuvThreatModel0bTest {
     PossiblySyntheticAccountsManager syntheticAccountsManager = new PossiblySyntheticAccountsManager(accounts, saltSharedSecret);
 
     KeysDynamoDb                keysDynamoDb                = mock(KeysDynamoDb.class);
-    ExperimentEnrollmentManager experimentEnrollmentManager = mock(ExperimentEnrollmentManager.class);
-    this.keysController = new KeysController(rateLimiters, keys, keysDynamoDb, syntheticAccountsManager, experimentEnrollmentManager);
+    this.keysController = new KeysController(rateLimiters, keysDynamoDb, syntheticAccountsManager);
   }
 
   @Test
