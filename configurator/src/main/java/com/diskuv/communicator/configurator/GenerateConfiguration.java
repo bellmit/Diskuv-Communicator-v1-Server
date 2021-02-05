@@ -2,6 +2,7 @@ package com.diskuv.communicator.configurator;
 
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import io.dropwizard.jetty.HttpConnectorFactory;
@@ -76,17 +77,40 @@ public class GenerateConfiguration implements Callable<Integer> {
             "standard output is used")
     protected File outputYamlFile;
 
-    private Random random;
+    private final Random random;
 
     public static void main(String... args) {
         int exitCode = new CommandLine(new GenerateConfiguration()).setExecutionExceptionHandler(new PrintExceptionMessageHandler()).execute(args);
         System.exit(exitCode);
     }
 
+    public GenerateConfiguration() {
+        random = new SecureRandom();
+    }
+
+    @VisibleForTesting
+    protected GenerateConfiguration(Random random) {
+        this.random = random;
+    }
+
     @Override
     public Integer call() throws Exception {
-        this.random = new SecureRandom();
+        WhisperServerConfiguration config = createWhisperServerConfiguration();
 
+        // write configuration
+        ObjectMapper mapperForWriting = mapperForWriting();
+        if (outputYamlFile != null) {
+            mapperForWriting.writeValue(outputYamlFile, config);
+        } else {
+            String configValue = mapperForWriting.writeValueAsString(config);
+            System.out.println(configValue);
+        }
+
+        return 0;
+    }
+
+    @VisibleForTesting
+    protected WhisperServerConfiguration createWhisperServerConfiguration() throws IllegalAccessException, InvalidKeyException {
         // create configuration
         WhisperServerConfiguration config = new WhisperServerConfiguration();
 
@@ -116,17 +140,7 @@ public class GenerateConfiguration implements Callable<Integer> {
         backupService(config);
         remoteConfig(config);
         accountDatabaseCrawler(config);
-
-        // write configuration
-        ObjectMapper mapperForWriting = mapperForWriting();
-        if (outputYamlFile != null) {
-            mapperForWriting.writeValue(outputYamlFile, config);
-        } else {
-            String configValue = mapperForWriting.writeValueAsString(config);
-            System.out.println(configValue);
-        }
-
-        return 0;
+        return config;
     }
 
     /**
