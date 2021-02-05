@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import io.dropwizard.jetty.HttpConnectorFactory;
+import io.dropwizard.jetty.HttpsConnectorFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import org.apache.commons.codec.binary.Hex;
 import org.passay.CharacterData;
@@ -46,12 +47,31 @@ import static com.diskuv.communicator.configurator.ConfigurationUtils.setField;
 public class GenerateConfiguration implements Callable<Integer> {
     private static final int DATABASE_PASSWORD_LENGTH = 30;
     private static final int UNIDENTIFIED_DELIVERY_KEY_ID_0 = 0;
-    @CommandLine.Option(names = {"--application-http-port"}, description = "The HTTP port to use for the application",
-            defaultValue = "8080", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
-    protected int applicationHttpPort;
+    @CommandLine.ArgGroup(exclusive = true, multiplicity = "0..1")
+    protected ApplicationConnection applicationConnection;
+
+    static class ApplicationHttpsConnection {
+        @CommandLine.Option(names = {"--application-https-port"}, description = "The HTTPS port to use for the application",
+                required = true)
+        protected int httpsPort;
+        @CommandLine.Option(names = {"--application-keystore-file"}, description = "The keystore of the SSL certificate",
+                required = true)
+        protected File keystoreFile;
+        @CommandLine.Option(names = {"--application-keystore-password"}, description = "The password to the SSL keystore certificate",
+                required = true)
+        protected String keystorePassword;
+    }
+
+    static class ApplicationConnection {
+        @CommandLine.ArgGroup(exclusive = false, multiplicity = "1..1")
+        protected ApplicationHttpsConnection httpsConnection;
+        @CommandLine.Option(names = {"--application-http-port"}, description = "The HTTP port to use for the application")
+        protected Integer httpPort;
+    }
     @CommandLine.Option(names = {"--admin-http-port"},
             description = "The HTTP port to use for administration. If not specified, no administration port is used")
     protected Integer adminHttpPort;
+
     @CommandLine.Option(names = {"-o", "--output-file"}, description = "Output YAML file. If not specified, " +
             "standard output is used")
     protected File outputYamlFile;
@@ -129,9 +149,17 @@ public class GenerateConfiguration implements Callable<Integer> {
         } else {
             serverFactory.setAdminConnectors(ImmutableList.of());
         }
-        HttpConnectorFactory applicationConnectorFactory = new HttpConnectorFactory();
-        applicationConnectorFactory.setPort(applicationHttpPort);
-        serverFactory.setApplicationConnectors(ImmutableList.of(applicationConnectorFactory));
+        if (applicationConnection != null && applicationConnection.httpPort != null) {
+            HttpConnectorFactory applicationConnectorFactory = new HttpConnectorFactory();
+            applicationConnectorFactory.setPort(applicationConnection.httpPort);
+            serverFactory.setApplicationConnectors(ImmutableList.of(applicationConnectorFactory));
+        } else if (applicationConnection != null && applicationConnection.httpsConnection != null) {
+            HttpsConnectorFactory applicationConnectorFactory = new HttpsConnectorFactory();
+            applicationConnectorFactory.setPort(applicationConnection.httpsConnection.httpsPort);
+            applicationConnectorFactory.setKeyStorePath(applicationConnection.httpsConnection.keystoreFile.getPath());
+            applicationConnectorFactory.setKeyStorePassword(applicationConnection.httpsConnection.keystorePassword);
+            serverFactory.setApplicationConnectors(ImmutableList.of(applicationConnectorFactory));
+        }
     }
 
     /**
