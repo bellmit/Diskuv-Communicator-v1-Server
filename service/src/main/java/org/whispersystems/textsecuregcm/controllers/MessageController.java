@@ -92,6 +92,7 @@ public class MessageController {
   private final Meter          unidentifiedMeter                = metricRegistry.meter(name(getClass(), "delivery", "unidentified"));
   private final Meter          identifiedMeter                  = metricRegistry.meter(name(getClass(), "delivery", "identified"  ));
   private final Meter          rejectOver256kibMessageMeter     = metricRegistry.meter(name(getClass(), "rejectOver256kibMessage"));
+  private final Meter          rejectUnsealedSenderLimit        = metricRegistry.meter(name(getClass(), "rejectUnsealedSenderLimit"));
   private final Timer          sendMessageInternalTimer         = metricRegistry.timer(name(getClass(), "sendMessageInternal"));
   private final Histogram      outgoingMessageListSizeHistogram = metricRegistry.histogram(name(getClass(), "outgoingMessageListSize"));
 
@@ -134,12 +135,12 @@ public class MessageController {
   @PUT
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  public SendMessageResponse sendMessage(@Auth                                     Account             realSource,
-                                         @HeaderParam("Authorization")             String              authorizationHeader,
-                                         @HeaderParam(OptionalAccess.UNIDENTIFIED) Optional<Anonymous> accessKey,
-                                         @HeaderParam("User-Agent")                String userAgent,
-                                         @PathParam("destination")                 AmbiguousIdentifier destinationName,
-                                         @Valid                                    IncomingMessageList messages)
+  public Response sendMessage(@Auth                                     Account             realSource,
+                              @HeaderParam("Authorization")             String              authorizationHeader,
+                              @HeaderParam(OptionalAccess.UNIDENTIFIED) Optional<Anonymous> accessKey,
+                              @HeaderParam("User-Agent")                String userAgent,
+                              @PathParam("destination")                 AmbiguousIdentifier destinationName,
+                              @Valid                                    IncomingMessageList messages)
       throws RateLimitExceededException
   {
     // Unlike Signal, we expect every API to fully authenticate the real source, and edge routers are going to authenticate
@@ -147,26 +148,30 @@ public class MessageController {
     // However, it is fine if the effective source ... the source seen by a
     // recipient in the Envelope after we send a message ... is not present as long as the sender shows a valid
     // anonymous key.
-    Optional<Account>   source = accessKey.isPresent() ? Optional.empty() : Optional.of(realSource);
+    final Optional<Account> source = accessKey.isPresent() ? Optional.empty() : Optional.of(realSource);
 
     // account authentication (@Auth does it, but we want the outdoors UUID)
     UUID outdoorsUUID = AuthHeaderSupport.validateJwtAndGetOutdoorsUUID(jwtAuthentication, authorizationHeader);
 
-    if (!source.isPresent() && !accessKey.isPresent()) {
-      throw new WebApplicationException(Response.Status.UNAUTHORIZED);
-    }
+    if (shouldSend(destinationName)) {
+      if (source.isEmpty() && accessKey.isEmpty()) {
+        throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+      }
 
-    if (!destinationName.hasUuid()) {
-      throw new WebApplicationException(Response.Status.BAD_REQUEST);
-    }
+      if (source.isPresent() && !source.get().isFor(destinationName)) {
+        rateLimiters.getMessagesLimiter().validate(source.get().getUuid() + "__" + destinationName);
 
-    if (source.isPresent() && !source.get().isFor(destinationName)) {
-      rateLimiters.getMessagesLimiter().validate(source.get().getNumber() + "__" + destinationName);
-    }
+        try {
+          rateLimiters.getUnsealedSenderLimiter().validate(source.get().getUuid().toString());
+        } catch (RateLimitExceededException e) {
+          rejectUnsealedSenderLimit.mark();
+          logger.debug("Rejected unsealed sender limit from: " + source.get().getUuid());
+        }
+      }
 
       if (source.isPresent() && !source.get().isFor(destinationName)) {
         identifiedMeter.mark();
-      } else if (!source.isPresent()) {
+      } else if (source.isEmpty()) {
         unidentifiedMeter.mark();
       }
 
@@ -185,7 +190,7 @@ public class MessageController {
 
         if (contentLength > MAX_MESSAGE_SIZE) {
           rejectOver256kibMessageMeter.mark();
-          throw new WebApplicationException(Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE).build());
+          return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE).build();
         }
       }
 
@@ -213,21 +218,66 @@ public class MessageController {
           }
         }
 
-      return new SendMessageResponse(!isSyncMessage && source.isPresent() && source.get().getEnabledDeviceCount() > 1);
-    } catch (NoSuchUserException e) {
-      throw new WebApplicationException(Response.status(404).build());
-    } catch (MismatchedDevicesException e) {
-      throw new WebApplicationException(Response.status(409)
-                                                .type(MediaType.APPLICATION_JSON_TYPE)
-                                                .entity(new MismatchedDevices(e.getMissingDevices(),
-                                                                              e.getExtraDevices()))
-                                                .build());
-    } catch (StaleDevicesException e) {
-      throw new WebApplicationException(Response.status(410)
-                                                .type(MediaType.APPLICATION_JSON)
-                                                .entity(new StaleDevices(e.getStaleDevices()))
-                                                .build());
+        return Response.ok(new SendMessageResponse(!isSyncMessage && source.isPresent() && source.get().getEnabledDeviceCount() > 1)).build();
+      } catch (NoSuchUserException e) {
+        // We should not leak that a user does not exist!
+        return Response.ok(new SendMessageResponse(false)).build();
+        // throw new WebApplicationException(Response.status(404).build());
+      } catch (MismatchedDevicesException e) {
+        throw new WebApplicationException(Response.status(409)
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .entity(new MismatchedDevices(e.getMissingDevices(),
+                        e.getExtraDevices()))
+                .build());
+      } catch (StaleDevicesException e) {
+        throw new WebApplicationException(Response.status(410)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(new StaleDevices(e.getStaleDevices()))
+                .build());
+      }
+    } else {
+      if (featureFlagsManager.isFeatureFlagActive("SEND_ALL_200_STATUS")) {
+        // Forgive me for what I must do
+        return Response.ok(new SendMessageResponse(false)).build();
+      } else {
+        return Response.status(503).build();
+      }
     }
+  }
+
+  private boolean shouldSend(final AmbiguousIdentifier destination) {
+    return true;
+    /*
+    final double hash = destination.sendingGateHash();
+
+    return (hash / 256.0) < getSuccessPercentage();
+    */
+  }
+
+  private double getSuccessPercentage() {
+    if (featureFlagsManager.isFeatureFlagActive("SEND_MESSAGE_1_PERCENT")) {
+      return 0.01;
+    } else if (featureFlagsManager.isFeatureFlagActive("SEND_MESSAGE_2_PERCENT")) {
+      return 0.02;
+    } else if (featureFlagsManager.isFeatureFlagActive("SEND_MESSAGE_4_PERCENT")) {
+      return 0.04;
+    } else if (featureFlagsManager.isFeatureFlagActive("SEND_MESSAGE_8_PERCENT")) {
+      return 0.08;
+    } else if (featureFlagsManager.isFeatureFlagActive("SEND_MESSAGE_16_PERCENT")) {
+      return 0.16;
+    } else if (featureFlagsManager.isFeatureFlagActive("SEND_MESSAGE_32_PERCENT")) {
+      return 0.32;
+    } else if (featureFlagsManager.isFeatureFlagActive("SEND_MESSAGE_48_PERCENT")) {
+      return 0.48;
+    } else if (featureFlagsManager.isFeatureFlagActive("SEND_MESSAGE_64_PERCENT")) {
+      return 0.64;
+    } else if (featureFlagsManager.isFeatureFlagActive("SEND_MESSAGE_80_PERCENT")) {
+      return 0.80;
+    } else if (featureFlagsManager.isFeatureFlagActive("SEND_MESSAGE_100_PERCENT")) {
+      return 1.0d;
+    }
+
+    return 0;
   }
 
   @Timed
@@ -344,7 +394,7 @@ public class MessageController {
 
       if (source.isPresent()) {
         // Contact by email address. Not phone number.
-        messageBuilder // WAS: source.get().getNumber()
+        messageBuilder // WAS: .setSource(source.get().getNumber())
                       .setSourceUuid(source.get().getUuid().toString())
                       .setSourceDevice((int)source.get().getAuthenticatedDevice().get().getId());
       }
