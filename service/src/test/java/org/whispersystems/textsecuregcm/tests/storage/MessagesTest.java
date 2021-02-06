@@ -17,13 +17,8 @@ import org.whispersystems.textsecuregcm.storage.Messages;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -33,10 +28,12 @@ public class MessagesTest {
   public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(LiquibasePreparer.forClasspathLocation("messagedb.xml"));
 
   private Messages messages;
+  private Set<Integer> timestampSampleWithoutReplacements;
 
   @Before
   public void setupAccountsDao() {
     this.messages = new Messages(new FaultTolerantDatabase("messages-test", Jdbi.create(db.getTestDatabase()), new CircuitBreakerConfiguration()));
+    this.timestampSampleWithoutReplacements = ConcurrentHashMap.newKeySet();
   }
 
   @Test
@@ -230,10 +227,21 @@ public class MessagesTest {
     Arrays.fill(content, (byte)random.nextInt(255));
     Arrays.fill(legacy, (byte)random.nextInt(255));
 
+    // verifyInTact will fail if we generate two same timestamps
+    Integer timestamp = null;
+    for (int i=0; i<100; ++i) {
+      int ts = random.nextInt(100000);
+      if (this.timestampSampleWithoutReplacements.add(ts)) {
+        // successfully added. that is a new, unique timestamp
+        timestamp = ts;
+      }
+    }
+    assertThat(timestamp).isNotNull();
+
     return Envelope.newBuilder()
                    .setSourceDevice(random.nextInt(10000))
                    .setSource("testSource" + random.nextInt())
-                   .setTimestamp(random.nextInt(100000))
+                   .setTimestamp(timestamp)
                    .setServerTimestamp(random.nextInt(100000))
                    .setLegacyMessage(ByteString.copyFrom(legacy))
                    .setContent(ByteString.copyFrom(content))
