@@ -42,9 +42,12 @@ public class BaseAccountAuthenticatorTest {
         clock                      = mock(Clock.class);
         baseAccountAuthenticator   = new BaseDiskuvAccountAuthenticator(accountsManager, jwtAuthentication, clock);
 
-        acct1      = new Account(AuthHelper.getRandomUUID(random), Set.of(new Device(1, null, null, null, null, null, null, null, false, 0, null, yesterday, 0, null, 0, null)), null);
-        acct2      = new Account(AuthHelper.getRandomUUID(random), Set.of(new Device(1, null, null, null, null, null, null, null, false, 0, null, yesterday, 0, null, 0, null)), null);
-        oldAccount = new Account(AuthHelper.getRandomUUID(random), Set.of(new Device(1, null, null, null, null, null, null, null, false, 0, null, oldTime, 0, null, 0, null)), null);
+        acct1      = new Account("+14088675309", AuthHelper.getRandomUUID(random), Set.of(new Device(1, null, null, null,
+            null, null, null, false, 0, null, yesterday, 0, null, 0, null)), null);
+        acct2      = new Account("+14098675309", AuthHelper.getRandomUUID(random), Set.of(new Device(1, null, null, null,
+            null, null, null, false, 0, null, yesterday, 0, null, 0, null)), null);
+        oldAccount = new Account("+14108675309", AuthHelper.getRandomUUID(random), Set.of(new Device(1, null, null, null,
+            null, null, null, false, 0, null, oldTime, 0, null, 0, null)), null);
     }
 
     @Test

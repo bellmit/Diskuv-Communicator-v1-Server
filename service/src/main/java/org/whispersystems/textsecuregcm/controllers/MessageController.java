@@ -331,7 +331,7 @@ public class MessageController {
   @DELETE
   @Path("/{source}/{timestamp}")
   public void removePendingMessage(@Auth Account account,
-                                   @PathParam("source") String source,
+                                   @PathParam("source") UUID source,
                                    @PathParam("timestamp") long timestamp)
   {
     try {

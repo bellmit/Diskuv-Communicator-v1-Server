@@ -128,7 +128,7 @@ public class MessagesDynamoDbTest {
   }
 
   @Test
-  public void testDeleteMessageByDestinationAndSourceAndTimestamp() {
+  public void testDeleteMessageByDestinationAndSourceUuidAndTimestamp() {
     final UUID destinationUuid = UUID.randomUUID();
     final UUID secondDestinationUuid = UUID.randomUUID();
     messagesDynamoDb.store(List.of(MESSAGE1), destinationUuid, 1);
@@ -139,7 +139,7 @@ public class MessagesDynamoDbTest {
     assertThat(messagesDynamoDb.load(destinationUuid, 2, MessagesDynamoDb.RESULT_SET_CHUNK_SIZE)).isNotNull().hasSize(1).element(0).satisfies(verify(MESSAGE3));
     assertThat(messagesDynamoDb.load(secondDestinationUuid, 1, MessagesDynamoDb.RESULT_SET_CHUNK_SIZE)).isNotNull().hasSize(1).element(0).satisfies(verify(MESSAGE2));
 
-    messagesDynamoDb.deleteMessageByDestinationAndSourceAndTimestamp(secondDestinationUuid, 1, MESSAGE2.getSource(), MESSAGE2.getTimestamp());
+    messagesDynamoDb.deleteMessageByDestinationAndSourceUuidAndTimestamp(secondDestinationUuid, 1, java.util.UUID.fromString(MESSAGE2.getSourceUuid()), MESSAGE2.getTimestamp());
 
     assertThat(messagesDynamoDb.load(destinationUuid, 1, MessagesDynamoDb.RESULT_SET_CHUNK_SIZE)).isNotNull().hasSize(1).element(0).satisfies(verify(MESSAGE1));
     assertThat(messagesDynamoDb.load(destinationUuid, 2, MessagesDynamoDb.RESULT_SET_CHUNK_SIZE)).isNotNull().hasSize(1).element(0).satisfies(verify(MESSAGE3));

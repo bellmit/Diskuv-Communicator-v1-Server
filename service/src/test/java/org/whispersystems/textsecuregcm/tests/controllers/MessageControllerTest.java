@@ -1,10 +1,39 @@
 package org.whispersystems.textsecuregcm.tests.controllers;
 
-import com.diskuv.communicatorservice.auth.JwtAuthentication;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static org.whispersystems.textsecuregcm.tests.util.JsonHelpers.asJson;
+import static org.whispersystems.textsecuregcm.tests.util.JsonHelpers.jsonFixture;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
 import io.dropwizard.testing.junit.ResourceTestRule;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -33,52 +62,21 @@ import org.whispersystems.textsecuregcm.storage.FeatureFlagsManager;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
+import org.whispersystems.textsecuregcm.tests.util.UuidHelpers;
 import org.whispersystems.textsecuregcm.util.Base64;
-
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static org.whispersystems.textsecuregcm.tests.util.JsonHelpers.asJson;
-import static org.whispersystems.textsecuregcm.tests.util.JsonHelpers.jsonFixture;
-import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.*;
 
 @Ignore
 public class MessageControllerTest {
   private static final String EMPTY_SOURCE            = "";
-  private static final UUID   SINGLE_DEVICE_UUID      = UUID_BOB;
+  private static final UUID   SINGLE_DEVICE_UUID      = UuidHelpers.UUID_BOB;
 
-  private static final UUID   MULTI_DEVICE_UUID       = UUID_ALICE;
+  private static final UUID   MULTI_DEVICE_UUID       = UuidHelpers.UUID_ALICE;
 
   private  final MessageSender          messageSender          = mock(MessageSender.class);
   private  final ReceiptSender          receiptSender          = mock(ReceiptSender.class);
   private  final PossiblySyntheticAccountsManager        accountsManager        = mock(PossiblySyntheticAccountsManager.class);
   private  final MessagesManager        messagesManager        = mock(MessagesManager.class);
-  private  final JwtAuthentication      jwtAuthentication      = mock(JwtAuthentication.class);
+  private  final com.diskuv.communicatorservice.auth.JwtAuthentication      jwtAuthentication      = mock(com.diskuv.communicatorservice.auth.JwtAuthentication.class);
   private  final RateLimiters           rateLimiters           = mock(RateLimiters.class);
   private  final RateLimiter            rateLimiter            = mock(RateLimiter.class);
   private  final ApnFallbackManager     apnFallbackManager     = mock(ApnFallbackManager.class);
@@ -99,13 +97,17 @@ public class MessageControllerTest {
   @Before
   public void setup() throws Exception {
     Set<Device> singleDeviceList = new HashSet<Device>() {{
-      add(new Device(1, null, "foo", "bar", "baz", "isgcm", null, null, false, 111, new SignedPreKey(333, "baz", "boop"), System.currentTimeMillis(), System.currentTimeMillis(), "Test", 0, new Device.DeviceCapabilities(true, false, false, true, true, false)));
+      add(new Device(1, null, "foo", "bar",
+          "isgcm", null, null, false, 111, new SignedPreKey(333, "baz", "boop"), System.currentTimeMillis(), System.currentTimeMillis(), "Test", 0, new Device.DeviceCapabilities(true, false, false, true, true, false)));
     }};
 
     Set<Device> multiDeviceList = new HashSet<Device>() {{
-      add(new Device(1, null, "foo", "bar", "baz", "isgcm", null, null, false, 222, new SignedPreKey(111, "foo", "bar"), System.currentTimeMillis(), System.currentTimeMillis(), "Test", 0, new Device.DeviceCapabilities(true, false, false, true, false, false)));
-      add(new Device(2, null, "foo", "bar", "baz", "isgcm", null, null, false, 333, new SignedPreKey(222, "oof", "rab"), System.currentTimeMillis(), System.currentTimeMillis(), "Test", 0, new Device.DeviceCapabilities(true, false, false, true, false, false)));
-      add(new Device(3, null, "foo", "bar", "baz", "isgcm", null, null, false, 444, null, System.currentTimeMillis() - TimeUnit.DAYS.toMillis(31), System.currentTimeMillis(), "Test", 0, new Device.DeviceCapabilities(false, false, false, false, false, false)));
+      add(new Device(1, null, "foo", "bar",
+          "isgcm", null, null, false, 222, new SignedPreKey(111, "foo", "bar"), System.currentTimeMillis(), System.currentTimeMillis(), "Test", 0, new Device.DeviceCapabilities(true, false, false, true, false, false)));
+      add(new Device(2, null, "foo", "bar",
+          "isgcm", null, null, false, 333, new SignedPreKey(222, "oof", "rab"), System.currentTimeMillis(), System.currentTimeMillis(), "Test", 0, new Device.DeviceCapabilities(true, false, false, true, false, false)));
+      add(new Device(3, null, "foo", "bar",
+          "isgcm", null, null, false, 444, null, System.currentTimeMillis() - TimeUnit.DAYS.toMillis(31), System.currentTimeMillis(), "Test", 0, new Device.DeviceCapabilities(false, false, false, false, false, false)));
     }};
 
     Account singleDeviceAccount = new Account(SINGLE_DEVICE_UUID, singleDeviceList, "1234".getBytes());
@@ -271,11 +273,11 @@ public class MessageControllerTest {
     final long timestampTwo = 313388;
 
     final UUID messageGuidOne = UUID.randomUUID();
-    final UUID sourceUuid     = UUID_ALICE;
+    final UUID sourceUuid     = UuidHelpers.UUID_ALICE;
 
     List<OutgoingMessageEntity> messages = new LinkedList<>() {{
-      add(new OutgoingMessageEntity(1L, false, messageGuidOne, Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, UUID_ALICE, 2, "hi there".getBytes(), null, 0, null));
-      add(new OutgoingMessageEntity(2L, false, null, Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, UUID_ALICE, 2, null, null, 0, null));
+      add(new OutgoingMessageEntity(1L, false, messageGuidOne, Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 2, "hi there".getBytes(), null, 0, null));
+      add(new OutgoingMessageEntity(2L, false, null, Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 2, null, null, 0, null));
     }};
 
     OutgoingMessageEntityList messagesList = new OutgoingMessageEntityList(messages, false);
@@ -312,8 +314,8 @@ public class MessageControllerTest {
     final long timestampTwo = 313388;
 
     List<OutgoingMessageEntity> messages = new LinkedList<OutgoingMessageEntity>() {{
-      add(new OutgoingMessageEntity(1L, false, UUID.randomUUID(), Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, UUID_ALICE, 2, "hi there".getBytes(), null, 0, null));
-      add(new OutgoingMessageEntity(2L, false, UUID.randomUUID(), Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, UUID_ALICE, 2, null, null, 0, null));
+      add(new OutgoingMessageEntity(1L, false, UUID.randomUUID(), Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 2, "hi there".getBytes(), null, 0, null));
+      add(new OutgoingMessageEntity(2L, false, UUID.randomUUID(), Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 2, null, null, 0, null));
     }};
 
     OutgoingMessageEntityList messagesList = new OutgoingMessageEntityList(messages, false);
@@ -337,34 +339,34 @@ public class MessageControllerTest {
 
     UUID sourceUuid = UUID.randomUUID();
 
-    when(messagesManager.delete(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_UUID, 1, UUID_ALICE_STRING, 31337))
+    when(messagesManager.delete(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31337))
         .thenReturn(Optional.of(new OutgoingMessageEntity(31337L, true, null,
                                                           Envelope.Type.CIPHERTEXT_VALUE,
                                                           null, timestamp,
-                                                          EMPTY_SOURCE, UUID_ALICE, 1, "hi".getBytes(), null, 0, null)));
+                                                          EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 1, "hi".getBytes(), null, 0, null)));
 
-    when(messagesManager.delete(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_UUID, 1, UUID_ALICE_STRING, 31338))
+    when(messagesManager.delete(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31338))
         .thenReturn(Optional.of(new OutgoingMessageEntity(31337L, true, null,
                                                           Envelope.Type.RECEIPT_VALUE,
                                                           null, System.currentTimeMillis(),
-                                                          EMPTY_SOURCE, UUID_ALICE, 1, null, null, 0, null)));
+                                                          EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 1, null, null, 0, null)));
 
 
-    when(messagesManager.delete(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_UUID, 1, UUID_ALICE_STRING, 31339))
+    when(messagesManager.delete(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31339))
         .thenReturn(Optional.empty());
 
     Response response = resources.getJerseyTest()
-                                 .target(String.format("/v1/messages/%s/%d", UUID_ALICE, 31337))
+                                 .target(String.format("/v1/messages/%s/%d", UuidHelpers.UUID_ALICE, 31337))
                                  .request()
                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .delete();
 
     assertThat("Good Response Code", response.getStatus(), is(equalTo(204)));
-    verify(receiptSender).sendReceipt(any(Account.class), eq(UUID_ALICE_STRING), eq(timestamp));
+    verify(receiptSender).sendReceipt(any(Account.class), eq(UuidHelpers.UUID_ALICE_STRING), eq(timestamp));
 
     response = resources.getJerseyTest()
-                        .target(String.format("/v1/messages/%s/%d", UUID_ALICE, 31338))
+                        .target(String.format("/v1/messages/%s/%d", UuidHelpers.UUID_ALICE, 31338))
                         .request()
                         .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                         .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
@@ -374,7 +376,7 @@ public class MessageControllerTest {
     verifyNoMoreInteractions(receiptSender);
 
     response = resources.getJerseyTest()
-                        .target(String.format("/v1/messages/%s/%d", UUID_ALICE, 31339))
+                        .target(String.format("/v1/messages/%s/%d", UuidHelpers.UUID_ALICE, 31339))
                         .request()
                         .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                         .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))

@@ -49,6 +49,7 @@ public class MessagesDynamoDb extends AbstractDynamoDbStore {
   private static final String KEY_SOURCE_DEVICE = "SD";
   private static final String KEY_MESSAGE = "M";
   private static final String KEY_CONTENT = "C";
+  private static final String KEY_SERVER_OUTDOORS_SOURCE_UUID = "SOSU";
   private static final String KEY_TTL = "E";
 
   private final Timer storeTimer = timer(name(getClass(), "store"));
@@ -105,6 +106,9 @@ public class MessagesDynamoDb extends AbstractDynamoDbStore {
       if (message.hasContent()) {
         item.withBinary(KEY_CONTENT, message.getContent().toByteArray());
       }
+      if (message.hasServerOutdoorsSourceUuid()) {
+        item.withBinary(KEY_SERVER_OUTDOORS_SOURCE_UUID, UUIDUtil.toBytes(UUID.fromString(message.getServerOutdoorsSourceUuid())));
+      }
       items.addItemToPut(item);
     }
 
@@ -131,9 +135,9 @@ public class MessagesDynamoDb extends AbstractDynamoDbStore {
     });
   }
 
-  public Optional<OutgoingMessageEntity> deleteMessageByDestinationAndSourceAndTimestamp(final UUID destinationAccountUuid, final long destinationDeviceId, final String source, final long timestamp) {
+  public Optional<OutgoingMessageEntity> deleteMessageByDestinationAndSourceUuidAndTimestamp(final UUID destinationAccountUuid, final long destinationDeviceId, final UUID sourceUuid, final long timestamp) {
     return deleteBySourceAndTimestamp.record(() -> {
-      if (StringUtils.isEmpty(source)) {
+      if (sourceUuid == null) {
         throw new IllegalArgumentException("must specify a source");
       }
 
@@ -141,14 +145,14 @@ public class MessagesDynamoDb extends AbstractDynamoDbStore {
       final QuerySpec querySpec = new QuerySpec().withProjectionExpression(KEY_SORT)
                                                  .withConsistentRead(true)
                                                  .withKeyConditionExpression("#part = :part AND begins_with ( #sort , :sortprefix )")
-                                                 .withFilterExpression("#source = :source AND #timestamp = :timestamp")
+                                                 .withFilterExpression("#source_uuid = :source_uuid AND #timestamp = :timestamp")
                                                  .withNameMap(Map.of("#part", KEY_PARTITION,
                                                                      "#sort", KEY_SORT,
-                                                                     "#source", KEY_SOURCE,
+                                                                     "#source_uuid", KEY_SOURCE_UUID,
                                                                      "#timestamp", KEY_TIMESTAMP))
                                                  .withValueMap(Map.of(":part", partitionKey,
                                                                       ":sortprefix", convertDestinationDeviceIdToSortKeyPrefix(destinationDeviceId),
-                                                                      ":source", source,
+                                                                      ":source_uuid", sourceUuid.toString(),
                                                                       ":timestamp", timestamp));
 
       final Table table = getDynamoDb().getTable(tableName);
@@ -224,7 +228,8 @@ public class MessagesDynamoDb extends AbstractDynamoDbStore {
     final int sourceDevice = message.hasAttribute(KEY_SOURCE_DEVICE) ? message.getInt(KEY_SOURCE_DEVICE) : 0;
     final byte[] messageBytes = message.getBinary(KEY_MESSAGE);
     final byte[] content = message.getBinary(KEY_CONTENT);
-    return new OutgoingMessageEntity(-1L, false, messageUuid, type, relay, timestamp, source, sourceUuid, sourceDevice, messageBytes, content, sortKey.getServerTimestamp());
+    final UUID serverOutdoorsSourceUuid = message.hasAttribute(KEY_SERVER_OUTDOORS_SOURCE_UUID) ? convertUuidFromBytes(message.getBinary(KEY_SERVER_OUTDOORS_SOURCE_UUID), "server outdoors source uuid") : null;
+    return new OutgoingMessageEntity(-1L, false, messageUuid, type, relay, timestamp, source, sourceUuid, sourceDevice, messageBytes, content, sortKey.getServerTimestamp(), serverOutdoorsSourceUuid);
   }
 
   private void deleteRowsMatchingQuery(byte[] partitionKey, QuerySpec querySpec) {

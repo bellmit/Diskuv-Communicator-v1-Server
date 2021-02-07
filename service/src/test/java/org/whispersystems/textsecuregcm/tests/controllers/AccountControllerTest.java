@@ -79,6 +79,7 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.notNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -582,7 +583,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "1234"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 2222, null),
+                 .put(Entity.entity(new AccountAttributes(false, 2222, null),
                                MediaType.APPLICATION_JSON_TYPE), AccountCreationResult.class);
 
     assertThat(result.getUuid()).isNotNull();
@@ -603,7 +604,7 @@ public class AccountControllerTest {
                     .target(String.format("/v1/accounts/code/%s", "1234"))
                     .request()
                     .header("Authorization", AuthHelper.getAuthHeader(SENDER, "bar"))
-                    .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 2222, null, null, null, null, false, null),
+                    .put(Entity.entity(new AccountAttributes(false, 2222, null, null, null, null, false, null),
                             MediaType.APPLICATION_JSON_TYPE), AccountCreationResult.class);
 
     assertThat(result.getUuid()).isNotNull();
@@ -624,7 +625,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "666666"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_HAS_STORAGE, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 2222, null),
+                 .put(Entity.entity(new AccountAttributes(false, 2222, null),
                                     MediaType.APPLICATION_JSON_TYPE), AccountCreationResult.class);
 
     assertThat(result.getUuid()).isNotNull();
@@ -641,7 +642,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "1234"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_OLD, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 2222, null),
+                 .put(Entity.entity(new AccountAttributes(false, 2222, null),
                                     MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(403);
@@ -657,7 +658,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "1111"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null),
+                 .put(Entity.entity(new AccountAttributes(false, 3333, null),
                                     MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(403);
@@ -673,7 +674,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "333333"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_PIN, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, "31337"),
+                 .put(Entity.entity(new AccountAttributes(false, 3333, "31337"),
                                     MediaType.APPLICATION_JSON_TYPE), AccountCreationResult.class);
 
     assertThat(result.getUuid()).isNotNull();
@@ -689,7 +690,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "666666"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_REG_LOCK, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null, null, Hex.toStringCondensed(registration_lock_key), null, true, null),
+                 .put(Entity.entity(new AccountAttributes(false, 3333, null, null, Hex.toStringCondensed(registration_lock_key), null, true, null),
                                     MediaType.APPLICATION_JSON_TYPE), AccountCreationResult.class);
 
     assertThat(result.getUuid()).isNotNull();
@@ -706,7 +707,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "666666"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_REG_LOCK, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null, null, Hex.toStringCondensed(registration_lock_key), null, true, null),
+                 .put(Entity.entity(new AccountAttributes(false, 3333, null, null, Hex.toStringCondensed(registration_lock_key), null, true, null),
                                     MediaType.APPLICATION_JSON_TYPE), AccountCreationResult.class);
 
     assertThat(result.getUuid()).isNotNull();
@@ -741,7 +742,7 @@ public class AccountControllerTest {
                    .target(String.format("/v1/accounts/code/%s", "666666"))
                    .request()
                    .header("Authorization", AuthHelper.getAuthHeader(SENDER_REG_LOCK, "bar"))
-                   .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null, null, null, null, true, null),
+                   .put(Entity.entity(new AccountAttributes(false, 3333, null, null, null, null, true, null),
                                       MediaType.APPLICATION_JSON_TYPE), AccountCreationResult.class);
 
       assertThat(result.getUuid()).isNotNull();
@@ -760,7 +761,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "333333"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_PIN, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, "31338"),
+                 .put(Entity.entity(new AccountAttributes(false, 3333, "31338"),
                                     MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(423);
@@ -776,7 +777,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "666666"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_REG_LOCK, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, Hex.toStringCondensed(new byte[32])),
+                 .put(Entity.entity(new AccountAttributes(false, 3333, Hex.toStringCondensed(new byte[32])),
                                     MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(423);
@@ -792,7 +793,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "333333"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_PIN, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null),
+                 .put(Entity.entity(new AccountAttributes(false, 3333, null),
                                     MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(423);
@@ -811,7 +812,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "666666"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_REG_LOCK, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null),
+                 .put(Entity.entity(new AccountAttributes(false, 3333, null),
                                     MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(423);
@@ -835,7 +836,7 @@ public class AccountControllerTest {
                  .target(String.format("/v1/accounts/code/%s", "444444"))
                  .request()
                  .header("Authorization", AuthHelper.getAuthHeader(SENDER_OVER_PIN, "bar"))
-                 .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, "31337"),
+                 .put(Entity.entity(new AccountAttributes(false, 3333, "31337"),
                                     MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(413);
@@ -854,7 +855,7 @@ public class AccountControllerTest {
                    .target(String.format("/v1/accounts/code/%s", "444444"))
                    .request()
                    .header("Authorization", AuthHelper.getAuthHeader(SENDER_OVER_PIN, "bar"))
-                   .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 3333, null),
+                   .put(Entity.entity(new AccountAttributes(false, 3333, null),
                                       MediaType.APPLICATION_JSON_TYPE), AccountCreationResult.class);
 
       assertThat(result.getUuid()).isNotNull();
@@ -875,7 +876,7 @@ public class AccountControllerTest {
                     .queryParam("transfer", true)
                     .request()
                     .header("Authorization", AuthHelper.getAuthHeader(SENDER_TRANSFER, "bar"))
-                    .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 2222, null),
+                    .put(Entity.entity(new AccountAttributes(false, 2222, null),
                             MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(409);
@@ -892,7 +893,7 @@ public class AccountControllerTest {
                     .queryParam("transfer", true)
                     .request()
                     .header("Authorization", AuthHelper.getAuthHeader(SENDER_TRANSFER, "bar"))
-                    .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 2222, null),
+                    .put(Entity.entity(new AccountAttributes(false, 2222, null),
                             MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(200);
@@ -908,7 +909,7 @@ public class AccountControllerTest {
                     .target(String.format("/v1/accounts/code/%s", "1234"))
                     .request()
                     .header("Authorization", AuthHelper.getAuthHeader(SENDER_TRANSFER, "bar"))
-                    .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 2222, null),
+                    .put(Entity.entity(new AccountAttributes(false, 2222, null),
                             MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(200);
@@ -1309,7 +1310,7 @@ public class AccountControllerTest {
                     .request()
                     .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                     .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
-                    .put(Entity.json(new AccountAttributes("keykeykeykey", false, 2222, null, null, null, null, true, null)));
+                    .put(Entity.json(new AccountAttributes(false, 2222, null, null, null, null, true, null)));
 
     assertThat(response.getStatus()).isEqualTo(204);
   }

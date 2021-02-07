@@ -199,7 +199,6 @@ public class WebSocketConnectionTest {
     OutgoingMessageEntityList outgoingMessagesList = new OutgoingMessageEntityList(outgoingMessages, false);
 
     when(device.getId()).thenReturn(2L);
-    when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
     when(account.getNumber()).thenReturn(accountUuid.toString());
@@ -352,7 +351,6 @@ public class WebSocketConnectionTest {
     OutgoingMessageEntityList   pendingMessagesList = new OutgoingMessageEntityList(pendingMessages, false);
 
     when(device.getId()).thenReturn(2L);
-    when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
     UUID accountUuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress(new Random().nextLong() + "@example.com");
@@ -719,7 +717,6 @@ public class WebSocketConnectionTest {
     OutgoingMessageEntityList outgoingMessagesList = new OutgoingMessageEntityList(outgoingMessages, false);
 
     when(device.getId()).thenReturn(2L);
-    when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
     when(account.getNumber()).thenReturn("+14152222222");
@@ -793,7 +790,6 @@ public class WebSocketConnectionTest {
     OutgoingMessageEntityList outgoingMessagesList = new OutgoingMessageEntityList(outgoingMessages, false);
 
     when(device.getId()).thenReturn(2L);
-    when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
     when(account.getNumber()).thenReturn("+14152222222");

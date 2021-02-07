@@ -16,6 +16,7 @@ import org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntity;
 import org.whispersystems.textsecuregcm.storage.FaultTolerantDatabase;
 import org.whispersystems.textsecuregcm.storage.Messages;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -313,17 +314,19 @@ public class MessagesTest {
     }
     assertThat(timestamp).isNotNull();
 
+    String sourceUuid = DiskuvUuidUtil
+        .uuidForOutdoorEmailAddress("testSource" + random.nextInt() + "@example.com").toString();
     return Envelope.newBuilder()
                    .setServerGuid(UUID.randomUUID().toString())
                    .setSourceDevice(random.nextInt(10000))
-                   .setSourceUuid(org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress("testSource" + random.nextInt() + "@example.com").toString())
+                   .setSourceUuid(sourceUuid)
                    .setTimestamp(serialTimestamp++)
                    .setServerTimestamp(serialTimestamp++)
                    .setLegacyMessage(ByteString.copyFrom(legacy))
                    .setContent(ByteString.copyFrom(content))
                    .setType(Envelope.Type.CIPHERTEXT)
                    .setServerGuid(UUID.randomUUID().toString())
-                   .setServerOutdoorsSourceUuid(UUID.randomUUID().toString())
+                   .setServerOutdoorsSourceUuid(sourceUuid)
                    .build();
   }
 }

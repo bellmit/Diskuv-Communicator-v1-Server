@@ -120,17 +120,17 @@ public class MessagesManager {
     }
   }
 
-  public Optional<OutgoingMessageEntity> delete(String destination, UUID destinationUuid, long destinationDevice, String source, long timestamp) {
+  public Optional<OutgoingMessageEntity> delete(String destination, UUID destinationUuid, long destinationDevice, UUID sourceUuid, long timestamp) {
     DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Preconditions.checkArgument(destinationUuid.toString().equals(destination));
-    Optional<OutgoingMessageEntity> removed = messagesCache.remove(destinationUuid, destinationDevice, source, timestamp);
+    Optional<OutgoingMessageEntity> removed = messagesCache.remove(destinationUuid, destinationDevice, sourceUuid.toString(), timestamp);
 
     if (removed.isEmpty()) {
       if (experimentEnrollmentManager.isEnrolled(destinationUuid, WRITE_DYNAMODB_EXPERIMENT)) {
-        removed = messagesDynamoDb.deleteMessageByDestinationAndSourceAndTimestamp(destinationUuid, destinationDevice, source, timestamp);
+        removed = messagesDynamoDb.deleteMessageByDestinationAndSourceUuidAndTimestamp(destinationUuid, destinationDevice, sourceUuid, timestamp);
       }
       if (removed.isEmpty() && !experimentEnrollmentManager.isEnrolled(destinationUuid, DISABLE_RDS_EXPERIMENT)) {
-        removed = messages.remove(destination, destinationDevice, source, timestamp);
+        removed = messages.remove(destination, destinationDevice, sourceUuid.toString(), timestamp);
       }
       cacheMissByNameMeter.mark();
     } else {

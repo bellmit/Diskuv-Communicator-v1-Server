@@ -18,19 +18,12 @@ package org.whispersystems.textsecuregcm.entities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
+import java.util.List;
 import org.hibernate.validator.constraints.Length;
-import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.Device.DeviceCapabilities;
 import org.whispersystems.textsecuregcm.storage.PaymentAddress;
 
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Optional;
-
 public class AccountAttributes {
-
-  @JsonProperty
-  private String signalingKey;
 
   @JsonProperty
   private boolean fetchesMessages;
@@ -66,13 +59,12 @@ public class AccountAttributes {
   public AccountAttributes() {}
 
   @VisibleForTesting
-  public AccountAttributes(String signalingKey, boolean fetchesMessages, int registrationId, String pin) {
-    this(signalingKey, fetchesMessages, registrationId, null, pin, null, null, true, null);
+  public AccountAttributes(boolean fetchesMessages, int registrationId, String pin) {
+    this(fetchesMessages, registrationId, null, pin, null, null, true, null);
   }
 
   @VisibleForTesting
-  public AccountAttributes(String signalingKey, boolean fetchesMessages, int registrationId, String name, String pin, String registrationLock, List<PaymentAddress> payments, boolean discoverableByPhoneNumber, final DeviceCapabilities capabilities) {
-    this.signalingKey              = signalingKey;
+  public AccountAttributes(boolean fetchesMessages, int registrationId, String name, String pin, String registrationLock, List<PaymentAddress> payments, boolean discoverableByPhoneNumber, final DeviceCapabilities capabilities) {
     this.fetchesMessages           = fetchesMessages;
     this.registrationId            = registrationId;
     this.name                      = name;
@@ -81,10 +73,6 @@ public class AccountAttributes {
     this.payments                  = payments;
     this.discoverableByPhoneNumber = discoverableByPhoneNumber;
     this.capabilities              = capabilities;
-  }
-
-  public String getSignalingKey() {
-    return signalingKey;
   }
 
   public boolean getFetchesMessages() {

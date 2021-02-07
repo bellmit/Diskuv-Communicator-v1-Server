@@ -484,9 +484,6 @@ public class AccountController {
   @DELETE
   @Path("/signaling_key")
   public void removeSignalingKey(@Auth DisabledPermittedAccount disabledPermittedAccount) {
-    Account account = disabledPermittedAccount.getAccount();
-    account.getAuthenticatedDevice().get().setSignalingKey(null);
-    accounts.update(account);
   }
 
   @Timed
@@ -505,7 +502,6 @@ public class AccountController {
     device.setLastSeen(Util.todayInMillis());
     device.setCapabilities(attributes.getCapabilities());
     device.setRegistrationId(attributes.getRegistrationId());
-    device.setSignalingKey(attributes.getSignalingKey());
     device.setUserAgent(userAgent);
 
     setAccountRegistrationLockFromAttributes(account, attributes);
@@ -643,13 +639,12 @@ public class AccountController {
     return false;
   }
 
-  private Account createAccount(UUID accountUuid, byte[] devicePassword, String userAgent, AccountAttributes accountAttributes) {
+  private Account createAccount(UUID accountUuid, byte[] password, String userAgent, AccountAttributes accountAttributes) {
     Optional<Account> maybeExistingAccount = accounts.get(accountUuid);
 
     Device device = new Device();
     device.setId(Device.MASTER_ID);
-    device.setAuthenticationCredentials(new AuthenticationCredentials(devicePassword));
-    device.setSignalingKey(accountAttributes.getSignalingKey());
+    device.setAuthenticationCredentials(new AuthenticationCredentials(password));
     device.setFetchesMessages(accountAttributes.getFetchesMessages());
     device.setRegistrationId(accountAttributes.getRegistrationId());
     device.setName(accountAttributes.getName());
