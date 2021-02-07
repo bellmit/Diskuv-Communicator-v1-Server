@@ -2,9 +2,7 @@ package com.diskuv.communicator.configurator;
 
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
-import io.dropwizard.jackson.Jackson;
 import org.whispersystems.textsecuregcm.WhisperServerConfiguration;
 import org.whispersystems.textsecuregcm.configuration.*;
 import picocli.CommandLine;
@@ -16,8 +14,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
-import static com.diskuv.communicator.configurator.ConfigurationUtils.mapperForWriting;
-import static com.diskuv.communicator.configurator.ConfigurationUtils.setField;
+import static com.diskuv.communicator.configurator.ConfigurationUtils.*;
 
 /** Modifies an existing YAML file. */
 @CommandLine.Command(
@@ -121,11 +118,8 @@ public class ModifyConfiguration implements Callable<Integer> {
 
   @Override
   public Integer call() throws Exception {
-    ObjectMapper mapperForReading = Jackson.newObjectMapper(new YAMLFactory());
-
     // load configuration
-    WhisperServerConfiguration config =
-        mapperForReading.readValue(inputYamlFile, WhisperServerConfiguration.class);
+    WhisperServerConfiguration config = createConfigurationBuilder().build(inputYamlFile);
 
     // modify configuration
     awsAttachments(config);
@@ -141,12 +135,11 @@ public class ModifyConfiguration implements Callable<Integer> {
     messageCache(config);
 
     // write configuration
-    ObjectMapper mapperForWriting = mapperForWriting();
+    String configYaml = convertToYaml(config);
     if (outputYamlFile != null) {
-      mapperForWriting.writeValue(outputYamlFile, config);
+      Files.writeString(outputYamlFile.toPath(), configYaml);
     } else {
-      String configValue = mapperForWriting.writeValueAsString(config);
-      System.out.println(configValue);
+      System.out.println(configYaml);
     }
 
     return 0;

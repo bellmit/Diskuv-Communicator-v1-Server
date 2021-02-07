@@ -24,6 +24,7 @@ import org.whispersystems.textsecuregcm.entities.MessageProtos;
 import picocli.CommandLine;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -31,7 +32,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
-import static com.diskuv.communicator.configurator.ConfigurationUtils.mapperForWriting;
+import static com.diskuv.communicator.configurator.ConfigurationUtils.convertToYaml;
 import static com.diskuv.communicator.configurator.ConfigurationUtils.setField;
 
 /**
@@ -98,12 +99,11 @@ public class GenerateConfiguration implements Callable<Integer> {
         WhisperServerConfiguration config = createWhisperServerConfiguration();
 
         // write configuration
-        ObjectMapper mapperForWriting = mapperForWriting();
+        String configYaml = convertToYaml(config);
         if (outputYamlFile != null) {
-            mapperForWriting.writeValue(outputYamlFile, config);
+            Files.writeString(outputYamlFile.toPath(), configYaml);
         } else {
-            String configValue = mapperForWriting.writeValueAsString(config);
-            System.out.println(configValue);
+            System.out.println(configYaml);
         }
 
         return 0;
