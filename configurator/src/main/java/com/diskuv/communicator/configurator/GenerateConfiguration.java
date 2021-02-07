@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
+import io.dropwizard.http2.Http2ConnectorFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.jetty.HttpsConnectorFactory;
 import io.dropwizard.server.DefaultServerFactory;
@@ -56,15 +57,29 @@ public class GenerateConfiguration implements Callable<Integer> {
         @CommandLine.Option(names = {"--application-https-port"}, description = "The HTTPS port to use for the application",
                 required = true)
         protected int httpsPort;
-        @CommandLine.Option(names = {"--application-keystore-file"}, description = "The keystore of the SSL certificate",
+        @CommandLine.Option(names = {"--application-https-keystore-file"}, description = "The keystore of the SSL certificate",
                 required = true)
         protected File keystoreFile;
-        @CommandLine.Option(names = {"--application-keystore-password"}, description = "The password to the SSL keystore certificate",
+        @CommandLine.Option(names = {"--application-https-keystore-password"}, description = "The password to the SSL keystore certificate",
+                required = true)
+        protected String keystorePassword;
+    }
+
+    static class ApplicationH2Connection {
+        @CommandLine.Option(names = {"--application-h2-port"}, description = "The HTTP/2 over TLS port to use for the application",
+                required = true)
+        protected int h2Port;
+        @CommandLine.Option(names = {"--application-h2-keystore-file"}, description = "The keystore of the SSL certificate",
+                required = true)
+        protected File keystoreFile;
+        @CommandLine.Option(names = {"--application-h2-keystore-password"}, description = "The password to the SSL keystore certificate",
                 required = true)
         protected String keystorePassword;
     }
 
     static class ApplicationConnection {
+        @CommandLine.ArgGroup(exclusive = false, multiplicity = "1..1")
+        protected ApplicationH2Connection h2Connection;
         @CommandLine.ArgGroup(exclusive = false, multiplicity = "1..1")
         protected ApplicationHttpsConnection httpsConnection;
         @CommandLine.Option(names = {"--application-http-port"}, description = "The HTTP port to use for the application")
@@ -172,6 +187,12 @@ public class GenerateConfiguration implements Callable<Integer> {
             applicationConnectorFactory.setPort(applicationConnection.httpsConnection.httpsPort);
             applicationConnectorFactory.setKeyStorePath(applicationConnection.httpsConnection.keystoreFile.getPath());
             applicationConnectorFactory.setKeyStorePassword(applicationConnection.httpsConnection.keystorePassword);
+            serverFactory.setApplicationConnectors(ImmutableList.of(applicationConnectorFactory));
+        } else if (applicationConnection != null && applicationConnection.h2Connection != null) {
+            Http2ConnectorFactory applicationConnectorFactory = new Http2ConnectorFactory();
+            applicationConnectorFactory.setPort(applicationConnection.h2Connection.h2Port);
+            applicationConnectorFactory.setKeyStorePath(applicationConnection.h2Connection.keystoreFile.getPath());
+            applicationConnectorFactory.setKeyStorePassword(applicationConnection.h2Connection.keystorePassword);
             serverFactory.setApplicationConnectors(ImmutableList.of(applicationConnectorFactory));
         }
     }
