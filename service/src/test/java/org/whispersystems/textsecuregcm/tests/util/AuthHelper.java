@@ -1,9 +1,19 @@
 package org.whispersystems.textsecuregcm.tests.util;
 
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.PolymorphicAuthDynamicFeature;
+import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
+import io.dropwizard.auth.basic.BasicCredentials;
+import java.security.Principal;
+import java.util.Optional;
+import java.util.Random;
+import java.util.UUID;
 import org.mockito.ArgumentMatcher;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
 import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
@@ -17,17 +27,6 @@ import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.util.Base64;
-
-import java.nio.charset.StandardCharsets;
-import java.security.Principal;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class AuthHelper {
   public static final String VALID_BEARER_TOKEN = "blah";
@@ -129,9 +128,9 @@ public class AuthHelper {
     when(UNDISCOVERABLE_DEVICE.isMaster()).thenReturn(true);
 
     when(VALID_ACCOUNT.getDevice(VALID_DEVICE_ID)).thenReturn(Optional.of(VALID_DEVICE));
-    when(VALID_ACCOUNT_TWO.getDevice(eq(VALID_DEVICE_ID_TWO))).thenReturn(Optional.of(VALID_DEVICE_TWO));
-    when(DISABLED_ACCOUNT.getDevice(eq(DISABLED_DEVICE_ID))).thenReturn(Optional.of(DISABLED_DEVICE));
-    when(UNDISCOVERABLE_ACCOUNT.getDevice(eq(UNDISCOVERABLE_DEVICE_ID))).thenReturn(Optional.of(UNDISCOVERABLE_DEVICE));
+    when(VALID_ACCOUNT_TWO.getDevice(VALID_DEVICE_ID_TWO)).thenReturn(Optional.of(VALID_DEVICE_TWO));
+    when(DISABLED_ACCOUNT.getDevice(DISABLED_DEVICE_ID)).thenReturn(Optional.of(DISABLED_DEVICE));
+    when(UNDISCOVERABLE_ACCOUNT.getDevice(UNDISCOVERABLE_DEVICE_ID)).thenReturn(Optional.of(UNDISCOVERABLE_DEVICE));
 
     when(VALID_ACCOUNT_TWO.getEnabledDeviceCount()).thenReturn(6);
 
@@ -205,8 +204,8 @@ public class AuthHelper {
   }
 
   public static String getAuthHeader(UUID accountUuid, String number, String password) {
-    String encodedPassword = Base64.encodeBytes(password.getBytes(StandardCharsets.UTF_8));
-    return "Basic " + Base64.encodeBytes((accountUuid + ":" + number + ":" + encodedPassword).getBytes(StandardCharsets.UTF_8));
+    String encodedPassword = Base64.encodeBytes(password.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    return "Basic " + Base64.encodeBytes((accountUuid + ":" + number + ":" + encodedPassword).getBytes(java.nio.charset.StandardCharsets.UTF_8));
   }
 
   public static String getAccountAuthHeader(String bearerToken) {

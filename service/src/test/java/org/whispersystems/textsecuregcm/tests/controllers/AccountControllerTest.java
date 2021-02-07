@@ -1,9 +1,35 @@
 package org.whispersystems.textsecuregcm.tests.controllers;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.ByteString;
 import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
 import io.dropwizard.testing.junit.ResourceTestRule;
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
@@ -51,39 +77,6 @@ import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
 import org.whispersystems.textsecuregcm.util.Hex;
 import org.whispersystems.textsecuregcm.util.SystemMapper;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.clearInvocations;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.notNull;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 @RunWith(JUnitParamsRunner.class)
 public class AccountControllerTest {
@@ -208,8 +201,8 @@ public class AccountControllerTest {
     when(accountsManager.get(eq(SENDER_HAS_STORAGE))).thenReturn(Optional.of(senderHasStorage));
     when(accountsManager.get(eq(SENDER_TRANSFER))).thenReturn(Optional.of(senderTransfer));
 
-    when(usernamesManager.put(eq(AuthHelper.VALID_UUID), eq("n00bkiller"))).thenReturn(true);
-    when(usernamesManager.put(eq(AuthHelper.VALID_UUID), eq("takenusername"))).thenReturn(false);
+    when(usernamesManager.put(eq(org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_UUID), eq("n00bkiller"))).thenReturn(true);
+    when(usernamesManager.put(eq(org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_UUID), eq("takenusername"))).thenReturn(false);
 
     when(abusiveHostRules.getAbusiveHostRulesFor(eq(ABUSIVE_HOST))).thenReturn(Collections.singletonList(new AbusiveHostRule(ABUSIVE_HOST, true, Collections.emptyList())));
     when(abusiveHostRules.getAbusiveHostRulesFor(eq(RESTRICTED_HOST))).thenReturn(Collections.singletonList(new AbusiveHostRule(RESTRICTED_HOST, false, Collections.singletonList("+123"))));
@@ -218,8 +211,8 @@ public class AccountControllerTest {
     when(recaptchaClient.verify(eq(INVALID_CAPTCHA_TOKEN), anyString())).thenReturn(false);
     when(recaptchaClient.verify(eq(VALID_CAPTCHA_TOKEN), anyString())).thenReturn(true);
 
-    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(AuthHelper.VALID_BEARER_TOKEN)).thenReturn(AuthHelper.VALID_EMAIL);
-    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(AuthHelper.VALID_BEARER_TOKEN_TWO)).thenReturn(AuthHelper.VALID_EMAIL_TWO);
+    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_BEARER_TOKEN)).thenReturn(org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_EMAIL);
+    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_BEARER_TOKEN_TWO)).thenReturn(org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_EMAIL_TWO);
 
     doThrow(new RateLimitExceededException(SENDER_OVER_PIN)).when(pinLimiter).validate(eq(SENDER_OVER_PIN));
 
@@ -1281,7 +1274,7 @@ public class AccountControllerTest {
     }
 
     // SECRET = UTF8_BYTES(PUSH_TOKEN || ACCOUNT_UUID)
-    byte[] secret = (pushToken + accountUuid).getBytes(StandardCharsets.UTF_8);
+    byte[] secret = (pushToken + accountUuid).getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
     // PUSH_CHALLENGE = HEX(NONCE || HMAC_SHA256(secret=SECRET, data=NONCE))
     byte[] digestActual;
@@ -1292,10 +1285,10 @@ public class AccountControllerTest {
     }
     byte[] digestExpected;
     try {
-      Mac mac = Mac.getInstance("HmacSHA256");
-      mac.init(new SecretKeySpec(secret, "HmacSHA256"));
+      javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+      mac.init(new javax.crypto.spec.SecretKeySpec(secret, "HmacSHA256"));
       digestExpected = mac.doFinal(nonce);
-    } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+    } catch (java.security.NoSuchAlgorithmException | java.security.InvalidKeyException e) {
       throw new AssertionError("Can't create a push challenge signature", e);
     }
 
