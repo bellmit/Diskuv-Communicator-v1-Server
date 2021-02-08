@@ -2,6 +2,7 @@ package org.whispersystems.textsecuregcm.synthetic;
 
 import org.whispersystems.textsecuregcm.storage.Account;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ public interface PossiblySyntheticAccount {
 
     UUID getUuid();
 
-    Iterable<? extends PossiblySyntheticDevice> getDevices();
+    Collection<? extends PossiblySyntheticDevice> getDevices();
 
     Optional<? extends PossiblySyntheticDevice> getDevice(long deviceId);
 

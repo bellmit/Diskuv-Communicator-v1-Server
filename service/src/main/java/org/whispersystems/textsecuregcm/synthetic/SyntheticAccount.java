@@ -15,6 +15,7 @@ import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.util.Base64;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -136,7 +137,7 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
   }
 
   @Override
-  public Iterable<? extends PossiblySyntheticDevice> getDevices() {
+  public Collection<? extends PossiblySyntheticDevice> getDevices() {
     return devices;
   }
 
