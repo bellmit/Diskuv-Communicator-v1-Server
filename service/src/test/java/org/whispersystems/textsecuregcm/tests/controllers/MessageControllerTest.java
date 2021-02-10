@@ -65,7 +65,6 @@ import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
 import org.whispersystems.textsecuregcm.tests.util.UuidHelpers;
 import org.whispersystems.textsecuregcm.util.Base64;
 
-@Ignore
 public class MessageControllerTest {
   private static final String EMPTY_SOURCE            = "";
   private static final UUID   SINGLE_DEVICE_UUID      = UuidHelpers.UUID_BOB;
@@ -79,6 +78,7 @@ public class MessageControllerTest {
   private  final com.diskuv.communicatorservice.auth.JwtAuthentication      jwtAuthentication      = mock(com.diskuv.communicatorservice.auth.JwtAuthentication.class);
   private  final RateLimiters           rateLimiters           = mock(RateLimiters.class);
   private  final RateLimiter            rateLimiter            = mock(RateLimiter.class);
+  private  final RateLimiter            unsealedSenderLimiter  = mock(RateLimiter.class);
   private  final ApnFallbackManager     apnFallbackManager     = mock(ApnFallbackManager.class);
   private  final FeatureFlagsManager    featureFlagsManager    = mock(FeatureFlagsManager.class);
 
@@ -120,7 +120,7 @@ public class MessageControllerTest {
     when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(eq(AuthHelper.VALID_BEARER_TOKEN_TWO))).thenReturn(AuthHelper.VALID_EMAIL_TWO);
 
     when(rateLimiters.getMessagesLimiter()).thenReturn(rateLimiter);
-    when(rateLimiters.getUnsealedSenderLimiter()).thenReturn(rateLimiter);
+    when(rateLimiters.getUnsealedSenderLimiter()).thenReturn(unsealedSenderLimiter);
   }
 
   @Test
