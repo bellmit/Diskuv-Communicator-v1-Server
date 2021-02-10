@@ -1,10 +1,17 @@
 package org.whispersystems.textsecuregcm.storage;
 
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntity;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntityList;
@@ -14,18 +21,8 @@ import org.whispersystems.textsecuregcm.redis.RedisOperation;
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import static com.codahale.metrics.MetricRegistry.name;
-
 public class MessagesManager {
 
-  private static final String READ_DYNAMODB_EXPERIMENT = "messages_dynamodb_read";
-  private static final String WRITE_DYNAMODB_EXPERIMENT = "messages_dynamodb_write";
   private static final String DISABLE_RDS_EXPERIMENT = "messages_disable_rds";
 
   private static final MetricRegistry metricRegistry       = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
@@ -79,7 +76,7 @@ public class MessagesManager {
       messageList.addAll(messages.load(destination, destinationDevice));
     }
 
-    if (messageList.size() < Messages.RESULT_SET_CHUNK_SIZE && !cachedMessagesOnly && experimentEnrollmentManager.isEnrolled(destinationUuid, READ_DYNAMODB_EXPERIMENT)) {
+    if (messageList.size() < Messages.RESULT_SET_CHUNK_SIZE && !cachedMessagesOnly) {
       messageList.addAll(messagesDynamoDb.load(destinationUuid, destinationDevice, Messages.RESULT_SET_CHUNK_SIZE - messageList.size()));
     }
 
@@ -97,9 +94,7 @@ public class MessagesManager {
     // TODO Remove this null check in a fully-UUID-ified world
     if (destinationUuid != null) {
       messagesCache.clear(destinationUuid);
-      if (experimentEnrollmentManager.isEnrolled(destinationUuid, WRITE_DYNAMODB_EXPERIMENT)) {
-        messagesDynamoDb.deleteAllMessagesForAccount(destinationUuid);
-      }
+      messagesDynamoDb.deleteAllMessagesForAccount(destinationUuid);
       if (!experimentEnrollmentManager.isEnrolled(destinationUuid, DISABLE_RDS_EXPERIMENT)) {
         messages.clear(destination);
       }
@@ -112,9 +107,7 @@ public class MessagesManager {
     DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Preconditions.checkArgument(destinationUuid.toString().equals(destination));
     messagesCache.clear(destinationUuid, deviceId);
-    if (experimentEnrollmentManager.isEnrolled(destinationUuid, WRITE_DYNAMODB_EXPERIMENT)) {
-      messagesDynamoDb.deleteAllMessagesForDevice(destinationUuid, deviceId);
-    }
+    messagesDynamoDb.deleteAllMessagesForDevice(destinationUuid, deviceId);
     if (!experimentEnrollmentManager.isEnrolled(destinationUuid, DISABLE_RDS_EXPERIMENT)) {
       messages.clear(destination, deviceId);
     }
@@ -126,9 +119,7 @@ public class MessagesManager {
     Optional<OutgoingMessageEntity> removed = messagesCache.remove(destinationUuid, destinationDevice, sourceUuid.toString(), timestamp);
 
     if (removed.isEmpty()) {
-      if (experimentEnrollmentManager.isEnrolled(destinationUuid, WRITE_DYNAMODB_EXPERIMENT)) {
-        removed = messagesDynamoDb.deleteMessageByDestinationAndSourceUuidAndTimestamp(destinationUuid, destinationDevice, sourceUuid, timestamp);
-      }
+      removed = messagesDynamoDb.deleteMessageByDestinationAndSourceUuidAndTimestamp(destinationUuid, destinationDevice, sourceUuid, timestamp);
       if (removed.isEmpty() && !experimentEnrollmentManager.isEnrolled(destinationUuid, DISABLE_RDS_EXPERIMENT)) {
         removed = messages.remove(destination, destinationDevice, sourceUuid.toString(), timestamp);
       }
@@ -147,9 +138,7 @@ public class MessagesManager {
     Optional<OutgoingMessageEntity> removed = messagesCache.remove(destinationUuid, deviceId, guid);
 
     if (removed.isEmpty()) {
-      if (experimentEnrollmentManager.isEnrolled(destinationUuid, WRITE_DYNAMODB_EXPERIMENT)) {
-        removed = messagesDynamoDb.deleteMessageByDestinationAndGuid(destinationUuid, deviceId, guid);
-      }
+      removed = messagesDynamoDb.deleteMessageByDestinationAndGuid(destinationUuid, deviceId, guid);
       if (removed.isEmpty() && !experimentEnrollmentManager.isEnrolled(destinationUuid, DISABLE_RDS_EXPERIMENT)) {
         removed = messages.remove(destination, guid);
       }
@@ -170,11 +159,7 @@ public class MessagesManager {
   public void persistMessages(final String destination, final UUID destinationUuid, final long destinationDeviceId, final List<Envelope> messages) {
     DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Preconditions.checkArgument(destinationUuid.toString().equals(destination));
-    if (experimentEnrollmentManager.isEnrolled(destinationUuid, WRITE_DYNAMODB_EXPERIMENT)) {
-      messagesDynamoDb.store(messages, destinationUuid, destinationDeviceId);
-    } else {
-      this.messages.store(messages, destination, destinationDeviceId);
-    }
+    messagesDynamoDb.store(messages, destinationUuid, destinationDeviceId);
     messagesCache.remove(destinationUuid, destinationDeviceId, messages.stream().map(message -> UUID.fromString(message.getServerGuid())).collect(Collectors.toList()));
   }
 
