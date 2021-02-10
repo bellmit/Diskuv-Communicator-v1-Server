@@ -173,7 +173,6 @@ public class ProfileController {
     return getVersionedProfile(requestAccount, accessKey, uuid, version, Optional.of(credentialRequest));
   }
 
-  @SuppressWarnings("OptionalIsPresent")
   private Optional<Profile> getVersionedProfile(Optional<Account> requestAccount,
                                                 Optional<Anonymous> accessKey,
                                                 UUID uuid,
@@ -184,7 +183,7 @@ public class ProfileController {
     if (!isZkEnabled) throw new WebApplicationException(Response.Status.NOT_FOUND);
 
     try {
-      if (!requestAccount.isPresent() && !accessKey.isPresent()) {
+      if (requestAccount.isEmpty() && accessKey.isEmpty()) {
         throw new WebApplicationException(Response.Status.UNAUTHORIZED);
       }
 
@@ -238,13 +237,13 @@ public class ProfileController {
 
     Optional<UUID> uuid = usernamesManager.get(username);
 
-    if (!uuid.isPresent()) {
+    if (uuid.isEmpty()) {
       throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build());
     }
 
     Optional<Account> accountProfile = accountsManager.get(uuid.get());
 
-    if (!accountProfile.isPresent()) {
+    if (accountProfile.isEmpty()) {
       throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build());
     }
 
@@ -268,8 +267,8 @@ public class ProfileController {
                                                                       UUID                       uuid)
       throws InvalidInputException
   {
-    if (!encodedProfileCredentialRequest.isPresent()) return Optional.empty();
-    if (!profile.isPresent())                         return Optional.empty();
+    if (encodedProfileCredentialRequest.isEmpty()) return Optional.empty();
+    if (profile.isEmpty())                         return Optional.empty();
 
     try {
       ProfileKeyCommitment         commitment = new ProfileKeyCommitment(profile.get().getCommitment());
@@ -304,7 +303,7 @@ public class ProfileController {
     // force, among other things, a validation of the anonymous access key.
     Optional<Account> requestAccount = accessKey.isPresent() ? Optional.empty() : Optional.of(realRequestAccount);
 
-    if (!requestAccount.isPresent() && !accessKey.isPresent()) {
+    if (requestAccount.isEmpty() && accessKey.isEmpty()) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
     if (!identifier.hasUuid()) {
