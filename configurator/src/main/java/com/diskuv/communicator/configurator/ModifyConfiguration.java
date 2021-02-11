@@ -33,8 +33,7 @@ public class ModifyConfiguration implements Callable<Integer> {
   @CommandLine.Option(
       names = {"-o", "--output-file"},
       description =
-          "Output YAML file. If not specified, standard output is used. "
-              + "Consider using a file in /dev/shm/")
+          "Output YAML file. If not specified, standard output is used")
   protected File outputYamlFile;
 
   @CommandLine.Option(
@@ -51,10 +50,7 @@ public class ModifyConfiguration implements Callable<Integer> {
     @CommandLine.Option(names = "--aws-access-secret", required = true)
     String secret;
 
-    @CommandLine.Option(
-        names = "--aws-access-secret-file",
-        required = true,
-        description = "Consider using a file in /dev/shm/")
+    @CommandLine.Option(names = "--aws-access-secret-file", required = true)
     File secretFile;
   }
 
