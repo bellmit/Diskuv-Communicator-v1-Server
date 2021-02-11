@@ -36,7 +36,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -59,7 +58,6 @@ import org.whispersystems.textsecuregcm.push.MessageSender;
 import org.whispersystems.textsecuregcm.push.ReceiptSender;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Device;
-import org.whispersystems.textsecuregcm.storage.FeatureFlagsManager;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
@@ -81,7 +79,6 @@ public class MessageControllerTest {
   private  final RateLimiter            rateLimiter            = mock(RateLimiter.class);
   private  final CardinalityRateLimiter unsealedSenderLimiter  = mock(CardinalityRateLimiter.class);
   private  final ApnFallbackManager     apnFallbackManager     = mock(ApnFallbackManager.class);
-  private  final FeatureFlagsManager    featureFlagsManager    = mock(FeatureFlagsManager.class);
 
   private  final ObjectMapper mapper = new ObjectMapper();
 
@@ -284,7 +281,7 @@ public class MessageControllerTest {
 
     OutgoingMessageEntityList messagesList = new OutgoingMessageEntityList(messages, false);
 
-    when(messagesManager.getMessagesForDevice(eq(AuthHelper.VALID_UUID.toString()), eq(AuthHelper.VALID_UUID), eq(1L), anyString(), anyBoolean())).thenReturn(messagesList);
+    when(messagesManager.getMessagesForDevice(eq(AuthHelper.VALID_UUID), eq(1L), anyString(), anyBoolean())).thenReturn(messagesList);
 
     OutgoingMessageEntityList response =
         resources.getJerseyTest().target("/v1/messages/")
@@ -322,7 +319,7 @@ public class MessageControllerTest {
 
     OutgoingMessageEntityList messagesList = new OutgoingMessageEntityList(messages, false);
 
-    when(messagesManager.getMessagesForDevice(eq(AuthHelper.VALID_NUMBER), eq(AuthHelper.VALID_UUID), eq(1L), anyString(), anyBoolean())).thenReturn(messagesList);
+    when(messagesManager.getMessagesForDevice(eq(AuthHelper.VALID_UUID), eq(1L), anyString(), anyBoolean())).thenReturn(messagesList);
 
     Response response =
         resources.getJerseyTest().target("/v1/messages/")
@@ -341,20 +338,20 @@ public class MessageControllerTest {
 
     UUID sourceUuid = UUID.randomUUID();
 
-    when(messagesManager.delete(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31337))
+    when(messagesManager.delete(AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31337))
         .thenReturn(Optional.of(new OutgoingMessageEntity(31337L, true, null,
                                                           Envelope.Type.CIPHERTEXT_VALUE,
                                                           null, timestamp,
                                                           EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 1, "hi".getBytes(), null, 0, null)));
 
-    when(messagesManager.delete(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31338))
+    when(messagesManager.delete(AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31338))
         .thenReturn(Optional.of(new OutgoingMessageEntity(31337L, true, null,
                                                           Envelope.Type.RECEIPT_VALUE,
                                                           null, System.currentTimeMillis(),
                                                           EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 1, null, null, 0, null)));
 
 
-    when(messagesManager.delete(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31339))
+    when(messagesManager.delete(AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31339))
         .thenReturn(Optional.empty());
 
     Response response = resources.getJerseyTest()

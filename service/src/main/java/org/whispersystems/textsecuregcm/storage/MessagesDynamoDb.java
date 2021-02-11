@@ -152,7 +152,7 @@ public class MessagesDynamoDb extends AbstractDynamoDbStore {
                                                                      "#timestamp", KEY_TIMESTAMP))
                                                  .withValueMap(Map.of(":part", partitionKey,
                                                                       ":sortprefix", convertDestinationDeviceIdToSortKeyPrefix(destinationDeviceId),
-                                                                      ":source_uuid", sourceUuid.toString(),
+                                                                      ":source_uuid", UUIDUtil.toBytes(sourceUuid),
                                                                       ":timestamp", timestamp));
 
       final Table table = getDynamoDb().getTable(tableName);

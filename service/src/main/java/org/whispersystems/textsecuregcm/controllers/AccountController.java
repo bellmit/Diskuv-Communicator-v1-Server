@@ -16,6 +16,8 @@
  */
 package org.whispersystems.textsecuregcm.controllers;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
@@ -23,6 +25,25 @@ import com.codahale.metrics.annotation.Timed;
 import com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader;
 import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import io.dropwizard.auth.Auth;
+import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import javax.validation.Valid;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.*;
@@ -55,25 +76,6 @@ import org.whispersystems.textsecuregcm.util.DiskuvUuidType;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Hex;
 import org.whispersystems.textsecuregcm.util.Util;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.validation.Valid;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER;
 
 /**
  * Unlike the original Signal REST endpoints, this controller drops the phone number parameters. It instead
@@ -208,7 +210,7 @@ public class AccountController {
   @Produces(MediaType.APPLICATION_JSON)
   @Path("/account")
   public AccountCreationResult registerAccount(@HeaderParam("Authorization")   String authorizationHeader,
-                                               @HeaderParam(DEVICE_AUTHORIZATION_HEADER)   String deviceAuthorizationHeader,
+                                               @HeaderParam(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER)   String deviceAuthorizationHeader,
                                                @HeaderParam("X-Signal-Agent")  String userAgent,
                                                @HeaderParam("X-Forwarded-For") String forwardedFor,
                                                @QueryParam("challenge")        Optional<String> pushChallenge,
@@ -668,7 +670,7 @@ public class AccountController {
       newUserMeter.mark();
     }
 
-    messagesManager.clear(accountUuid.toString(), maybeExistingAccount.map(Account::getUuid).orElse(null));
+    maybeExistingAccount.ifPresent(definitelyExistingAccount -> messagesManager.clear(definitelyExistingAccount.getUuid()));
     pendingAccounts.remove(accountUuid);
 
     return account;
@@ -695,14 +697,14 @@ public class AccountController {
     random.nextBytes(nonce);
 
     // SECRET = UTF8_BYTES(PUSH_TOKEN || ACCOUNT_UUID)
-    byte[] secret = (pushToken + accountUuid).getBytes(StandardCharsets.UTF_8);
+    byte[] secret = (pushToken + accountUuid).getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
     // PUSH_CHALLENGE = HEX(NONCE || HMAC_SHA256(SECRET, NONCE))
-    Mac mac;
+    javax.crypto.Mac mac;
     try {
-      mac = Mac.getInstance("HmacSHA256");
-      mac.init(new SecretKeySpec(secret, "HmacSHA256"));
-    } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+      mac = javax.crypto.Mac.getInstance("HmacSHA256");
+      mac.init(new javax.crypto.spec.SecretKeySpec(secret, "HmacSHA256"));
+    } catch (java.security.NoSuchAlgorithmException | java.security.InvalidKeyException e) {
       throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
     }
     byte[] digest = mac.doFinal(nonce);

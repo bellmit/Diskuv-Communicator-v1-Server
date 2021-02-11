@@ -115,7 +115,7 @@ public class DeviceController {
 
     account.removeDevice(deviceId);
     accounts.update(account);
-    messages.clear(account.getNumber(), account.getUuid(), deviceId);
+    messages.clear(account.getUuid(), deviceId);
   }
 
   @Timed
@@ -208,9 +208,9 @@ public class DeviceController {
       device.setCreated(System.currentTimeMillis());
       device.setCapabilities(accountAttributes.getCapabilities());
 
-    account.get().addDevice(device);
-    messages.clear(accountId, account.get().getUuid(), device.getId());
-    accounts.update(account.get());
+      account.get().addDevice(device);
+      messages.clear(account.get().getUuid(), device.getId());
+      accounts.update(account.get());
 
     pendingDevices.remove(accountUuid);
 

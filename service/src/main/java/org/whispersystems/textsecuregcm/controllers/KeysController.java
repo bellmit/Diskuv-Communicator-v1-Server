@@ -132,7 +132,7 @@ public class KeysController {
     if (account.isPresent()) {
       // Diskuv Change: We do not include the validated target phone number in the rate limit, since we may not
       // have a target rate number (we send responses regardless if there is an account)
-      rateLimiters.getPreKeysLimiter().validate(account.get().getNumber() + "__" + targetName.asString() + "." + deviceId);
+      rateLimiters.getPreKeysLimiter().validate(account.get().getNumber() + "__" + targetName + "." + deviceId);
     }
 
     Map<Long, PreKey>        preKeysByDeviceId = getLocalKeys(target, deviceId);

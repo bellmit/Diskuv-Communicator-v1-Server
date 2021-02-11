@@ -125,6 +125,20 @@ public class ModifyConfiguration implements Callable<Integer> {
               + "specified with comma-separated values or repeating the --redis-replica-url option")
   protected String[] redisReplicaUrls;
 
+  @CommandLine.Option(
+      names = {"--message-ddb-table-name"},
+      description = "Name of the DynamoDB table for messages",
+      defaultValue = "Message"
+  )
+  protected String messageDynamoDbTableName;
+
+  @CommandLine.Option(
+      names = {"--keys-ddb-table-name"},
+      description = "Name of the DynamoDB table for keys",
+      defaultValue = "Keys"
+  )
+  protected String keysDynamoDbTableName;
+
   public static void main(String... args) {
     int exitCode =
         new CommandLine(new ModifyConfiguration())
@@ -143,7 +157,8 @@ public class ModifyConfiguration implements Callable<Integer> {
     cdn(config);
     twilio(config);
     voiceVerification(config);
-    messageStore(config);
+    messageDynamoDb(config);
+    keysDynamoDb(config);
     abuseDatabase(config);
     accountsDatabase(config);
     cacheCluster(config);
@@ -194,9 +209,14 @@ public class ModifyConfiguration implements Callable<Integer> {
     }
   }
 
-  public void messageStore(WhisperServerConfiguration config) throws IllegalAccessException {
-    DatabaseConfiguration value = config.getMessageStoreConfiguration();
-    setDatabaseUrl(value, "signal_message");
+  public void messageDynamoDb(WhisperServerConfiguration config) throws IllegalAccessException {
+    MessageDynamoDbConfiguration value = config.getMessageDynamoDbConfiguration();
+    setDynamoDbConfiguration(value, messageDynamoDbTableName);
+  }
+
+  public void keysDynamoDb(WhisperServerConfiguration config) throws IllegalAccessException {
+    DynamoDbConfiguration value = config.getKeysDynamoDbConfiguration();
+    setDynamoDbConfiguration(value, keysDynamoDbTableName);
   }
 
   public void abuseDatabase(WhisperServerConfiguration config) throws IllegalAccessException {
@@ -275,6 +295,14 @@ public class ModifyConfiguration implements Callable<Integer> {
     if (databaseHostAndPerhapsPort != null) {
       setField(value, "url", "jdbc:postgresql://" + databaseHostAndPerhapsPort + "/" + database);
     }
+  }
+
+  private void setDynamoDbConfiguration(DynamoDbConfiguration dbConfiguration, String tableName)
+      throws IllegalAccessException {
+    if (region != null) {
+      setField(dbConfiguration, "region", region);
+    }
+    setField(dbConfiguration, "tableName", tableName);
   }
 
   private void setAwsAccess(Object value) throws IllegalAccessException, IOException {

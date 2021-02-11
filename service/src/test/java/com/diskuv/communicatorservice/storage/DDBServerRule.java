@@ -31,7 +31,7 @@ public class DDBServerRule extends ExternalResource {
   private final DynamoDbAsyncClient client;
 
   public DDBServerRule() {
-    System.setProperty("sqlite4java.library.path", "native-libs");
+    System.setProperty("sqlite4java.library.path", "target/lib");
     try {
       this.server =
           ServerRunner.createServerFromCommandLineArgs(new String[] {"-inMemory", "-port", PORT});

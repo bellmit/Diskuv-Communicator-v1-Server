@@ -41,11 +41,13 @@ public class MessagesDynamoDbTest {
 
     builder.setType(MessageProtos.Envelope.Type.CIPHERTEXT);
     builder.setSource("12348675309");
-    builder.setSourceUuid(UUID.randomUUID().toString());
+    String sourceUuid2 = UUID.randomUUID().toString();
+    builder.setSourceUuid(sourceUuid2);
     builder.setSourceDevice(1);
     builder.setContent(ByteString.copyFromUtf8("MOO"));
     builder.setServerGuid(UUID.randomUUID().toString());
     builder.setServerTimestamp(serverTimestamp + 1);
+    builder.setServerOutdoorsSourceUuid(sourceUuid2);
 
     MESSAGE2 = builder.build();
 
@@ -53,6 +55,7 @@ public class MessagesDynamoDbTest {
     builder.clearSource();
     builder.clearSourceUuid();
     builder.clearSourceDevice();
+    builder.clearServerOutdoorsSourceUuid();
     builder.setContent(ByteString.copyFromUtf8("COW"));
     builder.setServerGuid(UUID.randomUUID().toString());
     builder.setServerTimestamp(serverTimestamp);  // Test same millisecond arrival for two different messages
