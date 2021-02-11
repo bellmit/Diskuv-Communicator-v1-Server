@@ -5,7 +5,8 @@ import picocli.CommandLine;
 
 @CommandLine.Command(subcommands = {
         GenerateConfiguration.class,
-        ModifyConfiguration.class
+        ModifyConfiguration.class,
+        ViewClientConfiguration.class,
 })
 public class Configurator {
     public static void main(String... args) {

@@ -1,7 +1,6 @@
 package com.diskuv.communicator.configurator;
 
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
@@ -10,6 +9,8 @@ import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.jetty.HttpsConnectorFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import org.apache.commons.codec.binary.Hex;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
 import org.passay.CharacterData;
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
@@ -21,10 +22,12 @@ import org.whispersystems.textsecuregcm.configuration.*;
 import org.whispersystems.textsecuregcm.crypto.Curve;
 import org.whispersystems.textsecuregcm.crypto.ECKeyPair;
 import org.whispersystems.textsecuregcm.crypto.ECPrivateKey;
-import org.whispersystems.textsecuregcm.entities.MessageProtos;
+import org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate;
 import picocli.CommandLine;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.SecureRandom;
@@ -50,7 +53,17 @@ import static com.diskuv.communicator.configurator.ConfigurationUtils.setField;
 public class GenerateConfiguration implements Callable<Integer> {
     private static final int DATABASE_PASSWORD_LENGTH = 30;
     private static final int UNIDENTIFIED_DELIVERY_KEY_ID_0 = 0;
-    @CommandLine.ArgGroup(exclusive = true, multiplicity = "0..1")
+
+    @CommandLine.Parameters(
+        paramLabel = "SERVER_CERTIFICATE_SIGNING_KEYPAIR_FILE",
+        description =
+              "You MUST keep this forever-living server certificate signing key pair in a secure location. "
+              + "The server certificate is used to encrypt unidentified sender messages, and the signing key pair are used "
+              + "to generate new server certificates in case of server compromise. "
+              + "The file will be PEM encoded with both the signing private and public key")
+    protected File serverCertificateSigningKeyPairFile;
+
+    @CommandLine.ArgGroup(multiplicity = "0..1")
     protected ApplicationConnection applicationConnection;
 
     static class ApplicationHttpsConnection {
@@ -125,7 +138,7 @@ public class GenerateConfiguration implements Callable<Integer> {
     }
 
     @VisibleForTesting
-    protected WhisperServerConfiguration createWhisperServerConfiguration() throws IllegalAccessException, InvalidKeyException {
+    protected WhisperServerConfiguration createWhisperServerConfiguration() throws IllegalAccessException, InvalidKeyException, IOException {
         // create configuration
         WhisperServerConfiguration config = new WhisperServerConfiguration();
 
@@ -204,11 +217,12 @@ public class GenerateConfiguration implements Callable<Integer> {
      *
      * <pre>
      * zkConfig:
-     *   # 160 bytes (org.signal.zkgroup.ServerPublicParams.SIZE).
-     *   # base64 encoded.
+     *   # 161 bytes (org.signal.zkgroup.ServerPublicParams.SIZE; zkgroup 0.7.0).
+     *   # base64 encoded without padding.
+     *   # note: the iOS/Android constant for this field is base64 encoded _with_ padding.
      *   serverPublic: zG7l0tDo26hPEIE...tJS1iu9hRA
-     *   # 896 bytes (org.signal.zkgroup.ServerSecretParams.SIZE).
-     *   # base64 encoded.
+     *   # 769 bytes (org.signal.zkgroup.ServerSecretParams.SIZE; zkgroup 0.7.0).
+     *   # base64 encoded without padding.
      *   serverSecret: uggOoigNtWuPQ9p...bSUtYrvYUQ
      *   enabled: true
      * </pre>
@@ -350,28 +364,42 @@ public class GenerateConfiguration implements Callable<Integer> {
         setField(config, "apn", value);
     }
 
-    public void unidentifiedDelivery(WhisperServerConfiguration config) throws IllegalAccessException, InvalidKeyException {
+    public void unidentifiedDelivery(WhisperServerConfiguration config) throws IllegalAccessException, InvalidKeyException, IOException {
         UnidentifiedDeliveryConfiguration value = new UnidentifiedDeliveryConfiguration();
 
-        // generate certificate authority
+        // Generate certificate authority (aka signing key pair).
+        // The private key below (`caKey`) is analogous to an Android signing key.
         ECKeyPair caKeyPair = Curve.generateKeyPair();
         ECPrivateKey caKey = caKeyPair.getPrivateKey();
 
-        // generate certificate and key with id=0
+        // Write the signing key pair in PEM format
+        StringWriter sw = new StringWriter();
+        PemWriter pemWriter = new PemWriter(sw);
+        pemWriter.writeObject(new PemObject("PUBLIC KEY", caKeyPair.getPublicKey().serialize()));
+        pemWriter.writeObject(new PemObject("PRIVATE KEY", caKey.serialize()));
+        pemWriter.flush();
+        Files.writeString(serverCertificateSigningKeyPairFile.toPath(), sw.toString());
+
+        // Generate certificate and key with id=0.
+        // The private key below (`privateKey`) is analogous to an Android upload key.
+        // It looks like the intention from the Signal team is that you can change
+        // to a new `keyPair` if the server is breached. It is probably best to
+        // rotate the `keyPair` regularly.
         ECKeyPair keyPair = Curve.generateKeyPair();
-        byte[] certificate = MessageProtos.ServerCertificate.Certificate.newBuilder()
+        ECPrivateKey privateKey = keyPair.getPrivateKey();
+        byte[] certificate = ServerCertificate.Certificate.newBuilder()
                 .setId(UNIDENTIFIED_DELIVERY_KEY_ID_0)
                 .setKey(ByteString.copyFrom(keyPair.getPublicKey().serialize()))
                 .build()
                 .toByteArray();
         byte[] signature = Curve.calculateSignature(caKey, certificate);
-        byte[] signedCertificate = MessageProtos.ServerCertificate.newBuilder()
+        byte[] signedCertificate = ServerCertificate.newBuilder()
                 .setCertificate(ByteString.copyFrom(certificate))
                 .setSignature(ByteString.copyFrom(signature))
                 .build()
                 .toByteArray();
         setField(value, "certificate", signedCertificate);
-        setField(value, "privateKey", keyPair.getPrivateKey().serialize());
+        setField(value, "privateKey", privateKey.serialize());
 
         // https://github.com/signalapp/Signal-Android/blob/e0fc191883f257aaf11cb0da2b88252623d83f73/app/src/main/java/org/thoughtcrime/securesms/jobs/RotateCertificateJob.java#L30
         // is 1 day, so don't expire too much greater than that
