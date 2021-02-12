@@ -1,5 +1,10 @@
 package com.diskuv.communicator.configurator;
 
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
+import com.codahale.metrics.collectd.CollectdReporter;
+import com.codahale.metrics.collectd.Sender;
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -23,6 +28,8 @@ import org.whispersystems.textsecuregcm.crypto.Curve;
 import org.whispersystems.textsecuregcm.crypto.ECKeyPair;
 import org.whispersystems.textsecuregcm.crypto.ECPrivateKey;
 import org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate;
+import org.whispersystems.textsecuregcm.metrics.CollectdMetricsReporterFactory;
+import org.whispersystems.textsecuregcm.util.Constants;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -35,6 +42,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static com.diskuv.communicator.configurator.ConfigurationUtils.convertToYaml;
 import static com.diskuv.communicator.configurator.ConfigurationUtils.setField;
@@ -106,6 +114,17 @@ public class GenerateConfiguration implements Callable<Integer> {
             "standard output is used")
     protected File outputYamlFile;
 
+    static class MetricsCollectd {
+        @CommandLine.Option(names = {"--metrics-collectd-host"}, description = "The collectd host to stream metric values",
+                required = true)
+        protected String host;
+        @CommandLine.Option(names = {"--metrics-collectd-port"}, description = "The collectd port to stream metric values over UDP",
+                required = true)
+        protected int port;
+    }
+    @CommandLine.ArgGroup(exclusive = false, multiplicity = "0..1")
+    protected MetricsCollectd metricsCollectd;
+
     private final Random random;
 
     public static void main(String... args) {
@@ -168,6 +187,7 @@ public class GenerateConfiguration implements Callable<Integer> {
         backupService(config);
         remoteConfig(config);
         accountDatabaseCrawler(config);
+        metrics(config);
         return config;
     }
 
@@ -437,6 +457,15 @@ public class GenerateConfiguration implements Callable<Integer> {
         setUserAuthenticationTokenSharedSecret(value);
 
         setField(config, "backupService", value);
+    }
+
+    public void metrics(WhisperServerConfiguration config) {
+        if (this.metricsCollectd != null) {
+            CollectdMetricsReporterFactory factory = new CollectdMetricsReporterFactory();
+            factory.setHostname(this.metricsCollectd.host);
+            factory.setPort(this.metricsCollectd.port);
+            config.getMetricsFactory().setReporters(ImmutableList.of(factory));
+        }
     }
 
     private void setUserAuthenticationTokenSharedSecret(Object value) throws IllegalAccessException {
