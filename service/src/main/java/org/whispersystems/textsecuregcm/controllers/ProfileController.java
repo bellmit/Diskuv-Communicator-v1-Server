@@ -3,6 +3,24 @@ package org.whispersystems.textsecuregcm.controllers;
 import com.amazonaws.services.s3.AmazonS3;
 import com.codahale.metrics.annotation.Timed;
 import io.dropwizard.auth.Auth;
+import java.security.SecureRandom;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Optional;
+import java.util.UUID;
+import javax.validation.Valid;
+import javax.validation.valueextraction.Unwrapping;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
@@ -34,24 +52,7 @@ import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManag
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticVersionedProfile;
 import org.whispersystems.textsecuregcm.util.Pair;
 
-import javax.validation.Valid;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.security.SecureRandom;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.Collections;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -107,7 +108,16 @@ public class ProfileController {
     String                                  avatar         = request.isAvatar() ? generateAvatarObjectName() : null;
     Optional<ProfileAvatarUploadAttributes> response       = Optional.empty();
 
-    profilesManager.set(account.getUuid(), new VersionedProfile(request.getVersion(), request.getName(), avatar, request.getEmailAddress(), request.getAboutEmoji(), request.getAbout(), request.getCommitment().serialize()));
+    profilesManager.set(account.getUuid(),
+        new VersionedProfile(
+            request.getVersion(),
+            request.getName(),
+            avatar,
+            request.getEmailAddress(), 
+            request.getAboutEmoji(),
+            request.getAbout(),
+            request.getPaymentAddress(),
+            request.getCommitment().serialize()));
 
     if (request.isAvatar()) {
       Optional<String> currentAvatar = Optional.empty();
@@ -202,6 +212,7 @@ public class ProfileController {
       String                   about        = profile.map(PossiblySyntheticVersionedProfile::getAbout).orElse(null);
       String                   aboutEmoji   = profile.map(PossiblySyntheticVersionedProfile::getAboutEmoji).orElse(null);
       String                   avatar       = profile.map(PossiblySyntheticVersionedProfile::getAvatar).orElse(accountProfile.getAvatar());
+      final String paymentAddress = null;
       
       Optional<ProfileKeyCredentialResponse> credential = getProfileCredential(credentialRequest, profile, uuid);
 
@@ -209,6 +220,7 @@ public class ProfileController {
                                      about,
                                      aboutEmoji,
                                      avatar,
+                                     paymentAddress,
                                      accountProfile.getIdentityKey(),
                                      UnidentifiedAccessChecksum.generateFor(accountProfile.getUnidentifiedAccessKey()),
                                      accountProfile.isUnrestrictedUnidentifiedAccess(),
@@ -251,6 +263,7 @@ public class ProfileController {
                        null,
                        null,
                        accountProfile.get().getAvatar(),
+                       null,
                        accountProfile.get().getIdentityKey(),
                        UnidentifiedAccessChecksum.generateFor(accountProfile.get().getUnidentifiedAccessKey()),
                        accountProfile.get().isUnrestrictedUnidentifiedAccess(),
@@ -323,6 +336,7 @@ public class ProfileController {
                        null,
                        null,
                        accountProfile.getAvatar(),
+                       null,
                        accountProfile.getIdentityKey(),
                        UnidentifiedAccessChecksum.generateFor(accountProfile.getUnidentifiedAccessKey()),
                        accountProfile.isUnrestrictedUnidentifiedAccess(),

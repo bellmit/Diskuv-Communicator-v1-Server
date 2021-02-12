@@ -56,7 +56,8 @@ public class ProfilesManagerTest {
     Profiles            profiles                          = mock(Profiles.class);
 
     UUID             uuid    = UUID.randomUUID();
-    VersionedProfile profile = new VersionedProfile("someversion", "somename", "someavatar", "someemail", null, null, "somecommitment".getBytes());
+    VersionedProfile profile = new VersionedProfile("someversion", "somename", "someavatar", "someemail", null, null,
+        null, "somecommitment".getBytes());
 
     when(commands.hget(eq("profiles::" + uuid.toString()), eq("someversion"))).thenReturn(null);
     when(profiles.get(eq(uuid), eq("someversion"))).thenReturn(Optional.of(profile));
@@ -82,7 +83,8 @@ public class ProfilesManagerTest {
     Profiles            profiles                          = mock(Profiles.class);
 
     UUID             uuid    = UUID.randomUUID();
-    VersionedProfile profile = new VersionedProfile("someversion", "somename", "someavatar", "someemail", null, null, "somecommitment".getBytes());
+    VersionedProfile profile = new VersionedProfile("someversion", "somename", "someavatar", "someemail", null, null,
+        null, "somecommitment".getBytes());
 
     when(commands.hget(eq("profiles::" + uuid.toString()), eq("someversion"))).thenThrow(new RedisException("Connection lost"));
     when(profiles.get(eq(uuid), eq("someversion"))).thenReturn(Optional.of(profile));

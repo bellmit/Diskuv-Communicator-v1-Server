@@ -34,6 +34,10 @@ public class CreateProfileRequest {
   private String about;
 
   @JsonProperty
+  @ExactlySize({0, 684})
+  private String paymentAddress;
+
+  @JsonProperty
   @NotNull
   @JsonDeserialize(using = ProfileKeyCommitmentAdapter.Deserializing.class)
   @JsonSerialize(using = ProfileKeyCommitmentAdapter.Serializing.class)
@@ -41,14 +45,17 @@ public class CreateProfileRequest {
 
   public CreateProfileRequest() {}
 
-  public CreateProfileRequest(ProfileKeyCommitment commitment, String version, String name, String emailAddress, String aboutEmoji, String about, boolean wantsAvatar) {
+  public CreateProfileRequest(
+      ProfileKeyCommitment commitment, String version, String name, String emailAddress, String aboutEmoji, String about,
+      String paymentAddress, boolean wantsAvatar) {
     this.commitment = commitment;
-    this.version    = version;
-    this.name       = name;
+    this.version = version;
+    this.name = name;
     this.emailAddress = emailAddress;
     this.aboutEmoji = aboutEmoji;
-    this.about      = about;
-    this.avatar     = wantsAvatar;
+    this.about = about;
+    this.paymentAddress = paymentAddress;
+    this.avatar = wantsAvatar;
   }
 
   public ProfileKeyCommitment getCommitment() {
@@ -77,5 +84,9 @@ public class CreateProfileRequest {
 
   public String getAbout() {
     return StringUtils.stripToNull(about);
+  }
+
+  public String getPaymentAddress() {
+    return paymentAddress;
   }
 }
