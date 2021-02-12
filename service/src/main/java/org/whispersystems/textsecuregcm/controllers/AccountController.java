@@ -403,6 +403,7 @@ public class AccountController {
     Device  device  = account.getAuthenticatedDevice().get();
     device.setGcmId(null);
     device.setFetchesMessages(false);
+    device.setUserAgent("OWA");
 
     accounts.update(account);
   }
@@ -430,6 +431,11 @@ public class AccountController {
     Device  device  = account.getAuthenticatedDevice().get();
     device.setApnId(null);
     device.setFetchesMessages(false);
+    if (device.getId() == 1) {
+      device.setUserAgent("OWI");
+    } else {
+      device.setUserAgent("OWP");
+    }
 
     accounts.update(account);
   }
