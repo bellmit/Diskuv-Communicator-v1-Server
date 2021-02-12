@@ -28,6 +28,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.whispersystems.textsecuregcm.configuration.dynamic.DynamicConfiguration;
 import org.whispersystems.textsecuregcm.entities.MessageProtos;
 import org.whispersystems.textsecuregcm.metrics.PushLatencyManager;
 import org.whispersystems.textsecuregcm.redis.AbstractRedisClusterTest;
@@ -58,11 +59,12 @@ public class MessagePersisterIntegrationTest extends AbstractRedisClusterTest {
 
         final MessagesDynamoDb messagesDynamoDb = new MessagesDynamoDb(messagesDynamoDbRule.getDynamoDB(), MessagesDynamoDbRule.TABLE_NAME, Duration.ofDays(7));
         final AccountsManager accountsManager = mock(AccountsManager.class);
+        final DynamicConfigurationManager dynamicConfigurationManager = mock(DynamicConfigurationManager.class);
 
         notificationExecutorService = Executors.newSingleThreadExecutor();
         messagesCache               = new MessagesCache(getRedisCluster(), getRedisCluster(), notificationExecutorService);
         messagesManager             = new MessagesManager(messagesDynamoDb, messagesCache, mock(PushLatencyManager.class));
-        messagePersister            = new MessagePersister(messagesCache, messagesManager, accountsManager, mock(FeatureFlagsManager.class), PERSIST_DELAY);
+        messagePersister            = new MessagePersister(messagesCache, messagesManager, accountsManager, dynamicConfigurationManager, PERSIST_DELAY);
 
         account = mock(Account.class);
 
@@ -71,6 +73,7 @@ public class MessagePersisterIntegrationTest extends AbstractRedisClusterTest {
         when(account.getNumber()).thenReturn(accountUuid.toString());
         when(account.getUuid()).thenReturn(accountUuid);
         when(accountsManager.get(accountUuid)).thenReturn(Optional.of(account));
+        when(dynamicConfigurationManager.getConfiguration()).thenReturn(new DynamicConfiguration());
 
         messagesCache.start();
     }
