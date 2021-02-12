@@ -5,6 +5,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.collectd.CollectdReporter;
 import com.codahale.metrics.collectd.Sender;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.collect.ImmutableSet;
@@ -50,6 +51,7 @@ public class CollectdMetricsReporterFactory extends BaseReporterFactory {
 
   @JsonProperty @NotNull private Integer port;
 
+  @JsonIgnore
   private boolean initialized;
 
   public void setHostname(String hostname) {
