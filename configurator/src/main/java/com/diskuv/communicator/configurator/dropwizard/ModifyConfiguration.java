@@ -164,7 +164,7 @@ public class ModifyConfiguration implements Callable<Integer> {
     cacheCluster(config);
     pubsub(config);
     metricsCluster(config);
-    pushScheduler(config);
+    pushSchedulerCluster(config);
     messageCache(config);
 
     // write configuration
@@ -244,9 +244,9 @@ public class ModifyConfiguration implements Callable<Integer> {
     setRedisUrls(value);
   }
 
-  public void pushScheduler(WhisperServerConfiguration config) throws IllegalAccessException {
-    RedisConfiguration value = config.getPushScheduler();
-    setRedisUrlAndReplicas(value);
+  public void pushSchedulerCluster(WhisperServerConfiguration config) throws IllegalAccessException {
+    RedisClusterConfiguration value = config.getPushSchedulerCluster();
+    setRedisUrls(value);
   }
 
   public void messageCache(WhisperServerConfiguration config) throws IllegalAccessException {
