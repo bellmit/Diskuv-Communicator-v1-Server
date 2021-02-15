@@ -94,13 +94,9 @@ public class GenerateConfigurationTest {
             getClass().getResourceAsStream("serverCertificateSigningKeyPair.pem");
         PemReader reader =
             new PemReader(new InputStreamReader(signingKeyPairStream, StandardCharsets.UTF_8))) {
-      PemObject pemPublic = reader.readPemObject();
-      assertThat(pemPublic.getType()).isEqualTo("PUBLIC KEY");
-      ECPublicKey signingPublicKey = Curve.decodePoint(pemPublic.getContent(), 0);
-
-      PemObject pemPrivate = reader.readPemObject();
-      assertThat(pemPrivate.getType()).isEqualTo("PRIVATE KEY");
-      ECPrivateKey signingPrivateKey = Curve.decodePrivatePoint(pemPrivate.getContent());
+      PemUtils.PublicPrivateKeyPair signingKeyPair = PemUtils.getKeyPair(reader);
+      ECPublicKey signingPublicKey = signingKeyPair.getPublicKey();
+      ECPrivateKey signingPrivateKey = signingKeyPair.getPrivateKey();
 
       // then: signing public key derives from signing private key (they are coherent)
       ECPublicKey expectedSigningPublicKey = constructPublicKeyFromPrivateKey(signingPrivateKey);

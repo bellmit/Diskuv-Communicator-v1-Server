@@ -1,11 +1,15 @@
 package com.diskuv.communicator.configurator;
 
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
+import org.bouncycastle.util.io.pem.PemReader;
 import org.whispersystems.textsecuregcm.WhisperServerConfiguration;
+import org.whispersystems.textsecuregcm.crypto.ECPrivateKey;
+import org.whispersystems.textsecuregcm.crypto.ECPublicKey;
 import org.whispersystems.textsecuregcm.util.Base64;
 import picocli.CommandLine;
 
 import java.io.File;
+import java.io.FileReader;
 import java.util.concurrent.Callable;
 
 import static com.diskuv.communicator.configurator.ConfigurationUtils.createConfigurationBuilder;
@@ -22,8 +26,15 @@ import static com.diskuv.communicator.configurator.ConfigurationUtils.createConf
 public class ViewClientConfiguration implements Callable<Integer> {
   @CommandLine.Parameters(
       index = "0",
-      description = "The input YAML file")
-  protected File inputYamlFile;
+      paramLabel = "YAML_CONFIG_FILE",
+      description = "The YAML configuration file for the server")
+  protected File yamlServerFile;
+
+  @CommandLine.Parameters(
+          index = "1",
+          paramLabel = "SERVER_CERTIFICATE_SIGNING_KEYPAIR_FILE",
+          description = "PEM-encoded server certificate signing key pair. Only the public key is needed")
+  protected File serverCertificateSigningKeyPairFile;
 
   public static void main(String... args) {
     int exitCode =
@@ -36,7 +47,15 @@ public class ViewClientConfiguration implements Callable<Integer> {
   @Override
   public Integer call() throws Exception {
     // load configuration
-    WhisperServerConfiguration config = createConfigurationBuilder().build(inputYamlFile);
+    WhisperServerConfiguration config = createConfigurationBuilder().build(yamlServerFile);
+
+    // load public key from key pair
+    ECPublicKey signingPublicKey;
+    try (FileReader fileReader = new FileReader(serverCertificateSigningKeyPairFile);
+        PemReader reader = new PemReader(fileReader)) {
+      PemUtils.PublicPrivateKeyPair signingKeyPair = PemUtils.getKeyPair(reader);
+      signingPublicKey = signingKeyPair.getPublicKey();
+    }
 
     // view client configuration
     System.out.println();
@@ -57,7 +76,7 @@ public class ViewClientConfiguration implements Callable<Integer> {
     System.out.println("------------------------------");
     System.out.println();
     System.out.println("UNIDENTIFIED_SENDER_TRUST_ROOT (Android), kUDTrustRoot (iOS) := ");
-    System.out.println("  Use the PUBLIC KEY of your SERVER_CERTIFICATE_SIGNING_KEYPAIR_FILE that was generated alongside the YAML");
+    System.out.println("  "  + Base64.encodeBytes(signingPublicKey.serialize()));
     System.out.println("Examples:");
     System.out.println("* https://github.com/signalapp/Signal-Android/blob/fc41fb50144791deb17a3b240ebc4b84cbaf4ad3/app/build.gradle#L128");
     System.out.println("* https://github.com/signalapp/Signal-Android/blob/fc41fb50144791deb17a3b240ebc4b84cbaf4ad3/app/build.gradle#L258");
