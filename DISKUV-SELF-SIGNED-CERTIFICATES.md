@@ -1,5 +1,8 @@
 # Self Signed Certificates
 
+> The Android client uses OkHttp, which requires that SSL certificates have a "Subject Alternative Name" (SAN).
+> Most online tutorials for creating your SSL certificate will forget to include the SAN.
+
 1. We'll be using openssl and Java keytool to generate the certificate.
    So create an openssl configuration file `/tmp/req.conf`:
 
@@ -18,18 +21,23 @@
     subjectAltName = @alt_names
     [alt_names]
     IP.1 = 192.168.1.100
+    #DNS.1 = mycomputer
     ```
 
 2. Edit that configuration so that your CN and IP.1 are your IP address.
-   Do not use your loopback address (127.0.0.1).
+   Do not use your loopback adapter address (127.0.0.1).
+
+   Alternative: We don't recommend this option, but you can use DNS.1 instead of IP.1.
+   You have to figure out yourself how to get your Android/iOS client to recognize your
+   computer's domain name (`mycomputer` in the example above).
 
 3. Run:
 
-```bash
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/certandkey.pem -out /tmp/certandkey.pem -config /tmp/req.conf -extensions v3_req
-openssl pkcs12 -export -in /tmp/certandkey.pem -inkey /tmp/certandkey.pem -name local-server -out /tmp/server.p12 -passout pass:
-keytool -importkeystore -srcstorepass '' -deststorepass diskuv -destkeystore /tmp/server.jks -srckeystore /tmp/server.p12 -srcstoretype PKCS12
-```
+   ```bash
+   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/certandkey.pem -out /tmp/certandkey.pem -config /tmp/req.conf -extensions v3_req
+   openssl pkcs12 -export -in /tmp/certandkey.pem -inkey /tmp/certandkey.pem -name local-server -out /tmp/server.p12 -passout pass:
+   keytool -importkeystore -srcstorepass '' -deststorepass diskuv -destkeystore /tmp/server.jks -srckeystore /tmp/server.p12 -srcstoretype PKCS12
+   ```
 
 4. Let's assume you already have a YAML configuration file (ex.
    `java -jar configurator/target/configurator-*.jar` generate). In the YAML file
@@ -45,9 +53,11 @@ keytool -importkeystore -srcstorepass '' -deststorepass diskuv -destkeystore /tm
           keyStorePassword: diskuv
     ```
 
-5. Then your server will be compatible with the Signal-Android code base, which requires through the
-   `OkHostnameVerifier` that you have a certificate with a Subject Alternative Name (`IP.1` in the
-   first step, or `DNS.1` if you use domain name certificates). You will still need to add your certificate to
-   `app/src/main/res/raw/whisper.store` of Diskuv-Communicator-Android; instructions are in that
-   project's DISKUV-DEVELOPING.md
+5. Follow the instructions in Diskuv-Communicator-Android's
+   `DISKUV-DEVELOPING.md`. There is a section "Connecting to a private test server"
+   that we recommend following.
 
+   Alternative: There is a section "Regenerating the trust store". You can add your
+   certificate within its `certificateauthorities` variable by copying your `/tmp/certandkey.pem`
+   to Diskuv-Communicator-Android's app/certs/ folder. Then follow the shell commands
+   from that section.
