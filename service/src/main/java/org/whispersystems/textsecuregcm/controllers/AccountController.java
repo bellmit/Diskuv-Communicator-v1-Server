@@ -57,6 +57,7 @@ import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.storage.PendingAccountsManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.util.Constants;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Hex;
 import org.whispersystems.textsecuregcm.util.Util;
 import org.whispersystems.textsecuregcm.util.VerificationCode;
@@ -583,7 +584,7 @@ public class AccountController {
 
     Account account = new Account();
     account.setNumber(number);
-    account.setUuid(UUID.randomUUID());
+    account.setUuid(DiskuvUuidUtil.uuidForE164Number(number));
     account.addDevice(device);
     setAccountRegistrationLockFromAttributes(account, accountAttributes);
     account.setUnidentifiedAccessKey(accountAttributes.getUnidentifiedAccessKey());
