@@ -146,7 +146,8 @@ public class Account implements Principal  {
   }
 
   public boolean isStorageSupported() {
-    return devices.stream().anyMatch(device -> device.getCapabilities() != null && device.getCapabilities().isStorage());
+    // The storage service is not used in Diskuv, so storage "supported" is always false
+    return false;
   }
 
   public boolean isEnabled() {
