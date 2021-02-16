@@ -87,6 +87,6 @@ public class CreateProfileRequest {
   }
 
   public String getPaymentAddress() {
-    return paymentAddress;
+    return StringUtils.stripToNull(paymentAddress);
   }
 }
