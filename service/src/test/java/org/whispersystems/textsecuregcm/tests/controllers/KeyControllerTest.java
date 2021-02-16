@@ -482,7 +482,8 @@ public class KeyControllerTest {
                                  .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
                                  .get();
 
-    assertThat(response.getStatusInfo().getStatusCode()).isEqualTo(404);
+    // Diskuv Change: Do UNAUTHORIZED rather than NOT_FOUND when an account is not present
+    assertThat(response.getStatusInfo().getStatusCode()).isEqualTo(401);
   }
 
   @Test

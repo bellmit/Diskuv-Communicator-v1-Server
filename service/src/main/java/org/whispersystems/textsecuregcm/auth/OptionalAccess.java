@@ -30,11 +30,8 @@ public class OptionalAccess {
           return;
         }
 
-        if (requestAccount.isPresent()) {
-          throw new WebApplicationException(Response.Status.NOT_FOUND);
-        } else {
-          throw new WebApplicationException(Response.Status.UNAUTHORIZED);
-        }
+        // Diskuv Change: Do UNAUTHORIZED rather than NOT_FOUND when an account is not prese
+        throw new WebApplicationException(Response.Status.UNAUTHORIZED);
       }
     } catch (NumberFormatException e) {
       throw new WebApplicationException(Response.status(422).build());
@@ -51,7 +48,8 @@ public class OptionalAccess {
 
     //noinspection ConstantConditions
     if (requestAccount.isPresent() && (!targetAccount.isPresent() || (targetAccount.isPresent() && !targetAccount.get().isEnabled()))) {
-      throw new WebApplicationException(Response.Status.NOT_FOUND);
+      // Diskuv Change: Do UNAUTHORIZED rather than NOT_FOUND when an account is not present
+      throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
 
     if (accessKey.isPresent() && targetAccount.isPresent() && targetAccount.get().isEnabled() && targetAccount.get().isUnrestrictedUnidentifiedAccess()) {

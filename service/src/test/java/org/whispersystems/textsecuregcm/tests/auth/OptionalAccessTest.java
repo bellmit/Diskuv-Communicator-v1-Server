@@ -78,7 +78,8 @@ public class OptionalAccessTest {
       OptionalAccess.verify(Optional.of(account), Optional.empty(), Optional.empty());
       throw new AssertionError("should fail");
     } catch (WebApplicationException e) {
-      assertEquals(e.getResponse().getStatus(), 404);
+      // Diskuv Change: Do UNAUTHORIZED rather than NOT_FOUND when an account is not present
+      assertEquals(e.getResponse().getStatus(), 401);
     }
   }
 
