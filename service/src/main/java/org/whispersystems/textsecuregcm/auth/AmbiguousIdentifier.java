@@ -17,6 +17,17 @@ public class AmbiguousIdentifier {
     }
   }
 
+  public String toString() {
+    return asString();
+  }
+
+  public String asString() {
+    if (uuid != null) {
+      return uuid.toString();
+    }
+    return number;
+  }
+
   public UUID getUuid() {
     return uuid;
   }

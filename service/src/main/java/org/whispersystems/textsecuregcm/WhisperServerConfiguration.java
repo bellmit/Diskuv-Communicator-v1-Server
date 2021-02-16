@@ -178,6 +178,11 @@ public class WhisperServerConfiguration extends Configuration {
   @JsonProperty
   private JwtKeysConfiguration jwtKeys;
 
+  @Valid
+  @NotNull
+  @JsonProperty
+  private DiskuvSyntheticAccountsConfiguration diskuvSyntheticAccounts;
+
   private Map<String, String> transparentDataIndex = new HashMap<>();
 
   public RecaptchaConfiguration getRecaptchaConfiguration() {
@@ -312,5 +317,9 @@ public class WhisperServerConfiguration extends Configuration {
 
   public JwtKeysConfiguration getJwtKeys() {
     return jwtKeys;
+  }
+
+  public DiskuvSyntheticAccountsConfiguration getDiskuvSyntheticAccounts() {
+    return diskuvSyntheticAccounts;
   }
 }

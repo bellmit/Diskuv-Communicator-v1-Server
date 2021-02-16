@@ -44,6 +44,9 @@ import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice;
 import org.whispersystems.textsecuregcm.util.Base64;
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.Util;
@@ -84,14 +87,14 @@ public class MessageController {
   private final RateLimiters           rateLimiters;
   private final PushSender             pushSender;
   private final ReceiptSender          receiptSender;
-  private final AccountsManager        accountsManager;
+  private final PossiblySyntheticAccountsManager accountsManager;
   private final MessagesManager        messagesManager;
   private final ApnFallbackManager     apnFallbackManager;
 
   public MessageController(RateLimiters rateLimiters,
                            PushSender pushSender,
                            ReceiptSender receiptSender,
-                           AccountsManager accountsManager,
+                           PossiblySyntheticAccountsManager accountsManager,
                            MessagesManager messagesManager,
                            ApnFallbackManager apnFallbackManager)
   {
@@ -119,7 +122,7 @@ public class MessageController {
     // However, it is fine if the effective source ... the source seen by a
     // recipient in the Envelope after we send a message ... is not present as long as the sender shows a valid
     // anonymous key.
-    Optional<Account>   source = accessKey.isPresent() ? Optional.empty() : Optional.of(realSource);
+    final Optional<Account> source = accessKey.isPresent() ? Optional.empty() : Optional.of(realSource);
 
     if (!source.isPresent() && !accessKey.isPresent()) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
@@ -140,24 +143,25 @@ public class MessageController {
     }
 
     try {
-      boolean isSyncMessage = source.isPresent() && source.get().isFor(destinationName);
+      final boolean isSyncMessage = source.isPresent() && source.get().isFor(destinationName);
 
-      Optional<Account> destination;
+      PossiblySyntheticAccount destination;
 
-      if (!isSyncMessage) destination = accountsManager.get(destinationName);
-      else                destination = source;
+      if (!isSyncMessage) destination = accountsManager.get(destinationName.getUuid());
+      else                destination = source.get();
 
       OptionalAccess.verify(source, accessKey, destination);
-      assert(destination.isPresent());
 
-      validateCompleteDeviceList(destination.get(), messages.getMessages(), isSyncMessage);
-      validateRegistrationIds(destination.get(), messages.getMessages());
+      validateCompleteDeviceList(destination, messages.getMessages(), isSyncMessage);
+      validateRegistrationIds(destination, messages.getMessages());
 
-      for (IncomingMessage incomingMessage : messages.getMessages()) {
-        Optional<Device> destinationDevice = destination.get().getDevice(incomingMessage.getDestinationDeviceId());
+      if (destination.getRealAccount().isPresent()) {
+        for (IncomingMessage incomingMessage : messages.getMessages()) {
+          Optional<? extends PossiblySyntheticDevice> destinationDevice = destination.getDevice(incomingMessage.getDestinationDeviceId());
 
-        if (destinationDevice.isPresent()) {
-          sendMessage(source, destination.get(), destinationDevice.get(), messages.getTimestamp(), messages.isOnline(), incomingMessage);
+          if (destinationDevice.isPresent() && destinationDevice.get().getRealDevice().isPresent()) {
+            sendMessage(source, destination.getRealAccount().get(), destinationDevice.get().getRealDevice().get(), messages.getTimestamp(), messages.isOnline(), incomingMessage);
+          }
         }
       }
 
@@ -283,13 +287,13 @@ public class MessageController {
     }
   }
 
-  private void validateRegistrationIds(Account account, List<IncomingMessage> messages)
+  private void validateRegistrationIds(PossiblySyntheticAccount account, List<IncomingMessage> messages)
       throws StaleDevicesException
   {
     List<Long> staleDevices = new LinkedList<>();
 
     for (IncomingMessage message : messages) {
-      Optional<Device> device = account.getDevice(message.getDestinationDeviceId());
+      Optional<? extends PossiblySyntheticDevice> device = account.getDevice(message.getDestinationDeviceId());
 
       if (device.isPresent() &&
           message.getDestinationRegistrationId() > 0 &&
@@ -304,7 +308,7 @@ public class MessageController {
     }
   }
 
-  private void validateCompleteDeviceList(Account account,
+  private void validateCompleteDeviceList(PossiblySyntheticAccount account,
                                           List<IncomingMessage> messages,
                                           boolean isSyncMessage)
       throws MismatchedDevicesException
@@ -319,7 +323,7 @@ public class MessageController {
       messageDeviceIds.add(message.getDestinationDeviceId());
     }
 
-    for (Device device : account.getDevices()) {
+    for (PossiblySyntheticDevice device : account.getDevices()) {
       if (device.isEnabled() &&
           !(isSyncMessage && device.getId() == account.getAuthenticatedDevice().get().getId()))
       {

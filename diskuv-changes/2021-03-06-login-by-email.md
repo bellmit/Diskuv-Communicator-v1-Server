@@ -47,4 +47,6 @@ The following significantly changed semantics:
   know who sent the "unidentified" message. And even though, just like Signal, the recipient does not have the
   "source" of the unidentified message, there is (or will be) a change to Diskuv Communicator profiles that include
   email addresses. So the recipient will see the source email address through the sender profile.
-  Net effect: Unidentified messages are essentially unsupported in Diskuv Communicator.
+  Net effect: Unidentified messages are essentially unsupported in Diskuv Communicator. The only good use case
+  is for accounts like support@diskuv.com, where you want any authenticated user to contact you without you having to
+  press "Accept" message.

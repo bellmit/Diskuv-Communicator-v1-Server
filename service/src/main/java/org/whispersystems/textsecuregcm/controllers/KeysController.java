@@ -31,7 +31,6 @@ import org.whispersystems.textsecuregcm.entities.PreKeyState;
 import org.whispersystems.textsecuregcm.entities.SignedPreKey;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.storage.Account;
-import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.KeyRecord;
 import org.whispersystems.textsecuregcm.storage.Keys;
@@ -52,6 +51,9 @@ import java.util.List;
 import java.util.Optional;
 
 import io.dropwizard.auth.Auth;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/v2/keys")
@@ -61,9 +63,9 @@ public class KeysController {
 
   private final RateLimiters    rateLimiters;
   private final Keys            keys;
-  private final AccountsManager accounts;
+  private final PossiblySyntheticAccountsManager accounts;
 
-  public KeysController(RateLimiters rateLimiters, Keys keys, AccountsManager accounts) {
+  public KeysController(RateLimiters rateLimiters, Keys keys, PossiblySyntheticAccountsManager accounts) {
     this.rateLimiters   = rateLimiters;
     this.keys           = keys;
     this.accounts       = accounts;
@@ -129,26 +131,32 @@ public class KeysController {
       throw new WebApplicationException(Response.Status.BAD_REQUEST);
     }
 
-    Optional<Account> target = accounts.get(targetName);
+    PossiblySyntheticAccount target = accounts.get(targetName.getUuid());
+
     OptionalAccess.verify(account, accessKey, target, deviceId);
 
-    assert(target.isPresent());
-
     if (account.isPresent()) {
-      rateLimiters.getPreKeysLimiter().validate(account.get().getNumber() +  "__" + target.get().getNumber() + "." + deviceId);
+      // Diskuv Change: We do not include the validated target phone number in the rate limit, since we may not
+      // have a target rate number (we send responses regardless if there is an account)
+      rateLimiters.getPreKeysLimiter().validate(account.get().getNumber() + "__" + targetName.asString() + "." + deviceId);
     }
 
-    List<KeyRecord>          targetKeys = getLocalKeys(target.get(), deviceId);
+    List<KeyRecord>          targetKeys = getLocalKeys(target, deviceId);
     List<PreKeyResponseItem> devices    = new LinkedList<>();
 
-    for (Device device : target.get().getDevices()) {
+    for (PossiblySyntheticDevice device : target.getDevices()) {
       if (device.isEnabled() && (deviceId.equals("*") || device.getId() == Long.parseLong(deviceId))) {
         SignedPreKey signedPreKey = device.getSignedPreKey();
         PreKey preKey       = null;
 
-        for (KeyRecord keyRecord : targetKeys) {
-          if (keyRecord.getDeviceId() == device.getId()) {
+        Optional<PreKey> syntheticPreKey = device.generateUniqueSyntheticPreKey();
+        if (syntheticPreKey.isPresent()) {
+          preKey = syntheticPreKey.get();
+        } else {
+          for (KeyRecord keyRecord : targetKeys) {
+            if (keyRecord.getDeviceId() == device.getId()) {
               preKey = new PreKey(keyRecord.getKeyId(), keyRecord.getPublicKey());
+            }
           }
         }
 
@@ -159,7 +167,7 @@ public class KeysController {
     }
 
     if (devices.isEmpty()) return Optional.empty();
-    else                   return Optional.of(new PreKeyResponse(target.get().getIdentityKey(), devices));
+    else                   return Optional.of(new PreKeyResponse(target.getIdentityKey(), devices));
   }
 
   @Timed
@@ -185,15 +193,15 @@ public class KeysController {
     else                      return Optional.empty();
   }
 
-  private List<KeyRecord> getLocalKeys(Account destination, String deviceIdSelector) {
+  private List<KeyRecord> getLocalKeys(PossiblySyntheticAccount destination, String deviceIdSelector) {
     try {
       if (deviceIdSelector.equals("*")) {
-        return keys.get(destination.getNumber());
+        return keys.get(destination.getUuid().toString());
       }
 
       long deviceId = Long.parseLong(deviceIdSelector);
 
-      return keys.get(destination.getNumber(), deviceId);
+      return keys.get(destination.getUuid().toString(), deviceId);
     } catch (NumberFormatException e) {
       throw new WebApplicationException(Response.status(422).build());
     }

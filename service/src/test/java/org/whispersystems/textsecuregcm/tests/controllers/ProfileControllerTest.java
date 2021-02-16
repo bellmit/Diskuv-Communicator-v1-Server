@@ -32,6 +32,7 @@ import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.ProfilesManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.storage.VersionedProfile;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
 import org.whispersystems.textsecuregcm.util.SystemMapper;
 
@@ -49,7 +50,7 @@ import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_BEARE
 
 public class ProfileControllerTest {
 
-  private static AccountsManager  accountsManager     = mock(AccountsManager.class );
+  private static PossiblySyntheticAccountsManager  accountsManager     = mock(PossiblySyntheticAccountsManager.class );
   private static ProfilesManager  profilesManager     = mock(ProfilesManager.class);
   private static UsernamesManager usernamesManager    = mock(UsernamesManager.class);
   private static RateLimiters     rateLimiters        = mock(RateLimiters.class    );
@@ -104,15 +105,9 @@ public class ProfileControllerTest {
     when(capabilitiesAccount.isEnabled()).thenReturn(true);
     when(capabilitiesAccount.isUuidAddressingSupported()).thenReturn(true);
 
-    when(accountsManager.get(AuthHelper.VALID_NUMBER_TWO)).thenReturn(Optional.of(profileAccount));
-    when(accountsManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of(profileAccount));
+    when(accountsManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(profileAccount);
     when(usernamesManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of("n00bkiller"));
     when(usernamesManager.get("n00bkiller")).thenReturn(Optional.of(AuthHelper.VALID_UUID_TWO));
-    when(accountsManager.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasNumber() && identifier.getNumber().equals(AuthHelper.VALID_NUMBER_TWO)))).thenReturn(Optional.of(profileAccount));
-    when(accountsManager.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasUuid() && identifier.getUuid().equals(AuthHelper.VALID_UUID_TWO)))).thenReturn(Optional.of(profileAccount));
-
-    when(accountsManager.get(AuthHelper.VALID_NUMBER)).thenReturn(Optional.of(capabilitiesAccount));
-    when(accountsManager.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasNumber() && identifier.getNumber().equals(AuthHelper.VALID_NUMBER)))).thenReturn(Optional.of(capabilitiesAccount));
 
     when(profilesManager.get(eq(AuthHelper.VALID_UUID), eq("someversion"))).thenReturn(Optional.empty());
     when(profilesManager.get(eq(AuthHelper.VALID_UUID_TWO), eq("validversion"))).thenReturn(Optional.of(new VersionedProfile("validversion", "validname", "profiles/validavatar", "validcommitmnet".getBytes())));
@@ -138,7 +133,6 @@ public class ProfileControllerTest {
     assertThat(profile.getAvatar()).isEqualTo("profiles/bang");
     assertThat(profile.getUsername()).isEqualTo("n00bkiller");
 
-    verify(accountsManager, times(1)).get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasUuid() && identifier.getUuid().equals(AuthHelper.VALID_UUID_TWO)));
     verify(usernamesManager, times(1)).get(eq(AuthHelper.VALID_UUID_TWO));
     verify(rateLimiter, times(1)).validate(eq(AuthHelper.VALID_NUMBER));
   }
@@ -157,9 +151,9 @@ public class ProfileControllerTest {
     assertThat(profile.getAvatar()).isEqualTo("profiles/bang");
     assertThat(profile.getCapabilities().isUuid()).isFalse();
     assertThat(profile.getUsername()).isNull();
-    assertThat(profile.getUuid()).isNull();;
+    assertThat(profile.getUuid()).isNull();
 
-    verify(accountsManager, times(1)).get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasNumber() && identifier.getNumber().equals(AuthHelper.VALID_NUMBER_TWO)));
+    verify(accountsManager, times(1)).get(AuthHelper.VALID_UUID_TWO);
     verifyNoMoreInteractions(usernamesManager);
     verify(rateLimiter, times(1)).validate(eq(AuthHelper.VALID_NUMBER));
   }

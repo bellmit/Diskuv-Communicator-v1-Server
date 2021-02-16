@@ -19,15 +19,18 @@ package org.whispersystems.textsecuregcm.storage;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
+import org.whispersystems.textsecuregcm.entities.PreKey;
 import org.whispersystems.textsecuregcm.entities.UserCapabilities;
 import org.whispersystems.textsecuregcm.entities.SignedPreKey;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice;
 import org.whispersystems.textsecuregcm.util.Util;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.Null;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-public class Device {
+public class Device implements PossiblySyntheticDevice {
 
   public static final long MASTER_ID = 1;
 
@@ -107,6 +110,16 @@ public class Device {
     this.userAgent               = userAgent;
     this.uninstalledFeedback     = uninstalledFeedback;
     this.capabilities            = capabilities;
+  }
+
+  @Override
+  public Optional<Device> getRealDevice() {
+    return Optional.of(this);
+  }
+
+  @Override
+  public Optional<PreKey> generateUniqueSyntheticPreKey() {
+    return Optional.empty();
   }
 
   public String getApnId() {
@@ -212,7 +225,7 @@ public class Device {
     return (id == MASTER_ID && hasChannel && signedPreKey != null) ||
            (id != MASTER_ID && hasChannel && signedPreKey != null && lastSeen > (System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30)));
   }
-  
+
   public boolean getFetchesMessages() {
     return fetchesMessages;
   }

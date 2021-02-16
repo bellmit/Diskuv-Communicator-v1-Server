@@ -29,6 +29,8 @@ import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.ProfilesManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.storage.VersionedProfile;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
 import org.whispersystems.textsecuregcm.util.ExactlySize;
 import org.whispersystems.textsecuregcm.util.Pair;
 
@@ -61,7 +63,7 @@ public class ProfileController {
 
   private final RateLimiters     rateLimiters;
   private final ProfilesManager  profilesManager;
-  private final AccountsManager  accountsManager;
+  private final PossiblySyntheticAccountsManager accountsManager;
   private final UsernamesManager usernamesManager;
 
   private final PolicySigner              policySigner;
@@ -73,7 +75,7 @@ public class ProfileController {
   private final String              bucket;
 
   public ProfileController(RateLimiters rateLimiters,
-                           AccountsManager accountsManager,
+                           PossiblySyntheticAccountsManager accountsManager,
                            ProfilesManager profilesManager,
                            UsernamesManager usernamesManager,
                            AmazonS3 s3client,
@@ -190,25 +192,23 @@ public class ProfileController {
         rateLimiters.getProfileLimiter().validate(requestAccount.get().getNumber());
       }
 
-      Optional<Account> accountProfile = accountsManager.get(uuid);
+      PossiblySyntheticAccount accountProfile = accountsManager.get(uuid);
       OptionalAccess.verify(requestAccount, accessKey, accountProfile);
 
-      assert(accountProfile.isPresent());
-
-      Optional<String>           username = usernamesManager.get(accountProfile.get().getUuid());
+      Optional<String>           username = usernamesManager.get(accountProfile.getUuid());
       Optional<VersionedProfile> profile  = profilesManager.get(uuid, version);
 
-      String                     name     = profile.map(VersionedProfile::getName).orElse(accountProfile.get().getProfileName());
-      String                     avatar   = profile.map(VersionedProfile::getAvatar).orElse(accountProfile.get().getAvatar());
+      String                     name     = profile.map(VersionedProfile::getName).orElse(accountProfile.getProfileName());
+      String                     avatar   = profile.map(VersionedProfile::getAvatar).orElse(accountProfile.getAvatar());
 
       Optional<ProfileKeyCredentialResponse> credential = getProfileCredential(credentialRequest, profile, uuid);
 
       return Optional.of(new Profile(name,
                                      avatar,
-                                     accountProfile.get().getIdentityKey(),
-                                     UnidentifiedAccessChecksum.generateFor(accountProfile.get().getUnidentifiedAccessKey()),
-                                     accountProfile.get().isUnrestrictedUnidentifiedAccess(),
-                                     new UserCapabilities(accountProfile.get().isUuidAddressingSupported(), accountProfile.get().isGroupsV2Supported()),
+                                     accountProfile.getIdentityKey(),
+                                     UnidentifiedAccessChecksum.generateFor(accountProfile.getUnidentifiedAccessKey()),
+                                     accountProfile.isUnrestrictedUnidentifiedAccess(),
+                                     new UserCapabilities(accountProfile.isUuidAddressingSupported(), accountProfile.isGroupsV2Supported()),
                                      username.orElse(null),
                                      null, credential.orElse(null)));
     } catch (InvalidInputException e) {
@@ -216,39 +216,6 @@ public class ProfileController {
       throw new WebApplicationException(Response.Status.BAD_REQUEST);
     }
   }
-
-
-  // Diskuv Change: Do not allow profile retrieval by username, since no access control on profile retrieval
-//  @Timed
-//  @GET
-//  @Produces(MediaType.APPLICATION_JSON)
-//  @Path("/username/{username}")
-//  public Profile getProfileByUsername(@Auth Account account, @PathParam("username") String username) throws RateLimitExceededException {
-//    rateLimiters.getUsernameLookupLimiter().validate(account.getUuid().toString());
-//
-//    username = username.toLowerCase();
-//
-//    Optional<UUID> uuid = usernamesManager.get(username);
-//
-//    if (!uuid.isPresent()) {
-//      throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build());
-//    }
-//
-//    Optional<Account> accountProfile = accountsManager.get(uuid.get());
-//
-//    if (!accountProfile.isPresent()) {
-//      throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build());
-//    }
-//
-//    return new Profile(accountProfile.get().getProfileName(),
-//                       accountProfile.get().getAvatar(),
-//                       accountProfile.get().getIdentityKey(),
-//                       UnidentifiedAccessChecksum.generateFor(accountProfile.get().getUnidentifiedAccessKey()),
-//                       accountProfile.get().isUnrestrictedUnidentifiedAccess(),
-//                       new UserCapabilities(accountProfile.get().isUuidAddressingSupported(), accountProfile.get().isGroupsV2Supported()),
-//                       username,
-//                       accountProfile.get().getUuid(), null);
-//  }
 
   private Optional<ProfileKeyCredentialResponse> getProfileCredential(Optional<String>           encodedProfileCredentialRequest,
                                                                       Optional<VersionedProfile> profile,
@@ -302,27 +269,25 @@ public class ProfileController {
     if (!requestAccount.isPresent() && !accessKey.isPresent()) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
+    if (!identifier.hasUuid()) {
+      throw new WebApplicationException(Response.Status.BAD_REQUEST);
+    }
 
     if (requestAccount.isPresent()) {
       rateLimiters.getProfileLimiter().validate(requestAccount.get().getNumber());
     }
 
-    Optional<Account> accountProfile = accountsManager.get(identifier);
+    PossiblySyntheticAccount accountProfile = accountsManager.get(identifier.getUuid());
     OptionalAccess.verify(requestAccount, accessKey, accountProfile);
 
-    Optional<String> username = Optional.empty();
+    Optional<String> username = usernamesManager.get(accountProfile.getUuid());;
 
-    if (!identifier.hasNumber()) {
-      //noinspection OptionalGetWithoutIsPresent
-      username = usernamesManager.get(accountProfile.get().getUuid());
-    }
-
-    return new Profile(accountProfile.get().getProfileName(),
-                       accountProfile.get().getAvatar(),
-                       accountProfile.get().getIdentityKey(),
-                       UnidentifiedAccessChecksum.generateFor(accountProfile.get().getUnidentifiedAccessKey()),
-                       accountProfile.get().isUnrestrictedUnidentifiedAccess(),
-                       new UserCapabilities(accountProfile.get().isUuidAddressingSupported(), accountProfile.get().isGroupsV2Supported()),
+    return new Profile(accountProfile.getProfileName(),
+                       accountProfile.getAvatar(),
+                       accountProfile.getIdentityKey(),
+                       UnidentifiedAccessChecksum.generateFor(accountProfile.getUnidentifiedAccessKey()),
+                       accountProfile.isUnrestrictedUnidentifiedAccess(),
+                       new UserCapabilities(accountProfile.isUuidAddressingSupported(), accountProfile.isGroupsV2Supported()),
                        username.orElse(null),
                        null, null);
   }

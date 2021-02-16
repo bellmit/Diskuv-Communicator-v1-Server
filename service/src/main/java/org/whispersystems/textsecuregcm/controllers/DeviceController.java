@@ -67,7 +67,7 @@ public class DeviceController {
 
   private final Logger logger = LoggerFactory.getLogger(DeviceController.class);
 
-  private static final int MAX_DEVICES = 6;
+  public static final int MAX_DEVICES = 6;
 
   private final PendingDevicesManager pendingDevices;
   private final AccountsManager       accounts;

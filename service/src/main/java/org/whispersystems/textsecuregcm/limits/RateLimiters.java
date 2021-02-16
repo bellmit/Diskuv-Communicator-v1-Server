@@ -17,6 +17,7 @@
 package org.whispersystems.textsecuregcm.limits;
 
 
+import com.google.common.annotations.VisibleForTesting;
 import org.whispersystems.textsecuregcm.configuration.RateLimitsConfiguration;
 import org.whispersystems.textsecuregcm.redis.ReplicatedJedisPool;
 
@@ -127,6 +128,30 @@ public class RateLimiters {
     this.usernameSetLimiter = new RateLimiter(cacheClient, "usernameSet",
                                               config.getUsernameSet().getBucketSize(),
                                               config.getUsernameSet().getLeakRatePerMinute());
+  }
+
+  @VisibleForTesting
+  public RateLimiters(RateLimiter rateLimiter) {
+    this.smsDestinationLimiter = rateLimiter;
+    this.voiceDestinationLimiter = rateLimiter;
+    this.voiceDestinationDailyLimiter = rateLimiter;
+    this.smsVoiceIpLimiter = rateLimiter;
+    this.smsVoicePrefixLimiter = rateLimiter;
+    this.autoBlockLimiter = rateLimiter;
+    this.verifyLimiter = rateLimiter;
+    this.pinLimiter = rateLimiter;
+    this.attachmentLimiter = rateLimiter;
+    this.contactsLimiter = rateLimiter;
+    this.contactsIpLimiter = rateLimiter;
+    this.preKeysLimiter = rateLimiter;
+    this.messagesLimiter = rateLimiter;
+    this.allocateDeviceLimiter = rateLimiter;
+    this.verifyDeviceLimiter = rateLimiter;
+    this.turnLimiter = rateLimiter;
+    this.profileLimiter = rateLimiter;
+    this.stickerPackLimiter = rateLimiter;
+    this.usernameLookupLimiter = rateLimiter;
+    this.usernameSetLimiter = rateLimiter;
   }
 
   public RateLimiter getAllocateDeviceLimiter() {

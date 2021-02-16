@@ -29,6 +29,7 @@ import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
 import org.whispersystems.textsecuregcm.util.Base64;
 
@@ -64,7 +65,7 @@ public class MessageControllerTest {
 
   private  final PushSender             pushSender             = mock(PushSender.class            );
   private  final ReceiptSender          receiptSender          = mock(ReceiptSender.class);
-  private  final AccountsManager        accountsManager        = mock(AccountsManager.class       );
+  private  final PossiblySyntheticAccountsManager        accountsManager        = mock(PossiblySyntheticAccountsManager.class);
   private  final MessagesManager        messagesManager        = mock(MessagesManager.class);
   private  final RateLimiters           rateLimiters           = mock(RateLimiters.class          );
   private  final RateLimiter            rateLimiter            = mock(RateLimiter.class           );
@@ -97,10 +98,8 @@ public class MessageControllerTest {
     Account singleDeviceAccount = new Account(SINGLE_DEVICE_UUID, singleDeviceList, "1234".getBytes());
     Account multiDeviceAccount  = new Account(MULTI_DEVICE_UUID, multiDeviceList, "1234".getBytes());
 
-    when(accountsManager.get(eq(SINGLE_DEVICE_UUID))).thenReturn(Optional.of(singleDeviceAccount));
-    when(accountsManager.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasUuid() && identifier.getUuid().equals(SINGLE_DEVICE_UUID)))).thenReturn(Optional.of(singleDeviceAccount));
-    when(accountsManager.get(eq(MULTI_DEVICE_UUID))).thenReturn(Optional.of(multiDeviceAccount));
-    when(accountsManager.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasUuid() && identifier.getUuid().equals(MULTI_DEVICE_UUID)))).thenReturn(Optional.of(multiDeviceAccount));
+    when(accountsManager.get(eq(SINGLE_DEVICE_UUID))).thenReturn(singleDeviceAccount);
+    when(accountsManager.get(eq(MULTI_DEVICE_UUID))).thenReturn(multiDeviceAccount);
 
     when(rateLimiters.getMessagesLimiter()).thenReturn(rateLimiter);
   }

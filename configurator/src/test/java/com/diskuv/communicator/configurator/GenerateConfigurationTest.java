@@ -4,19 +4,16 @@ import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import io.dropwizard.configuration.ConfigurationException;
 import io.dropwizard.configuration.ConfigurationSourceProvider;
-import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.whispersystems.curve25519.JavaCurve25519Provider;
 import org.whispersystems.textsecuregcm.WhisperServerConfiguration;
 import org.whispersystems.textsecuregcm.crypto.Curve;
 import org.whispersystems.textsecuregcm.crypto.ECPrivateKey;
 import org.whispersystems.textsecuregcm.crypto.ECPublicKey;
 import org.whispersystems.textsecuregcm.entities.MessageProtos;
 import org.whispersystems.textsecuregcm.util.Base64;
-import org.whispersystems.textsecuregcm.util.ByteUtil;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
@@ -28,9 +25,10 @@ import java.util.Random;
 import static com.diskuv.communicator.configurator.ConfigurationUtils.convertToYaml;
 import static com.diskuv.communicator.configurator.ConfigurationUtils.createConfigurationBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.whispersystems.textsecuregcm.util.DiskuvKeyUtil.constructPublicKeyFromPrivateKey;
 
 public class GenerateConfigurationTest {
-  private static Yaml YAML = new Yaml();
+  private static final Yaml YAML = new Yaml();
   @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
 
   @Test
@@ -139,14 +137,5 @@ public class GenerateConfigurationTest {
             .noneSatisfy(c -> assertThat(c).containsSequence(expectedSignedCertificate));
       }
     }
-  }
-
-  private static ECPublicKey constructPublicKeyFromPrivateKey(ECPrivateKey privateKey) throws InvalidKeyException {
-    JavaCurve25519Provider curve25519Provider = new JavaCurve25519Provider() {};
-    byte[] publicKeyRaw = curve25519Provider.generatePublicKey(privateKey.serialize());
-    byte[] curveType = {Curve.DJB_TYPE};
-    byte[] publicKey = ByteUtil.combine(curveType, publicKeyRaw);
-    ECPublicKey serverPublicKey = Curve.decodePoint(publicKey, 0);
-    return serverPublicKey;
   }
 }

@@ -23,6 +23,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
 import org.whispersystems.textsecuregcm.auth.StoredRegistrationLock;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice;
 
 import javax.security.auth.Subject;
 import java.security.Principal;
@@ -32,7 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-public class Account implements Principal  {
+public class Account implements Principal, PossiblySyntheticAccount {
 
   @JsonIgnore
   private UUID uuid;
@@ -81,6 +83,11 @@ public class Account implements Principal  {
     this.uuid                  = uuid;
     this.devices               = devices;
     this.unidentifiedAccessKey = unidentifiedAccessKey;
+  }
+
+  @Override
+  public Optional<Account> getRealAccount() {
+    return Optional.of(this);
   }
 
   public Optional<Device> getAuthenticatedDevice() {
