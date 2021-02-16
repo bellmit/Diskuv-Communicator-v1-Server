@@ -208,36 +208,37 @@ public class ProfileController {
   }
 
 
-  @Timed
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Path("/username/{username}")
-  public Profile getProfileByUsername(@Auth Account account, @PathParam("username") String username) throws RateLimitExceededException {
-    rateLimiters.getUsernameLookupLimiter().validate(account.getUuid().toString());
-
-    username = username.toLowerCase();
-
-    Optional<UUID> uuid = usernamesManager.get(username);
-
-    if (!uuid.isPresent()) {
-      throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build());
-    }
-
-    Optional<Account> accountProfile = accountsManager.get(uuid.get());
-
-    if (!accountProfile.isPresent()) {
-      throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build());
-    }
-
-    return new Profile(accountProfile.get().getProfileName(),
-                       accountProfile.get().getAvatar(),
-                       accountProfile.get().getIdentityKey(),
-                       UnidentifiedAccessChecksum.generateFor(accountProfile.get().getUnidentifiedAccessKey()),
-                       accountProfile.get().isUnrestrictedUnidentifiedAccess(),
-                       new UserCapabilities(accountProfile.get().isUuidAddressingSupported(), accountProfile.get().isGroupsV2Supported()),
-                       username,
-                       accountProfile.get().getUuid(), null);
-  }
+  // Diskuv Change: Do not allow profile retrieval by username, since no access control on profile retrieval
+//  @Timed
+//  @GET
+//  @Produces(MediaType.APPLICATION_JSON)
+//  @Path("/username/{username}")
+//  public Profile getProfileByUsername(@Auth Account account, @PathParam("username") String username) throws RateLimitExceededException {
+//    rateLimiters.getUsernameLookupLimiter().validate(account.getUuid().toString());
+//
+//    username = username.toLowerCase();
+//
+//    Optional<UUID> uuid = usernamesManager.get(username);
+//
+//    if (!uuid.isPresent()) {
+//      throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build());
+//    }
+//
+//    Optional<Account> accountProfile = accountsManager.get(uuid.get());
+//
+//    if (!accountProfile.isPresent()) {
+//      throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build());
+//    }
+//
+//    return new Profile(accountProfile.get().getProfileName(),
+//                       accountProfile.get().getAvatar(),
+//                       accountProfile.get().getIdentityKey(),
+//                       UnidentifiedAccessChecksum.generateFor(accountProfile.get().getUnidentifiedAccessKey()),
+//                       accountProfile.get().isUnrestrictedUnidentifiedAccess(),
+//                       new UserCapabilities(accountProfile.get().isUuidAddressingSupported(), accountProfile.get().isGroupsV2Supported()),
+//                       username,
+//                       accountProfile.get().getUuid(), null);
+//  }
 
   private Optional<ProfileKeyCredentialResponse> getProfileCredential(Optional<String>           encodedProfileCredentialRequest,
                                                                       Optional<VersionedProfile> profile,

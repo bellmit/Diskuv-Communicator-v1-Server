@@ -42,6 +42,7 @@ import java.util.Optional;
 import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.*;
 
 public class ProfileControllerTest {
@@ -161,21 +162,15 @@ public class ProfileControllerTest {
 
   @Test
   public void testProfileGetByUsername() throws RateLimitExceededException {
-    Profile profile= resources.getJerseyTest()
-                              .target("/v1/profile/username/n00bkiller")
-                              .request()
-                              .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
-                              .get(Profile.class);
-
-    assertThat(profile.getIdentityKey()).isEqualTo("bar");
-    assertThat(profile.getName()).isEqualTo("baz");
-    assertThat(profile.getAvatar()).isEqualTo("profiles/bang");
-    assertThat(profile.getUsername()).isEqualTo("n00bkiller");
-    assertThat(profile.getUuid()).isEqualTo(AuthHelper.VALID_UUID_TWO);
-
-    verify(accountsManager, times(1)).get(eq(AuthHelper.VALID_UUID_TWO));
-    verify(usernamesManager, times(1)).get(eq("n00bkiller"));
-    verify(usernameRateLimiter, times(1)).validate(eq(AuthHelper.VALID_UUID.toString()));
+    // Diskuv Change: Do not allow profile retrieval by username, since no access control on profile retrieval
+    // So profile retrieval target path is not present.
+    assertThrows(javax.ws.rs.NotFoundException.class, () -> {
+      resources.getJerseyTest()
+              .target("/v1/profile/username/n00bkiller")
+              .request()
+              .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+              .get(Profile.class);
+    });
   }
 
   @Test
@@ -195,7 +190,9 @@ public class ProfileControllerTest {
                                  .request()
                                  .get();
 
-    assertThat(response.getStatus()).isEqualTo(401);
+    // Diskuv Change: Do not allow profile retrieval by username, since no access control on profile retrieval
+    // So profile retrieval target path is not present (404).
+    assertThat(response.getStatus()).isEqualTo(404);
   }
 
 
@@ -207,10 +204,9 @@ public class ProfileControllerTest {
                               .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
                               .get();
 
+    // Diskuv Change: Do not allow profile retrieval by username, since no access control on profile retrieval
+    // So profile retrieval target path is not present (404).
     assertThat(response.getStatus()).isEqualTo(404);
-
-    verify(usernamesManager, times(1)).get(eq("n00bkillerzzzzz"));
-    verify(usernameRateLimiter, times(1)).validate(eq(AuthHelper.VALID_UUID.toString()));
   }
 
 
