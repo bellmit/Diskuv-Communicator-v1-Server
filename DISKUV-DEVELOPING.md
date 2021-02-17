@@ -308,3 +308,17 @@ java -jar service/target/TextSecureServer-*.jar abusedb migrate local.yml
 # Start the TextSecureServer
 java -jar service/target/TextSecureServer-*.jar server local.yml
 ```
+
+### Production
+
+You will need to have at least once initially, and after every database upgrade, run the following
+on one server host (your deployment paths will likely be different):
+
+```bash
+java -jar ./TextSecureServer-*.jar accountdb status var/conf/config.yml
+java -jar ./TextSecureServer-*.jar accountdb migrate var/conf/config.yml
+java -jar ./TextSecureServer-*.jar messagedb status var/conf/config.yml
+java -jar ./TextSecureServer-*.jar messagedb migrate var/conf/config.yml
+java -jar ./TextSecureServer-*.jar abusedb status var/conf/config.yml
+java -jar ./TextSecureServer-*.jar abusedb migrate var/conf/config.yml
+```
