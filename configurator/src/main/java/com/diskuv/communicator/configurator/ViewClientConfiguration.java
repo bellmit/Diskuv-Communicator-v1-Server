@@ -82,6 +82,41 @@ public class ViewClientConfiguration implements Callable<Integer> {
     System.out.println("* https://github.com/signalapp/Signal-Android/blob/fc41fb50144791deb17a3b240ebc4b84cbaf4ad3/app/build.gradle#L258");
     System.out.println("* https://github.com/signalapp/Signal-iOS/blob/bac01d739403afc9bfc3d4997adc5e4a28612044/SignalServiceKit/src/TSConstants.swift#L165");
     System.out.println("* https://github.com/signalapp/Signal-iOS/blob/bac01d739403afc9bfc3d4997adc5e4a28612044/SignalServiceKit/src/TSConstants.swift#L212");
+    System.out.println();
+
+    System.out.println("Google Firebase Messaging");
+    System.out.println("-------------------------");
+    System.out.println();
+    System.out.println("gcm_defaultSenderId (Android) := ");
+    System.out.println("  "  + config.getGcmConfiguration().getSenderId());
+    System.out.println("firebase_database_url (Android, but not used) := ");
+    System.out.println("  https://project-xxx.blackhole.firebaseio.com");
+    System.out.println("remaining firebase_messaging.xml settings (Android) := ");
+    System.out.println("  0. Make sure you have two \"projects\" in your Google Cloud account. One staging, one production ");
+    System.out.println("  1. For both projects, follow the 'Register your app with Firebase' steps in");
+    System.out.println("     https://firebase.google.com/docs/cloud-messaging/android/client#register_your_app_with_firebase");
+    System.out.println("     * Your Android package name for your staging project will end in '.staging', like com.diskuv.communicator.staging");
+    System.out.println("     * Do not enter anything for 'Debug signing certificate SHA-1'");
+    System.out.println("  2. For both projects, click [Download google-services.json] to obtain your Firebase Android config file (google-services.json)");
+    System.out.println("  3. For both projects, go into your Project settings and:");
+    System.out.println("     * Set your _first_ SHA certificate fingerprint to be your **release** signing key. This is to reduce chances");
+    System.out.println("       of accidental deletion.");
+    System.out.println("     * For the staging project only, include any debug SHA fingerprints (one per developer machine)");
+    System.out.println("     * There is a little \"?\" button to give you help getting your SHA fingerprints");
+    System.out.println("  4. Change Diskuv-Communicator-Android so that src/(main|staging)/res/values/firebase_messaging.xml has the following values:");
+    System.out.println("     firebase_messaging.xml             google-services.json");
+    System.out.println("     ----------------------             --------------------");
+    System.out.println("     google_app_id                      client/client_info/mobilesdk_app_id");
+    System.out.println("     default_web_client_id              client/oauth_client/client_id (client_type == 3)");
+    System.out.println("     google_api_key                     client/client_info/mobilesdk_app_id");
+    System.out.println("     google_crash_reporting_api_key     client/client_info/mobilesdk_app_id");
+    System.out.println("     project_id                         project_info/project_id");
+    System.out.println("     firebase_database_url              project_info/firebase_url (but you do not need this)");
+    System.out.println("Examples:");
+    System.out.println("* https://github.com/signalapp/Signal-Android/blob/264a245d27912a3167dee6da531d6b0d41bbe421/app/src/main/res/values/firebase_messaging.xml#L3-L9");
+    System.out.println("Reference:");
+    System.out.println("* https://developers.google.com/android/guides/google-services-plugin");
+    System.out.println();
 
     return 0;
   }
