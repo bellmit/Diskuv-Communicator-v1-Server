@@ -44,6 +44,9 @@ public class IncomingMessage {
   @JsonProperty
   private long   timestamp; // deprecated
 
+  @JsonProperty
+  private Boolean online; // use IncomingMessageList.online - this is a temporary adaptation for older clients
+
   public String getDestination() {
     return destination;
   }
@@ -72,4 +75,7 @@ public class IncomingMessage {
     return content;
   }
 
+  public Boolean isOnline() {
+    return online;
+  }
 }
