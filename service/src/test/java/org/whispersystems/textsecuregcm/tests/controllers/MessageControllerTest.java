@@ -399,9 +399,10 @@ public class MessageControllerTest {
 
     final Response response =
         resources.getJerseyTest()
-            .target(String.format("/v1/messages/%s", SINGLE_DEVICE_RECIPIENT))
+            .target(String.format("/v1/messages/%s", SINGLE_DEVICE_UUID))
             .request()
-            .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
             .put(Entity.entity(mapper.readValue(jsonFixture(fixture), IncomingMessageList.class),
                 MediaType.APPLICATION_JSON_TYPE));
 

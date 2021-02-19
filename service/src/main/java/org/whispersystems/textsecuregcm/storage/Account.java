@@ -21,16 +21,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
-import org.whispersystems.textsecuregcm.auth.StoredRegistrationLock;
-
-import javax.security.auth.Subject;
 import java.security.Principal;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import javax.security.auth.Subject;
+import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
+import org.whispersystems.textsecuregcm.auth.StoredRegistrationLock;
 
 public class Account implements Principal, org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount {
 
@@ -57,9 +55,6 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
 
   @JsonProperty
   private String pin;
-
-  @JsonProperty
-  private List<PaymentAddress> payments;
 
   @JsonProperty
   private String registrationLock;
@@ -295,14 +290,6 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
 
   public void setUnrestrictedUnidentifiedAccess(boolean unrestrictedUnidentifiedAccess) {
     this.unrestrictedUnidentifiedAccess = unrestrictedUnidentifiedAccess;
-  }
-
-  public List<PaymentAddress> getPayments() {
-    return payments;
-  }
-
-  public void setPayments(List<PaymentAddress> payments) {
-    this.payments = payments;
   }
 
   public boolean isFor(AmbiguousIdentifier identifier) {

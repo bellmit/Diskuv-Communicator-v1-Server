@@ -228,8 +228,7 @@ public class ProfileController {
                                      username.orElse(null),
                                      null,
                                      emailAddress,
-                                     credential.orElse(null),
-                                     java.util.List.of()));
+                                     credential.orElse(null)));
     } catch (InvalidInputException e) {
       logger.info("Bad profile request", e);
       throw new WebApplicationException(Response.Status.BAD_REQUEST);
@@ -270,8 +269,7 @@ public class ProfileController {
                        new UserCapabilities(accountProfile.get().isGroupsV2Supported(), accountProfile.get().isGv1MigrationSupported()),
                        username,
                        accountProfile.get().getUuid(),
-                       null,
-                       accountProfile.get().getPayments());
+                       null);
   }
   */
 
@@ -344,8 +342,7 @@ public class ProfileController {
                        username.orElse(null),
                        null,
                        accountProfile.getProfileEmailAddress(),
-                       null,
-                       java.util.List.of());
+                       null);
   }
 
 
