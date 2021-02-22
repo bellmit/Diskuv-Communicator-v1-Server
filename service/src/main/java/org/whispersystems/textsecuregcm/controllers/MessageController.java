@@ -28,6 +28,7 @@ import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.protobuf.ByteString;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.util.DataSize;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import java.io.IOException;
@@ -68,6 +69,7 @@ import org.whispersystems.textsecuregcm.push.ApnFallbackManager;
 import org.whispersystems.textsecuregcm.push.MessageSender;
 import org.whispersystems.textsecuregcm.push.NotPushRegisteredException;
 import org.whispersystems.textsecuregcm.push.ReceiptSender;
+import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
 import org.whispersystems.textsecuregcm.redis.RedisOperation;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Device;
@@ -103,10 +105,12 @@ public class MessageController {
   private final MessagesManager             messagesManager;
   private final ApnFallbackManager          apnFallbackManager;
   private final DynamicConfigurationManager dynamicConfigurationManager;
+  private final FaultTolerantRedisCluster   metricsCluster;
 
   private static final String SENT_MESSAGE_COUNTER_NAME                          = name(MessageController.class, "sentMessages");
   private static final String REJECT_UNSEALED_SENDER_COUNTER_NAME                = name(MessageController.class, "rejectUnsealedSenderLimit");
   private static final String INTERNATIONAL_UNSEALED_SENDER_COUNTER_NAME         = name(MessageController.class, "internationalUnsealedSender");
+  private static final String UNSEALED_SENDER_ACCOUNT_AGE_DISTRIBUTION_NAME      = name(MessageController.class, "unsealedSenderAccountAge");
   private static final String CONTENT_SIZE_DISTRIBUTION_NAME                     = name(MessageController.class, "messageContentSize");
   private static final String OUTGOING_MESSAGE_LIST_SIZE_BYTES_DISTRIBUTION_NAME = name(MessageController.class, "outgoingMessageListSizeBytes");
 
@@ -116,6 +120,8 @@ public class MessageController {
 
   private static final long MAX_MESSAGE_SIZE = DataSize.kibibytes(256).toBytes();
 
+  private static final String SENT_FIRST_UNSEALED_SENDER_MESSAGE_KEY = "sent_first_unsealed_sender_message";
+
   public MessageController(com.diskuv.communicatorservice.auth.JwtAuthentication jwtAuthentication,
                            RateLimiters rateLimiters,
                            MessageSender messageSender,
@@ -123,7 +129,8 @@ public class MessageController {
                            PossiblySyntheticAccountsManager accountsManager,
                            MessagesManager messagesManager,
                            ApnFallbackManager apnFallbackManager,
-                           DynamicConfigurationManager dynamicConfigurationManager)
+                           DynamicConfigurationManager dynamicConfigurationManager,
+                           FaultTolerantRedisCluster metricsCluster)
   {
     this.jwtAuthentication           = jwtAuthentication;
     this.rateLimiters                = rateLimiters;
@@ -133,6 +140,7 @@ public class MessageController {
     this.messagesManager             = messagesManager;
     this.apnFallbackManager          = apnFallbackManager;
     this.dynamicConfigurationManager = dynamicConfigurationManager;
+    this.metricsCluster              = metricsCluster;
   }
 
   @Timed
@@ -166,6 +174,26 @@ public class MessageController {
     }
 
     if (source.isPresent() && !source.get().isFor(destinationName)) {
+      RedisOperation.unchecked(() -> {
+        metricsCluster.useCluster(connection -> {
+          if (connection.sync().pfadd(SENT_FIRST_UNSEALED_SENDER_MESSAGE_KEY, source.get().getUuid().toString()) == 1) {
+            final List<Tag> tags = List.of(
+                UserAgentTagUtil.getPlatformTag(userAgent),
+                Tag.of(SENDER_COUNTRY_TAG_NAME, Util.getCountryCode(source.get().getNumber())));
+
+            assert source.get().getMasterDevice().isPresent();
+
+            final long accountAge = System.currentTimeMillis() - source.get().getMasterDevice().get().getCreated();
+
+            DistributionSummary.builder(UNSEALED_SENDER_ACCOUNT_AGE_DISTRIBUTION_NAME)
+                .tags(tags)
+                .publishPercentileHistogram()
+                .register(Metrics.globalRegistry)
+                .record(accountAge);
+          }
+        });
+      });
+
       try {
         rateLimiters.getUnsealedSenderLimiter().validate(source.get().getUuid().toString(), destinationName.toString());
       } catch (RateLimitExceededException e) {
@@ -223,10 +251,6 @@ public class MessageController {
 
       if (source.isPresent() && !source.get().isFor(destinationName)) {
         rateLimiters.getMessagesLimiter().validate(source.get().getUuid() + "__" + destination.get().getUuid());
-
-        if (!Util.getCountryCode(source.get().getNumber()).equals(destination.get().getNumber())) {
-          Metrics.counter(INTERNATIONAL_UNSEALED_SENDER_COUNTER_NAME, SENDER_COUNTRY_TAG_NAME, Util.getCountryCode(source.get().getNumber()));
-        }
       }
 
       validateCompleteDeviceList(destination.get(), messages.getMessages(), isSyncMessage);
