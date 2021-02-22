@@ -170,10 +170,12 @@ public class MessageController {
         rateLimiters.getUnsealedSenderLimiter().validate(source.get().getUuid().toString(), destinationName.toString());
       } catch (RateLimitExceededException e) {
         Metrics.counter(REJECT_UNSEALED_SENDER_COUNTER_NAME).increment();
-        logger.debug("Rejected unsealed sender limit from: {}", source.get().getUuid());
 
         if (dynamicConfigurationManager.getConfiguration().getMessageRateConfiguration().isEnforceUnsealedSenderRateLimit()) {
+          logger.debug("Rejected unsealed sender limit from: {}", source.get().getNumber());
           throw e;
+        } else {
+          logger.debug("Would reject unsealed sender limit from: {}", source.get().getNumber());
         }
       }
     }
