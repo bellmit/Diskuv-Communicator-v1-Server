@@ -138,6 +138,7 @@ public class ProfileController {
     account.setProfileName(request.getName());
     account.setProfileEmailAddress(request.getEmailAddress());
     account.setAvatar(avatar);
+    account.setCurrentProfileVersion(request.getVersion());
     accountsManager.update(account);
 
     if (response.isPresent()) return Response.ok(response).build();
@@ -198,7 +199,7 @@ public class ProfileController {
       }
 
       if (requestAccount.isPresent()) {
-        rateLimiters.getProfileLimiter().validate(requestAccount.get().getNumber());
+        rateLimiters.getProfileLimiter().validate(requestAccount.get().getUuid().toString());
       }
 
       PossiblySyntheticAccount accountProfile = accountsManager.get(uuid);
@@ -213,7 +214,7 @@ public class ProfileController {
       String                   aboutEmoji   = profile.map(PossiblySyntheticVersionedProfile::getAboutEmoji).orElse(null);
       String                   avatar       = profile.map(PossiblySyntheticVersionedProfile::getAvatar).orElse(accountProfile.getAvatar());
       final String paymentAddress = null;
-      
+
       Optional<ProfileKeyCredentialResponse> credential = getProfileCredential(credentialRequest, profile, uuid);
 
       return Optional.of(new Profile(name,

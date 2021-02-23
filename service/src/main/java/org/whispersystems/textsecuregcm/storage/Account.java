@@ -44,6 +44,9 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
   @JsonProperty
   private String identityKey;
 
+  @JsonProperty("cpv")
+  private String currentProfileVersion;
+
   @JsonProperty
   private String name;
 
@@ -235,6 +238,14 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
     return lastSeen;
   }
 
+  public Optional<String> getCurrentProfileVersion() {
+    return Optional.ofNullable(currentProfileVersion);
+  }
+
+  public void setCurrentProfileVersion(String currentProfileVersion) {
+    this.currentProfileVersion = currentProfileVersion;
+  }
+
   public String getProfileName() {
     return name;
   }
@@ -319,5 +330,4 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
   public boolean implies(Subject subject) {
     return false;
   }
-
 }

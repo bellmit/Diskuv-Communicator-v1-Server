@@ -42,4 +42,6 @@ public interface PossiblySyntheticAccount {
     boolean isGroupsV2Supported();
 
     boolean isGv1MigrationSupported();
+
+    Optional<String> getCurrentProfileVersion();
 }

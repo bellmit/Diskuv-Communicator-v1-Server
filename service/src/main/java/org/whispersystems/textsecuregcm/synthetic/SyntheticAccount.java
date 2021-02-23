@@ -104,6 +104,11 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
   }
 
   @Override
+  public Optional<String> getCurrentProfileVersion() {
+    return Optional.of(profileState.getKeyVersion());
+  }
+
+  @Override
   public String getProfileName() {
     return profileState.getName();
   }
@@ -167,11 +172,12 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
   }
 
   @Override
-  public boolean isGroupsV2Supported() {
+  public boolean isGv1MigrationSupported() {
     return true;
   }
 
-  @Override public boolean isGv1MigrationSupported() {
+  @Override
+  public boolean isGroupsV2Supported() {
     return true;
   }
 
