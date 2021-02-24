@@ -8,11 +8,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -24,12 +26,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
 import io.dropwizard.testing.junit.ResourceTestRule;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
@@ -42,10 +47,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader;
+import org.mockito.ArgumentMatcher;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
 import org.whispersystems.textsecuregcm.auth.OptionalAccess;
 import org.whispersystems.textsecuregcm.configuration.dynamic.DynamicConfiguration;
+import org.whispersystems.textsecuregcm.configuration.dynamic.DynamicMessageRateConfiguration;
 import org.whispersystems.textsecuregcm.controllers.MessageController;
 import org.whispersystems.textsecuregcm.entities.IncomingMessageList;
 import org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
@@ -77,6 +86,8 @@ public class MessageControllerTest {
 
   private static final UUID   MULTI_DEVICE_UUID       = UuidHelpers.UUID_ALICE;
 
+  private static final UUID   INTERNATIONAL_UUID      = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress("international@example.com");
+
   private final MessageSender               messageSender               = mock(MessageSender.class);
   private final ReceiptSender               receiptSender               = mock(ReceiptSender.class);
   private final PossiblySyntheticAccountsManager        accountsManager        = mock(PossiblySyntheticAccountsManager.class);
@@ -88,6 +99,7 @@ public class MessageControllerTest {
   private final ApnFallbackManager          apnFallbackManager          = mock(ApnFallbackManager.class);
   private final DynamicConfigurationManager dynamicConfigurationManager = mock(DynamicConfigurationManager.class);
   private final FaultTolerantRedisCluster   metricsCluster              = mock(FaultTolerantRedisCluster.class);
+  private final ScheduledExecutorService    receiptExecutor             = mock(ScheduledExecutorService.class);
 
   private final ObjectMapper mapper = new ObjectMapper();
 
@@ -97,7 +109,7 @@ public class MessageControllerTest {
                                                             .addProvider(new PolymorphicAuthValueFactoryProvider.Binder<>(ImmutableSet.of(Account.class, DisabledPermittedAccount.class)))
                                                             .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
                                                             .addResource(new MessageController(jwtAuthentication, rateLimiters, messageSender, receiptSender, accountsManager,
-                                                                                               messagesManager, apnFallbackManager, dynamicConfigurationManager, metricsCluster))
+                                                                                               messagesManager, apnFallbackManager, dynamicConfigurationManager, metricsCluster, receiptExecutor))
                                                             .build();
 
 
@@ -117,11 +129,13 @@ public class MessageControllerTest {
           "isgcm", null, null, false, 444, null, System.currentTimeMillis() - TimeUnit.DAYS.toMillis(31), System.currentTimeMillis(), "Test", 0, new Device.DeviceCapabilities(false, false, false, false, false, false)));
     }};
 
-    Account singleDeviceAccount = new Account(SINGLE_DEVICE_UUID, singleDeviceList, "1234".getBytes());
-    Account multiDeviceAccount  = new Account(MULTI_DEVICE_UUID, multiDeviceList, "1234".getBytes());
+    Account singleDeviceAccount  = new Account(SINGLE_DEVICE_UUID, singleDeviceList, "1234".getBytes());
+    Account multiDeviceAccount   = new Account(MULTI_DEVICE_UUID, multiDeviceList, "1234".getBytes());
+    Account internationalAccount = new Account(INTERNATIONAL_UUID, singleDeviceList, "1234".getBytes());
 
     when(accountsManager.get(eq(SINGLE_DEVICE_UUID))).thenReturn(singleDeviceAccount);
     when(accountsManager.get(eq(MULTI_DEVICE_UUID))).thenReturn(multiDeviceAccount);
+    when(accountsManager.get(INTERNATIONAL_UUID)).thenReturn(internationalAccount);
 
     when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(eq(AuthHelper.VALID_BEARER_TOKEN))).thenReturn(AuthHelper.VALID_EMAIL);
     when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(eq(AuthHelper.VALID_BEARER_TOKEN_TWO))).thenReturn(AuthHelper.VALID_EMAIL_TWO);
@@ -130,6 +144,12 @@ public class MessageControllerTest {
     when(rateLimiters.getUnsealedSenderLimiter()).thenReturn(unsealedSenderLimiter);
 
     when(dynamicConfigurationManager.getConfiguration()).thenReturn(new DynamicConfiguration());
+
+    when(receiptExecutor.schedule(any(Runnable.class), anyLong(), any())).thenAnswer(
+        (Answer<ScheduledFuture<?>>) invocation -> {
+          invocation.getArgument(0, Runnable.class).run();
+          return mock(ScheduledFuture.class);
+        });
   }
 
   @Test
@@ -139,7 +159,7 @@ public class MessageControllerTest {
                  .target(String.format("/v1/messages/%s", SINGLE_DEVICE_UUID))
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
+                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                  .put(Entity.entity(mapper.readValue(jsonFixture("fixtures/current_message_single_device.json"), IncomingMessageList.class),
                                     MediaType.APPLICATION_JSON_TYPE));
 
@@ -153,7 +173,7 @@ public class MessageControllerTest {
                  .target(String.format("/v1/messages/%s", SINGLE_DEVICE_UUID))
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.entity(mapper.readValue(jsonFixture("fixtures/current_message_single_device.json"), IncomingMessageList.class),
                                     MediaType.APPLICATION_JSON_TYPE));
 
@@ -166,6 +186,40 @@ public class MessageControllerTest {
     assertTrue(captor.getValue().hasSourceDevice());
   }
 
+  @org.junit.Ignore("Diskuv has not international phone number detection logic")
+  @Test
+  public synchronized void testInternationalUnsealedSenderFromRateLimitedHost() throws Exception {
+    final String senderHost = "10.0.0.1";
+
+    final DynamicConfiguration dynamicConfiguration = mock(DynamicConfiguration.class);
+    final DynamicMessageRateConfiguration messageRateConfiguration = mock(DynamicMessageRateConfiguration.class);
+
+    when(dynamicConfigurationManager.getConfiguration()).thenReturn(dynamicConfiguration);
+    when(dynamicConfiguration.getMessageRateConfiguration()).thenReturn(messageRateConfiguration);
+    when(messageRateConfiguration.getRateLimitedCountryCodes()).thenReturn(Set.of("1"));
+    when(messageRateConfiguration.getRateLimitedHosts()).thenReturn(Set.of(senderHost));
+    when(messageRateConfiguration.getResponseDelay()).thenReturn(Duration.ofMillis(1));
+    when(messageRateConfiguration.getResponseDelayJitter()).thenReturn(Duration.ofMillis(1));
+    when(messageRateConfiguration.getReceiptDelay()).thenReturn(Duration.ofMillis(1));
+    when(messageRateConfiguration.getReceiptDelayJitter()).thenReturn(Duration.ofMillis(1));
+    when(messageRateConfiguration.getReceiptProbability()).thenReturn(1.0);
+
+    Response response =
+        resources.getJerseyTest()
+            .target(String.format("/v1/messages/%s", INTERNATIONAL_UUID))
+            .request()
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+            .header("X-Forwarded-For", senderHost)
+            .put(Entity.entity(mapper.readValue(jsonFixture("fixtures/current_message_single_device.json"), IncomingMessageList.class),
+                MediaType.APPLICATION_JSON_TYPE));
+
+    assertThat("Good Response", response.getStatus(), is(equalTo(200)));
+
+    verify(messageSender, never()).sendMessage(any(), any(), any(), anyBoolean());
+    verify(receiptSender).sendReceipt(any(), eq(AuthHelper.VALID_NUMBER), anyLong());
+  }
+
   @Test
   public synchronized void testSingleDeviceCurrentUnidentified() throws Exception {
     Response response =
@@ -174,7 +228,7 @@ public class MessageControllerTest {
                  .request()
                  .header(OptionalAccess.UNIDENTIFIED, Base64.encodeBytes("1234".getBytes()))
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.entity(mapper.readValue(jsonFixture("fixtures/current_message_single_device.json"), IncomingMessageList.class),
                                     MediaType.APPLICATION_JSON_TYPE));
 
@@ -207,7 +261,7 @@ public class MessageControllerTest {
                  .target(String.format("/v1/messages/%s", MULTI_DEVICE_UUID))
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.entity(mapper.readValue(jsonFixture("fixtures/current_message_single_device.json"), IncomingMessageList.class),
                                     MediaType.APPLICATION_JSON_TYPE));
 
@@ -227,7 +281,7 @@ public class MessageControllerTest {
                  .target(String.format("/v1/messages/%s", MULTI_DEVICE_UUID))
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.entity(mapper.readValue(jsonFixture("fixtures/current_message_extra_device.json"), IncomingMessageList.class),
                                     MediaType.APPLICATION_JSON_TYPE));
 
@@ -247,7 +301,7 @@ public class MessageControllerTest {
                  .target(String.format("/v1/messages/%s", MULTI_DEVICE_UUID))
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.entity(mapper.readValue(jsonFixture("fixtures/current_message_multi_device.json"), IncomingMessageList.class),
                                     MediaType.APPLICATION_JSON_TYPE));
 
@@ -262,7 +316,7 @@ public class MessageControllerTest {
         resources.getJerseyTest().target(String.format("/v1/messages/%s", MULTI_DEVICE_UUID))
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.entity(mapper.readValue(jsonFixture("fixtures/current_message_registration_id.json"), IncomingMessageList.class),
                                     MediaType.APPLICATION_JSON_TYPE));
 
@@ -298,7 +352,7 @@ public class MessageControllerTest {
         resources.getJerseyTest().target("/v1/messages/")
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .accept(MediaType.APPLICATION_JSON_TYPE)
                  .get(OutgoingMessageEntityList.class);
 
@@ -336,7 +390,7 @@ public class MessageControllerTest {
         resources.getJerseyTest().target("/v1/messages/")
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.INVALID_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.INVALID_DEVICE_ID_STRING, AuthHelper.INVALID_PASSWORD))
+                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.INVALID_DEVICE_ID_STRING, AuthHelper.INVALID_PASSWORD))
                  .accept(MediaType.APPLICATION_JSON_TYPE)
                  .get();
 
@@ -369,7 +423,7 @@ public class MessageControllerTest {
                                  .target(String.format("/v1/messages/%s/%d", UuidHelpers.UUID_ALICE, 31337))
                                  .request()
                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                 .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .delete();
 
     assertThat("Good Response Code", response.getStatus(), is(equalTo(204)));
@@ -379,7 +433,7 @@ public class MessageControllerTest {
                         .target(String.format("/v1/messages/%s/%d", UuidHelpers.UUID_ALICE, 31338))
                         .request()
                         .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                        .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                        .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                         .delete();
 
     assertThat("Good Response Code", response.getStatus(), is(equalTo(204)));
@@ -389,7 +443,7 @@ public class MessageControllerTest {
                         .target(String.format("/v1/messages/%s/%d", UuidHelpers.UUID_ALICE, 31339))
                         .request()
                         .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                        .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                        .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                         .delete();
 
     assertThat("Good Response Code", response.getStatus(), is(equalTo(204)));
@@ -406,7 +460,7 @@ public class MessageControllerTest {
             .target(String.format("/v1/messages/%s", SINGLE_DEVICE_UUID))
             .request()
             .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+            .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
             .put(Entity.entity(mapper.readValue(jsonFixture(fixture), IncomingMessageList.class),
                 MediaType.APPLICATION_JSON_TYPE));
 

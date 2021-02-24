@@ -597,7 +597,6 @@ public class AccountController {
 
     {
       final List<Tag> tags = new ArrayList<>();
-      tags.add(Tag.of(COUNTRY_CODE_TAG_NAME, Util.getCountryCode(number)));
 
       try {
         if (pushChallenge.isPresent()) {
