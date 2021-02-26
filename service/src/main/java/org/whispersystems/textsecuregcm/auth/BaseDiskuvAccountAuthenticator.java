@@ -1,11 +1,17 @@
 package org.whispersystems.textsecuregcm.auth;
 
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
 import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import com.google.common.annotations.VisibleForTesting;
+import io.dropwizard.auth.basic.BasicCredentials;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Metrics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
@@ -46,6 +52,12 @@ public class BaseDiskuvAccountAuthenticator {
           metricRegistry.meter(name(getClass(), "authentication", "illegalSanctuaryAccountUuid"));
   private final Meter invalidAuthHeaderMeter          =
       metricRegistry.meter(name(getClass(), "authentication", "invalidHeader"));
+
+  private final String daysSinceLastSeenDistributionName = name(getClass(), "authentication", "daysSinceLastSeen");
+
+  private static final String IS_PRIMARY_DEVICE_TAG = "isPrimary";
+
+  private final Logger logger = LoggerFactory.getLogger(BaseDiskuvAccountAuthenticator.class);
 
   private final AccountsManager accountsManager;
   private final JwtAuthentication jwtAuthentication;
@@ -144,6 +156,12 @@ public class BaseDiskuvAccountAuthenticator {
     final long todayInMillisWithOffset = Util.todayInMillisGivenOffsetFromNow(clock, Duration.ofSeconds(lastSeenOffsetSeconds).negated());
 
     if (device.getLastSeen() < todayInMillisWithOffset) {
+      DistributionSummary.builder(daysSinceLastSeenDistributionName)
+          .tags(IS_PRIMARY_DEVICE_TAG, String.valueOf(device.isMaster()))
+          .publishPercentileHistogram()
+          .register(Metrics.globalRegistry)
+          .record(Duration.ofMillis(todayInMillisWithOffset - device.getLastSeen()).toDays());
+
       device.setLastSeen(Util.todayInMillis(clock));
       accountsManager.update(account);
     }
