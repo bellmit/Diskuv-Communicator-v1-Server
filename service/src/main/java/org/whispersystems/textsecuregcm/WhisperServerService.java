@@ -143,6 +143,7 @@ import org.whispersystems.textsecuregcm.metrics.MaxFileDescriptorGauge;
 import org.whispersystems.textsecuregcm.metrics.MetricsApplicationEventListener;
 import org.whispersystems.textsecuregcm.metrics.NetworkReceivedGauge;
 import org.whispersystems.textsecuregcm.metrics.NetworkSentGauge;
+import org.whispersystems.textsecuregcm.metrics.NstatCounters;
 import org.whispersystems.textsecuregcm.metrics.OperatingSystemMemoryGauge;
 import org.whispersystems.textsecuregcm.metrics.PushLatencyManager;
 import org.whispersystems.textsecuregcm.metrics.TrafficSource;
@@ -257,8 +258,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
   {
     SharedMetricRegistries.add(Constants.METRICS_NAME, environment.metrics());
 
-    if (config.getMicrometerConfiguration() != null) {
-    Metrics.addRegistry(new WavefrontMeterRegistry(new WavefrontConfig() {
+    final WavefrontConfig wavefrontConfig = new WavefrontConfig() {
       @Override
       public String get(final String key) {
         return null;
@@ -273,7 +273,10 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
       public int batchSize() {
         return config.getMicrometerConfiguration().getBatchSize();
       }
-    }, Clock.SYSTEM) {
+    };
+
+    if (config.getMicrometerConfiguration() != null) {
+    Metrics.addRegistry(new WavefrontMeterRegistry(wavefrontConfig, Clock.SYSTEM) {
       @Override
       protected DistributionStatisticConfig defaultHistogramConfig() {
         return DistributionStatisticConfig.builder()
@@ -590,6 +593,8 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     BufferPoolGauges.registerMetrics();
     GarbageCollectionGauges.registerMetrics();
+
+    new NstatCounters().registerMetrics(recurringJobExecutor, wavefrontConfig.step());
   }
 
   private void registerExceptionMappers(Environment environment, WebSocketEnvironment<Account> webSocketEnvironment, WebSocketEnvironment<Account> provisioningEnvironment) {
