@@ -39,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import io.lettuce.core.ScriptOutputType;
+import io.lettuce.core.cluster.api.sync.RedisAdvancedClusterCommands;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
@@ -76,6 +78,7 @@ import org.whispersystems.textsecuregcm.storage.DynamicConfigurationManager;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
+import org.whispersystems.textsecuregcm.tests.util.RedisClusterHelper;
 import org.whispersystems.textsecuregcm.tests.util.UuidHelpers;
 import org.whispersystems.textsecuregcm.util.Base64;
 
@@ -88,6 +91,9 @@ public class MessageControllerTest {
 
   private static final UUID   INTERNATIONAL_UUID      = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress("international@example.com");
 
+  @SuppressWarnings("unchecked")
+  private final RedisAdvancedClusterCommands<String, String> redisCommands  = mock(RedisAdvancedClusterCommands.class);
+
   private final MessageSender               messageSender               = mock(MessageSender.class);
   private final ReceiptSender               receiptSender               = mock(ReceiptSender.class);
   private final PossiblySyntheticAccountsManager        accountsManager        = mock(PossiblySyntheticAccountsManager.class);
@@ -98,7 +104,7 @@ public class MessageControllerTest {
   private final CardinalityRateLimiter      unsealedSenderLimiter       = mock(CardinalityRateLimiter.class);
   private final ApnFallbackManager          apnFallbackManager          = mock(ApnFallbackManager.class);
   private final DynamicConfigurationManager dynamicConfigurationManager = mock(DynamicConfigurationManager.class);
-  private final FaultTolerantRedisCluster   metricsCluster              = mock(FaultTolerantRedisCluster.class);
+  private final FaultTolerantRedisCluster   metricsCluster              = RedisClusterHelper.buildMockRedisCluster(redisCommands);
   private final ScheduledExecutorService    receiptExecutor             = mock(ScheduledExecutorService.class);
 
   private final ObjectMapper mapper = new ObjectMapper();
@@ -203,6 +209,8 @@ public class MessageControllerTest {
     when(messageRateConfiguration.getReceiptDelay()).thenReturn(Duration.ofMillis(1));
     when(messageRateConfiguration.getReceiptDelayJitter()).thenReturn(Duration.ofMillis(1));
     when(messageRateConfiguration.getReceiptProbability()).thenReturn(1.0);
+
+    when(redisCommands.evalsha(any(), any(), any(), any())).thenReturn(List.of(1L, 1L));
 
     Response response =
         resources.getJerseyTest()
