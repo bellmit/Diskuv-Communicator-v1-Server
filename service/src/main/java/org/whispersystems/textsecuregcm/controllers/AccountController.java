@@ -224,7 +224,7 @@ public class AccountController {
                                                @QueryParam("challenge")        Optional<String> pushChallenge,
                                                @QueryParam("captcha")          Optional<String> captcha,
                                                @Valid                          AccountAttributes accountAttributes)
-      throws RateLimitExceededException
+      throws RateLimitExceededException, RetryLaterException
   {
     // account authentication
     UUID outdoorsUUID = AuthHeaderSupport.validateJwtAndGetOutdoorsUUID(jwtAuthentication, authorizationHeader);

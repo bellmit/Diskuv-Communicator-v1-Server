@@ -40,7 +40,7 @@ public class RateLimiter {
   private final ObjectMapper mapper = SystemMapper.getMapper();
 
   private   final Meter                     meter;
-  private   final Timer                     validateTimer;
+  protected final Timer                     validateTimer;
   protected final FaultTolerantRedisCluster cacheCluster;
   protected final String                    name;
   private   final int                       bucketSize;
@@ -78,7 +78,7 @@ public class RateLimiter {
         setBucket(key, bucket);
       } else {
         meter.mark();
-        throw new RateLimitExceededException(key + " , " + amount);
+        throw new RateLimitExceededException(key + " , " + amount, bucket.getMillisUntilSpace(amount));
       }
     }
   }
@@ -99,7 +99,7 @@ public class RateLimiter {
     return leakRatePerMinute;
   }
 
-  private void setBucket(String key, LeakyBucket bucket) {
+  protected void setBucket(String key, LeakyBucket bucket) {
     try {
       final String serialized = bucket.serialize(mapper);
 
@@ -109,7 +109,7 @@ public class RateLimiter {
     }
   }
 
-  private LeakyBucket getBucket(String key) {
+  protected LeakyBucket getBucket(String key) {
     try {
       final String serialized = cacheCluster.withCluster(connection -> connection.sync().get(getBucketName(key)));
 
