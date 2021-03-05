@@ -31,6 +31,7 @@ import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.SystemMapper;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -40,7 +41,7 @@ public class RateLimiter {
   private final ObjectMapper mapper = SystemMapper.getMapper();
 
   private   final Meter                     meter;
-  protected final Timer                     validateTimer;
+  private   final Timer                     validateTimer;
   protected final FaultTolerantRedisCluster cacheCluster;
   protected final String                    name;
   private   final int                       bucketSize;
@@ -78,7 +79,7 @@ public class RateLimiter {
         setBucket(key, bucket);
       } else {
         meter.mark();
-        throw new RateLimitExceededException(key + " , " + amount, bucket.getMillisUntilSpace(amount));
+        throw new RateLimitExceededException(key + " , " + amount, bucket.getTimeUntilSpaceAvailable(amount));
       }
     }
   }
@@ -99,7 +100,7 @@ public class RateLimiter {
     return leakRatePerMinute;
   }
 
-  protected void setBucket(String key, LeakyBucket bucket) {
+  private void setBucket(String key, LeakyBucket bucket) {
     try {
       final String serialized = bucket.serialize(mapper);
 
@@ -109,7 +110,7 @@ public class RateLimiter {
     }
   }
 
-  protected LeakyBucket getBucket(String key) {
+  private LeakyBucket getBucket(String key) {
     try {
       final String serialized = cacheCluster.withCluster(connection -> connection.sync().get(getBucketName(key)));
 
