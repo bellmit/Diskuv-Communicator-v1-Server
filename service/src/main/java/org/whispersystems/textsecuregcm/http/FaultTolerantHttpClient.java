@@ -32,6 +32,9 @@ public class FaultTolerantHttpClient {
   private final Retry                    retry;
   private final CircuitBreaker           breaker;
 
+  public static final String SECURITY_PROTOCOL_TLS_1_2 = "TLSv1.2";
+  public static final String SECURITY_PROTOCOL_TLS_1_3 = "TLSv1.3";
+
   public static Builder newBuilder() {
     return new Builder();
   }
@@ -81,6 +84,7 @@ public class FaultTolerantHttpClient {
     private String                      name;
     private Executor                    executor;
     private KeyStore                    trustStore;
+    private String                      securityProtocol = SECURITY_PROTOCOL_TLS_1_2;
     private RetryConfiguration          retryConfiguration;
     private CircuitBreakerConfiguration circuitBreakerConfiguration;
 
@@ -121,6 +125,11 @@ public class FaultTolerantHttpClient {
       return this;
     }
 
+    public Builder withSecurityProtocol(final String securityProtocol) {
+      this.securityProtocol = securityProtocol;
+      return this;
+    }
+
     public Builder withTrustedServerCertificate(final String certificatePem) throws CertificateException {
       this.trustStore = CertificateUtil.buildKeyStoreForPem(certificatePem);
       return this;
@@ -137,12 +146,13 @@ public class FaultTolerantHttpClient {
                                                    .version(version)
                                                    .executor(executor);
 
+      final SslConfigurator sslConfigurator = SslConfigurator.newInstance().securityProtocol(securityProtocol);
+
       if (this.trustStore != null) {
-        builder.sslContext(SslConfigurator.newInstance()
-               .securityProtocol("TLSv1.2")
-               .trustStore(trustStore)
-               .createSSLContext());
+        sslConfigurator.trustStore(trustStore);
       }
+
+      builder.sslContext(sslConfigurator.createSSLContext());
 
       return new FaultTolerantHttpClient(name, builder.build(), retryConfiguration, circuitBreakerConfiguration);
     }
