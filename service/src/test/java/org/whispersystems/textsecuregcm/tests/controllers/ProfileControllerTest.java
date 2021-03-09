@@ -470,14 +470,15 @@ public class ProfileControllerTest {
     clearInvocations(AuthHelper.VALID_ACCOUNT_TWO);
 
     final String name = RandomStringUtils.randomAlphabetic(380);
+    final String email = RandomStringUtils.randomAlphabetic(464);
     final String paymentAddress = RandomStringUtils.randomAlphanumeric(684);
 
     Response response = resources.getJerseyTest()
         .target("/v1/profile")
         .request()
         .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
-        .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
-        .put(Entity.entity(new CreateProfileRequest(commitment, "yetanotherversion", name, "email", null, null, paymentAddress, false), MediaType.APPLICATION_JSON_TYPE));
+        .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+        .put(Entity.entity(new CreateProfileRequest(commitment, "yetanotherversion", name, email, null, null, paymentAddress, false), MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.hasEntity()).isFalse();
@@ -508,7 +509,7 @@ public class ProfileControllerTest {
                                .target("/v1/profile/" + AuthHelper.VALID_UUID_TWO + "/validversion")
                                .request()
                                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
-                               .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                               .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
                                .get(Profile.class);
 
     assertThat(profile.getIdentityKey()).isEqualTo("bar");
@@ -535,14 +536,15 @@ public class ProfileControllerTest {
     clearInvocations(AuthHelper.VALID_ACCOUNT_TWO);
 
     final String name = RandomStringUtils.randomAlphabetic(380);
+    final String email = RandomStringUtils.randomAlphabetic(464);
     final String paymentAddress = RandomStringUtils.randomAlphanumeric(684);
 
     Response response = resources.getJerseyTest()
         .target("/v1/profile")
         .request()
         .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
-        .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
-        .put(Entity.entity(new CreateProfileRequest(commitment, "someversion", name, "someemail", null, null, paymentAddress, false), MediaType.APPLICATION_JSON_TYPE));
+        .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+        .put(Entity.entity(new CreateProfileRequest(commitment, "someversion", name, email, null, null, paymentAddress, false), MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.hasEntity()).isFalse();
@@ -550,6 +552,7 @@ public class ProfileControllerTest {
     verify(AuthHelper.VALID_ACCOUNT_TWO).setCurrentProfileVersion("someversion");
   }
 
+  @org.junit.Ignore("Diskuv does not do payments")
   @Test
   public void testGetProfileReturnsNoPaymentAddressIfCurrentVersionMismatch() {
     when(profilesManager.get(AuthHelper.VALID_UUID_TWO, "validversion")).thenReturn(
@@ -558,7 +561,7 @@ public class ProfileControllerTest {
         .target("/v1/profile/" + AuthHelper.VALID_UUID_TWO + "/validversion")
         .request()
         .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
-        .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+        .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
         .get(Profile.class);
     assertThat(profile.getPaymentAddress()).isEqualTo("paymentaddress");
 

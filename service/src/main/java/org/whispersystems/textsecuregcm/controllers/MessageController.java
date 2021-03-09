@@ -88,6 +88,7 @@ import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManag
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice;
 import org.whispersystems.textsecuregcm.util.Base64;
 import org.whispersystems.textsecuregcm.util.Constants;
+import org.whispersystems.textsecuregcm.util.ForwardedIpUtil;
 import org.whispersystems.textsecuregcm.util.Util;
 import org.whispersystems.textsecuregcm.util.ua.UnrecognizedUserAgentException;
 import org.whispersystems.textsecuregcm.util.ua.UserAgentUtil;
@@ -591,15 +592,15 @@ public class MessageController {
   }
 
   @VisibleForTesting
-  void recordInternationalUnsealedSenderMetrics(final String senderIp, final String senderCountryCode, final String destinationNumber) {
-    {
+  void recordInternationalUnsealedSenderMetrics(final String forwardedFor, final String senderCountryCode, final String destinationNumber) {
+    ForwardedIpUtil.getMostRecentProxy(forwardedFor).ifPresent(senderIp -> {
       final String destinationSetKey = getDestinationSetKey(senderIp);
       final String messageCountKey = getMessageCountKey(senderIp);
 
       recordInternationalUnsealedSenderMetricsScript.execute(
           List.of(destinationSetKey, messageCountKey),
           List.of(destinationNumber));
-    }
+    });
 
     Metrics.counter(INTERNATIONAL_UNSEALED_SENDER_COUNTER_NAME, SENDER_COUNTRY_TAG_NAME, senderCountryCode).increment();
   }

@@ -74,8 +74,7 @@ import org.whispersystems.textsecuregcm.storage.PendingAccountsManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.util.ByteUtil;
 import org.whispersystems.textsecuregcm.util.Constants;
-import org.whispersystems.textsecuregcm.util.DiskuvUuidType;
-import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
+import org.whispersystems.textsecuregcm.util.ForwardedIpUtil;
 import org.whispersystems.textsecuregcm.util.Hex;
 import org.whispersystems.textsecuregcm.util.Util;
 
@@ -171,7 +170,7 @@ public class AccountController {
     }
 
     try {
-      DiskuvUuidUtil.verifyDiskuvUuid(accountId);
+      org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.verifyDiskuvUuid(accountId);
     } catch (IllegalArgumentException e) {
       return Response.status(400).build();
     }
@@ -246,20 +245,17 @@ public class AccountController {
     String accountId = accountUuid.toString();
 
     // validate UUID if Outdoors (which anybody with knowledge of the email address can reconstruct)
-    DiskuvUuidType diskuvUuidType;
+    org.whispersystems.textsecuregcm.util.DiskuvUuidType diskuvUuidType;
     try {
-      diskuvUuidType = DiskuvUuidUtil.verifyDiskuvUuid(accountId);
+      diskuvUuidType = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.verifyDiskuvUuid(accountId);
     } catch (IllegalArgumentException e) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
-    if (diskuvUuidType == DiskuvUuidType.OUTDOORS && !outdoorsUUID.equals(accountUuid)) {
+    if (diskuvUuidType == org.whispersystems.textsecuregcm.util.DiskuvUuidType.OUTDOORS && !outdoorsUUID.equals(accountUuid)) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
 
-    String requester = Arrays.stream(forwardedFor.split(","))
-            .map(String::trim)
-            .reduce((a, b) -> b)
-            .orElseThrow();
+    String requester = ForwardedIpUtil.getMostRecentProxy(forwardedFor).orElseThrow();
 
     Optional<StoredVerificationCode> storedChallenge = pendingAccounts.getCodeForPendingAccount(accountUuid);
     CaptchaRequirement               requirement     = requiresCaptcha(accountId, forwardedFor, requester, captcha, storedChallenge, pushChallenge);

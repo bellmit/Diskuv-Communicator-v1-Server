@@ -33,7 +33,7 @@ public class MessageControllerMetricsTest extends AbstractRedisClusterTest {
     messageController = new MessageController(mock(RateLimiters.class),
         mock(MessageSender.class),
         mock(ReceiptSender.class),
-        mock(AccountsManager.class),
+        mock(org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager.class),
         mock(MessagesManager.class),
         mock(ApnFallbackManager.class),
         mock(DynamicConfigurationManager.class),
