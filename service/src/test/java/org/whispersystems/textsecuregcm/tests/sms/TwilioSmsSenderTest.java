@@ -46,6 +46,7 @@ public class TwilioSmsSenderTest {
     configuration.setAccountToken(ACCOUNT_TOKEN);
     configuration.setNumbers(NUMBERS);
     configuration.setMessagingServiceSid(MESSAGING_SERVICE_SID);
+    configuration.setNanpaMessagingServiceSid(NANPA_MESSAGING_SERVICE_SID);
     configuration.setLocalDomain(LOCAL_DOMAIN);
     configuration.setIosVerificationText("Verify on iOS: %1$s\n\nsomelink://verify/%1$s");
     configuration.setAndroidNgVerificationText("<#> Verify on AndroidNg: %1$s\n\ncharacters");
@@ -73,7 +74,7 @@ public class TwilioSmsSenderTest {
 
     verify(1, postRequestedFor(urlEqualTo("/2010-04-01/Accounts/" + ACCOUNT_ID + "/Messages.json"))
         .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
-        .withRequestBody(equalTo("MessagingServiceSid=test_messaging_services_id&To=%2B14153333333&Body=%3C%23%3E+Verify+on+AndroidNg%3A+123-456%0A%0Acharacters")));
+        .withRequestBody(equalTo("MessagingServiceSid=nanpa_test_messaging_service_id&To=%2B14153333333&Body=%3C%23%3E+Verify+on+AndroidNg%3A+123-456%0A%0Acharacters")));
   }
 
   @Test
@@ -87,7 +88,7 @@ public class TwilioSmsSenderTest {
 
     verify(1, postRequestedFor(urlEqualTo("/2010-04-01/Accounts/" + ACCOUNT_ID + "/Messages.json"))
             .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
-            .withRequestBody(equalTo("MessagingServiceSid=test_messaging_services_id&To=%2B14153333333&Body=Verify+on+Android202001%3A+123-456%0A%0Asomelink%3A%2F%2Fverify%2F123-456%0A%0Acharacters")));
+            .withRequestBody(equalTo("MessagingServiceSid=nanpa_test_messaging_service_id&To=%2B14153333333&Body=Verify+on+Android202001%3A+123-456%0A%0Asomelink%3A%2F%2Fverify%2F123-456%0A%0Acharacters")));
   }
 
   @Test
@@ -149,7 +150,7 @@ public class TwilioSmsSenderTest {
 
     verify(3, postRequestedFor(urlEqualTo("/2010-04-01/Accounts/" + ACCOUNT_ID + "/Messages.json"))
         .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
-        .withRequestBody(equalTo("MessagingServiceSid=test_messaging_services_id&To=%2B14153333333&Body=%3C%23%3E+Verify+on+AndroidNg%3A+123-456%0A%0Acharacters")));
+        .withRequestBody(equalTo("MessagingServiceSid=nanpa_test_messaging_service_id&To=%2B14153333333&Body=%3C%23%3E+Verify+on+AndroidNg%3A+123-456%0A%0Acharacters")));
   }
 
   @Test
@@ -225,16 +226,6 @@ public class TwilioSmsSenderTest {
 
   @Test
   @Ignore
-  public void testDefaultSenderId() {
-    runSenderIdTest("+14098675309", "SIGNALFOO", () -> {
-      TwilioSenderIdConfiguration senderIdConfiguration = new TwilioSenderIdConfiguration();
-      senderIdConfiguration.setDefaultSenderId("SIGNALFOO");
-      return senderIdConfiguration;
-    });
-  }
-
-  @Test
-  @Ignore
   public void testSenderIdWithAllFieldsPopulated() {
     final Supplier<TwilioSenderIdConfiguration> senderIdConfigurationSupplier = () -> {
       TwilioSenderIdConfiguration        senderIdConfiguration               = new TwilioSenderIdConfiguration();
@@ -273,7 +264,7 @@ public class TwilioSmsSenderTest {
 
     verify(1, postRequestedFor(urlEqualTo("/2010-04-01/Accounts/" + ACCOUNT_ID + "/Messages.json"))
             .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
-            .withRequestBody(equalTo("MessagingServiceSid=test_messaging_services_id&To=%2B14153333333&Body=%3C%23%3E+Verify+on+AndroidNg%3A+123-456%0A%0Acharacters")));
+            .withRequestBody(equalTo("MessagingServiceSid=nanpa_test_messaging_service_id&To=%2B14153333333&Body=%3C%23%3E+Verify+on+AndroidNg%3A+123-456%0A%0Acharacters")));
   }
 
   @Test
