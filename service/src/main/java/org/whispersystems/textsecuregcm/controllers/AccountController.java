@@ -29,6 +29,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -203,7 +204,7 @@ public class AccountController {
                                 @PathParam("number")            String number,
                                 @HeaderParam("X-Forwarded-For") String forwardedFor,
                                 @HeaderParam("User-Agent")      List<String> userAgent,
-                                @HeaderParam("Accept-Language") Optional<String> locale,
+                                @HeaderParam("Accept-Language") Optional<String> acceptLanguage,
                                 @QueryParam("client")           Optional<String> client,
                                 @QueryParam("captcha")          Optional<String> captcha,
                                 @QueryParam("challenge")        Optional<String> pushChallenge)

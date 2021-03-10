@@ -17,6 +17,7 @@
 package org.whispersystems.textsecuregcm.sms;
 
 
+import java.util.Locale;
 import java.util.Optional;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -36,7 +37,7 @@ public class SmsSender {
     twilioSender.deliverSmsVerification(destination, clientType, verificationCode);
   }
 
-  public void deliverVoxVerification(String destination, String verificationCode, Optional<String> locale) {
-    twilioSender.deliverVoxVerification(destination, verificationCode, locale);
+  public void deliverVoxVerification(String destination, String verificationCode, Optional<Locale> maybeLocale) {
+    twilioSender.deliverVoxVerification(destination, verificationCode, maybeLocale);
   }
 }

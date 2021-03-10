@@ -197,11 +197,10 @@ public class DescribeUserCommand extends EnvironmentCommand<WhisperServerConfigu
     FaultTolerantRedisCluster metricsCluster = new FaultTolerantRedisCluster("metrics_cluster", configuration.getMetricsClusterConfiguration(), redisClusterClientResources);
     MessagesCache messagesCache = new MessagesCache(messageInsertCacheCluster, messageReadDeleteCluster, keyspaceNotificationDispatchExecutor);
     PushLatencyManager pushLatencyManager = new PushLatencyManager(metricsCluster);
-    DirectoryQueue directoryQueue = new DirectoryQueue  (configuration.getDirectoryConfiguration().getSqsConfiguration());
     UsernamesManager usernamesManager = new UsernamesManager(usernames, reservedUsernames, cacheCluster);
     ProfilesManager profilesManager = new ProfilesManager(profiles, cacheCluster);
     MessagesManager messagesManager = new MessagesManager(messagesDynamoDb, messagesCache, pushLatencyManager);
-    AccountsManager accountsManager = new AccountsManager(accounts, cacheCluster, directoryQueue, keysDynamoDb, messagesManager, usernamesManager, profilesManager);
+    AccountsManager accountsManager = new AccountsManager(accounts, cacheCluster, keysDynamoDb, messagesManager, usernamesManager, profilesManager);
 
     accountsManager.get(new AmbiguousIdentifier(namespace.getString("user"))).ifPresentOrElse(account -> {
           final boolean hasStoredManifest = storageClient.hasStoredData(account.getUuid()).join();
