@@ -6,7 +6,8 @@ import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.whispersystems.textsecuregcm.auth.AccountAuthenticator;
+import org.whispersystems.textsecuregcm.auth.DiskuvAccountAuthenticator;
+import org.whispersystems.textsecuregcm.auth.DiskuvCredentials;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntity;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntityList;
 import org.whispersystems.textsecuregcm.push.ApnFallbackManager;
@@ -25,7 +26,6 @@ import org.whispersystems.textsecuregcm.websocket.WebSocketAccountAuthenticator;
 import org.whispersystems.textsecuregcm.websocket.WebSocketConnection;
 import org.whispersystems.textsecuregcm.websocket.WebsocketAddress;
 import org.whispersystems.websocket.WebSocketClient;
-import org.whispersystems.websocket.auth.WebSocketAuthenticator;
 import org.whispersystems.websocket.auth.WebSocketAuthenticator.AuthenticationResult;
 import org.whispersystems.websocket.messages.WebSocketResponseMessage;
 import org.whispersystems.websocket.session.WebSocketSessionContext;
@@ -40,7 +40,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import io.dropwizard.auth.basic.BasicCredentials;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -51,10 +50,18 @@ public class WebSocketConnectionTest {
   private static final String VALID_USER   = "+14152222222";
   private static final String INVALID_USER = "+14151111111";
 
-  private static final String VALID_PASSWORD   = "secure";
-  private static final String INVALID_PASSWORD = "insecure";
+  private static final String VALID_PASSWORD      = "secure";
+  private static final String INVALID_PASSWORD    = "insecure";
 
-  private static final AccountAuthenticator accountAuthenticator = mock(AccountAuthenticator.class);
+  private static final String VALID_JWT_TOKEN     = "quality";
+  private static final String INVALID_JWT_TOKEN   = "sketchy";
+
+  private static final long VALID_DEVICE_ID_NUM   = 1;
+  private static final long INVALID_DEVICE_ID_NUM = 2;
+  private static final String VALID_DEVICE_ID     = Long.toString(VALID_DEVICE_ID_NUM);
+  private static final String INVALID_DEVICE_ID   = Long.toString(INVALID_DEVICE_ID_NUM);
+
+  private static final DiskuvAccountAuthenticator accountAuthenticator = mock(DiskuvAccountAuthenticator.class);
   private static final AccountsManager      accountsManager      = mock(AccountsManager.class);
   private static final PubSubManager        pubSubManager        = mock(PubSubManager.class       );
   private static final Account              account              = mock(Account.class             );
@@ -71,17 +78,18 @@ public class WebSocketConnectionTest {
     AuthenticatedConnectListener  connectListener        = new AuthenticatedConnectListener(pushSender, receiptSender, storedMessages, pubSubManager, apnFallbackManager);
     WebSocketSessionContext       sessionContext         = mock(WebSocketSessionContext.class);
 
-    when(accountAuthenticator.authenticate(eq(new BasicCredentials(VALID_USER, VALID_PASSWORD))))
+    when(accountAuthenticator.authenticate(eq(new DiskuvCredentials(VALID_JWT_TOKEN, VALID_DEVICE_ID_NUM, VALID_PASSWORD))))
         .thenReturn(Optional.of(account));
 
-    when(accountAuthenticator.authenticate(eq(new BasicCredentials(INVALID_USER, INVALID_PASSWORD))))
+    when(accountAuthenticator.authenticate(eq(new DiskuvCredentials(INVALID_JWT_TOKEN, INVALID_DEVICE_ID_NUM, INVALID_PASSWORD))))
         .thenReturn(Optional.<Account>empty());
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
 
     when(upgradeRequest.getParameterMap()).thenReturn(new HashMap<String, List<String>>() {{
-      put("login", new LinkedList<String>() {{add(VALID_USER);}});
-      put("password", new LinkedList<String>() {{add(VALID_PASSWORD);}});
+      put("device-id", new LinkedList<String>() {{add(VALID_DEVICE_ID);}});
+      put("device-password", new LinkedList<String>() {{add(VALID_PASSWORD);}});
+      put("jwt-token", new LinkedList<String>() {{add(VALID_JWT_TOKEN);}});
     }});
 
     AuthenticationResult<Account> account = webSocketAuthenticator.authenticate(upgradeRequest);
@@ -92,8 +100,9 @@ public class WebSocketConnectionTest {
     verify(sessionContext).addListener(any(WebSocketSessionContext.WebSocketEventListener.class));
 
     when(upgradeRequest.getParameterMap()).thenReturn(new HashMap<String, List<String>>() {{
-      put("login", new LinkedList<String>() {{add(INVALID_USER);}});
-      put("password", new LinkedList<String>() {{add(INVALID_PASSWORD);}});
+      put("device-id", new LinkedList<String>() {{add(INVALID_DEVICE_ID);}});
+      put("device-password", new LinkedList<String>() {{add(INVALID_PASSWORD);}});
+      put("jwt-token", new LinkedList<String>() {{add(INVALID_JWT_TOKEN);}});
     }});
 
     account = webSocketAuthenticator.authenticate(upgradeRequest);

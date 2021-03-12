@@ -26,6 +26,7 @@ import org.whispersystems.textsecuregcm.util.SystemMapper;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.UUID;
 
 import redis.clients.jedis.Jedis;
 
@@ -46,22 +47,22 @@ public class PendingAccountsManager {
     this.mapper          = SystemMapper.getMapper();
   }
 
-  public void store(String number, StoredVerificationCode code) {
-    memcacheSet(number, code);
-    pendingAccounts.insert(number, code.getCode(), code.getTimestamp(), code.getPushCode());
+  public void store(UUID accountUuid, StoredVerificationCode code) {
+    memcacheSet(accountUuid.toString(), code);
+    pendingAccounts.insert(accountUuid, code.getCode(), code.getTimestamp(), code.getPushCode());
   }
 
-  public void remove(String number) {
-    memcacheDelete(number);
-    pendingAccounts.remove(number);
+  public void remove(UUID accountUuid) {
+    memcacheDelete(accountUuid.toString());
+    pendingAccounts.remove(accountUuid);
   }
 
-  public Optional<StoredVerificationCode> getCodeForNumber(String number) {
-    Optional<StoredVerificationCode> code = memcacheGet(number);
+  public Optional<StoredVerificationCode> getCodeForPendingAccount(UUID accountUuid) {
+    Optional<StoredVerificationCode> code = memcacheGet(accountUuid.toString());
 
     if (!code.isPresent()) {
-      code = pendingAccounts.getCodeForNumber(number);
-      code.ifPresent(storedVerificationCode -> memcacheSet(number, storedVerificationCode));
+      code = pendingAccounts.getCodeForPendingAccount(accountUuid);
+      code.ifPresent(storedVerificationCode -> memcacheSet(accountUuid.toString(), storedVerificationCode));
     }
 
     return code;

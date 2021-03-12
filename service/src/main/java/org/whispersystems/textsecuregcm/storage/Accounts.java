@@ -60,8 +60,9 @@ public class Accounts {
   public boolean create(Account account) {
     return database.with(jdbi -> jdbi.inTransaction(TransactionIsolationLevel.SERIALIZABLE, handle -> {
       try (Timer.Context ignored = createTimer.time()) {
-        UUID uuid = handle.createQuery("INSERT INTO accounts (" + NUMBER + ", " + UID + ", " + DATA + ") VALUES (:number, :uuid, CAST(:data AS json)) ON CONFLICT(number) DO UPDATE SET data = EXCLUDED.data RETURNING uuid")
-                          .bind("number", account.getNumber())
+        // Login by email. So check for conflicts on UUID rather than phone number. And don't write any phone number
+        UUID uuid = handle.createQuery("INSERT INTO accounts (" + NUMBER + ", " + UID + ", " + DATA + ") VALUES (:number, :uuid, CAST(:data AS json)) ON CONFLICT(uuid) DO UPDATE SET data = EXCLUDED.data RETURNING uuid")
+                          .bind("number", "")
                           .bind("uuid", account.getUuid())
                           .bind("data", mapper.writeValueAsString(account))
                           .mapTo(UUID.class)
@@ -90,14 +91,8 @@ public class Accounts {
   }
 
   public Optional<Account> get(String number) {
-    return database.with(jdbi -> jdbi.withHandle(handle -> {
-      try (Timer.Context ignored = getByNumberTimer.time()) {
-        return handle.createQuery("SELECT * FROM accounts WHERE " + NUMBER + " = :number")
-                     .bind("number", number)
-                     .mapTo(Account.class)
-                     .findFirst();
-      }
-    }));
+    // Login by email.
+    throw new UnsupportedOperationException("We do not support phone number searches");
   }
 
   public Optional<Account> get(UUID uuid) {

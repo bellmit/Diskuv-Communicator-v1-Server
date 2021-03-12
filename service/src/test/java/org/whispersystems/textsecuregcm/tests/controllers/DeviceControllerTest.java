@@ -117,8 +117,8 @@ public class DeviceControllerTest {
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(masterDevice));
     when(account.isEnabled()).thenReturn(false);
 
-    when(pendingDevicesManager.getCodeForNumber(AuthHelper.VALID_NUMBER)).thenReturn(Optional.of(new StoredVerificationCode("5678901", System.currentTimeMillis(), null)));
-    when(pendingDevicesManager.getCodeForNumber(AuthHelper.VALID_NUMBER_TWO)).thenReturn(Optional.of(new StoredVerificationCode("1112223", System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(31), null)));
+    when(pendingDevicesManager.getCodeForPendingDevice(AuthHelper.VALID_UUID)).thenReturn(Optional.of(new StoredVerificationCode("5678901", System.currentTimeMillis(), null)));
+    when(pendingDevicesManager.getCodeForPendingDevice(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of(new StoredVerificationCode("1112223", System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(31), null)));
     when(accountsManager.get(AuthHelper.VALID_NUMBER)).thenReturn(Optional.of(account));
     when(accountsManager.get(AuthHelper.VALID_NUMBER_TWO)).thenReturn(Optional.of(maxedAccount));
   }
@@ -143,8 +143,8 @@ public class DeviceControllerTest {
 
     assertThat(response.getDeviceId()).isEqualTo(42L);
 
-    verify(pendingDevicesManager).remove(AuthHelper.VALID_NUMBER);
-    verify(messagesManager).clear(eq(AuthHelper.VALID_NUMBER), eq(42L));
+    verify(pendingDevicesManager).remove(AuthHelper.VALID_UUID);
+    verify(messagesManager).clear(eq(AuthHelper.VALID_UUID.toString()), eq(42L));
   }
 
   @Test

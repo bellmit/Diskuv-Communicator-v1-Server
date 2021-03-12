@@ -30,8 +30,9 @@ public class ReceiptSender {
 
     Account          destinationAccount = getDestinationAccount(destination);
     Set<Device>      destinationDevices = destinationAccount.getDevices();
+    // Contact by email address. Not phone number.
     Envelope.Builder message            = Envelope.newBuilder()
-                                                  .setSource(source.getNumber())
+                                                  .setSource("") // WAS: .setSource(source.getNumber())
                                                   .setSourceUuid(source.getUuid().toString())
                                                   .setSourceDevice((int) source.getAuthenticatedDevice().get().getId())
                                                   .setTimestamp(messageId)

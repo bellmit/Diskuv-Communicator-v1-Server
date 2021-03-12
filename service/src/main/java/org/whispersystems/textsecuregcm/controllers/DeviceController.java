@@ -21,7 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
-import org.whispersystems.textsecuregcm.auth.AuthorizationHeader;
+import org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.InvalidAuthorizationHeaderException;
 import org.whispersystems.textsecuregcm.auth.StoredVerificationCode;
 import org.whispersystems.textsecuregcm.entities.AccountAttributes;
@@ -29,7 +29,6 @@ import org.whispersystems.textsecuregcm.entities.DeviceInfo;
 import org.whispersystems.textsecuregcm.entities.DeviceInfoList;
 import org.whispersystems.textsecuregcm.entities.DeviceResponse;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
-import org.whispersystems.textsecuregcm.sqs.DirectoryQueue;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
@@ -56,8 +55,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import io.dropwizard.auth.Auth;
+
+import static org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER;
 
 @Path("/v1/devices")
 public class DeviceController {
@@ -120,12 +122,14 @@ public class DeviceController {
   public VerificationCode createDeviceToken(@Auth Account account)
       throws RateLimitExceededException, DeviceLimitExceededException
   {
-    rateLimiters.getAllocateDeviceLimiter().validate(account.getNumber());
+    UUID accountUuid = account.getUuid();
+    String accountId = accountUuid.toString();
+    rateLimiters.getAllocateDeviceLimiter().validate(accountId);
 
     int maxDeviceLimit = MAX_DEVICES;
 
-    if (maxDeviceConfiguration.containsKey(account.getNumber())) {
-      maxDeviceLimit = maxDeviceConfiguration.get(account.getNumber());
+    if (maxDeviceConfiguration.containsKey(accountId)) {
+      maxDeviceLimit = maxDeviceConfiguration.get(accountId);
     }
 
     if (account.getEnabledDeviceCount() >= maxDeviceLimit) {
@@ -141,7 +145,7 @@ public class DeviceController {
                                                                                System.currentTimeMillis(),
                                                                                null);
 
-    pendingDevices.store(account.getNumber(), storedVerificationCode);
+    pendingDevices.store(accountUuid, storedVerificationCode);
 
     return verificationCode;
   }
@@ -152,62 +156,58 @@ public class DeviceController {
   @Consumes(MediaType.APPLICATION_JSON)
   @Path("/{verification_code}")
   public DeviceResponse verifyDeviceToken(@PathParam("verification_code") String verificationCode,
-                                          @HeaderParam("Authorization")   String authorizationHeader,
+                                          @HeaderParam(DEVICE_AUTHORIZATION_HEADER)   String deviceAuthorizationHeader,
+                                          @Auth                           Account account,
                                           @Valid                          AccountAttributes accountAttributes)
       throws RateLimitExceededException, DeviceLimitExceededException
   {
+    UUID accountUuid = account.getUuid();
+    String accountId = accountUuid.toString();
+
+    // device password to be used for subsequent device authentication
+    final DeviceAuthorizationHeader deviceHeader;
     try {
-      AuthorizationHeader header = AuthorizationHeader.fromFullHeader(authorizationHeader);
-      String number              = header.getIdentifier().getNumber();
-      String password            = header.getPassword();
-
-      if (number == null) throw new WebApplicationException(400);
-
-      rateLimiters.getVerifyDeviceLimiter().validate(number);
-
-      Optional<StoredVerificationCode> storedVerificationCode = pendingDevices.getCodeForNumber(number);
-
-      if (!storedVerificationCode.isPresent() || !storedVerificationCode.get().isValid(verificationCode)) {
-        throw new WebApplicationException(Response.status(403).build());
-      }
-
-      Optional<Account> account = accounts.get(number);
-
-      if (!account.isPresent()) {
-        throw new WebApplicationException(Response.status(403).build());
-      }
-
-      int maxDeviceLimit = MAX_DEVICES;
-
-      if (maxDeviceConfiguration.containsKey(account.get().getNumber())) {
-        maxDeviceLimit = maxDeviceConfiguration.get(account.get().getNumber());
-      }
-
-      if (account.get().getEnabledDeviceCount() >= maxDeviceLimit) {
-        throw new DeviceLimitExceededException(account.get().getDevices().size(), MAX_DEVICES);
-      }
-
-      Device device = new Device();
-      device.setName(accountAttributes.getName());
-      device.setAuthenticationCredentials(new AuthenticationCredentials(password));
-      device.setSignalingKey(accountAttributes.getSignalingKey());
-      device.setFetchesMessages(accountAttributes.getFetchesMessages());
-      device.setId(account.get().getNextDeviceId());
-      device.setRegistrationId(accountAttributes.getRegistrationId());
-      device.setLastSeen(Util.todayInMillis());
-      device.setCreated(System.currentTimeMillis());
-
-      account.get().addDevice(device);
-      messages.clear(account.get().getNumber(), device.getId());
-      accounts.update(account.get());
-
-      pendingDevices.remove(number);
-
-      return new DeviceResponse(device.getId());
+      deviceHeader = DeviceAuthorizationHeader.fromFullHeader(deviceAuthorizationHeader);
     } catch (InvalidAuthorizationHeaderException e) {
-      logger.info("Bad Authorization Header", e);
-      throw new WebApplicationException(Response.status(401).build());
+      throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
+    String devicePassword      = deviceHeader.getDevicePassword();
+
+    rateLimiters.getVerifyDeviceLimiter().validate(accountId);
+
+    Optional<StoredVerificationCode> storedVerificationCode = pendingDevices.getCodeForPendingDevice(accountUuid);
+
+    if (!storedVerificationCode.isPresent() || !storedVerificationCode.get().isValid(verificationCode)) {
+      throw new WebApplicationException(Response.status(403).build());
+    }
+
+    int maxDeviceLimit = MAX_DEVICES;
+
+    if (maxDeviceConfiguration.containsKey(accountId)) {
+      maxDeviceLimit = maxDeviceConfiguration.get(accountId);
+    }
+
+    if (account.getEnabledDeviceCount() >= maxDeviceLimit) {
+      throw new DeviceLimitExceededException(account.getDevices().size(), MAX_DEVICES);
+    }
+
+    Device device = new Device();
+    device.setName(accountAttributes.getName());
+    device.setAuthenticationCredentials(new AuthenticationCredentials(devicePassword));
+    device.setSignalingKey(accountAttributes.getSignalingKey());
+    device.setFetchesMessages(accountAttributes.getFetchesMessages());
+    device.setId(account.getNextDeviceId());
+    device.setRegistrationId(accountAttributes.getRegistrationId());
+    device.setLastSeen(Util.todayInMillis());
+    device.setCreated(System.currentTimeMillis());
+
+    account.addDevice(device);
+    messages.clear(accountId, device.getId());
+    accounts.update(account);
+
+    pendingDevices.remove(accountUuid);
+
+    return new DeviceResponse(device.getId());
   }
 
   @Timed

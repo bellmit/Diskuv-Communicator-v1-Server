@@ -20,19 +20,9 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
-import org.whispersystems.textsecuregcm.auth.AuthorizationHeader;
-import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
-import org.whispersystems.textsecuregcm.auth.ExternalServiceCredentialGenerator;
-import org.whispersystems.textsecuregcm.auth.ExternalServiceCredentials;
-import org.whispersystems.textsecuregcm.auth.InvalidAuthorizationHeaderException;
-import org.whispersystems.textsecuregcm.auth.StoredRegistrationLock;
-import org.whispersystems.textsecuregcm.auth.StoredVerificationCode;
-import org.whispersystems.textsecuregcm.auth.TurnToken;
-import org.whispersystems.textsecuregcm.auth.TurnTokenGenerator;
+import org.whispersystems.textsecuregcm.auth.*;
 import org.whispersystems.textsecuregcm.entities.AccountAttributes;
 import org.whispersystems.textsecuregcm.entities.AccountCreationResult;
 import org.whispersystems.textsecuregcm.entities.ApnRegistrationId;
@@ -40,7 +30,6 @@ import org.whispersystems.textsecuregcm.entities.DeprecatedPin;
 import org.whispersystems.textsecuregcm.entities.DeviceName;
 import org.whispersystems.textsecuregcm.entities.GcmRegistrationId;
 import org.whispersystems.textsecuregcm.entities.RegistrationLock;
-import org.whispersystems.textsecuregcm.entities.RegistrationLockFailure;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.push.APNSender;
 import org.whispersystems.textsecuregcm.push.ApnMessage;
@@ -60,19 +49,9 @@ import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Hex;
 import org.whispersystems.textsecuregcm.util.Util;
-import org.whispersystems.textsecuregcm.util.VerificationCode;
 
 import javax.validation.Valid;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.security.SecureRandom;
@@ -83,8 +62,21 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER;
+
 import io.dropwizard.auth.Auth;
 
+/**
+ * Unlike the original Signal REST endpoints, this controller drops the phone number parameters. It instead
+ * expects a JWT token with a verifiable claim about the email address. [Diskuv Change] [class]
+ *
+ * Also the preAuth sequence is different, and we've renamed it to preReg to reflect the difference. Since
+ * we already have a verifiable JWT identity claim, we don't need an SMS code verification. However, we still
+ * want to verify any FCM/APN channel before we blindly accept the device FCM/APN message tokens from the user. So
+ * before an account is registered (ie. preReg), we still validate the device verification code.
+ *
+ * Just as Signal did, you are _not_ required to use FCM/APN.
+ */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/v1/accounts")
 public class AccountController {
@@ -100,8 +92,8 @@ public class AccountController {
   private final Meter          captchaFailureMeter    = metricRegistry.meter(name(AccountController.class, "captcha_failure"    ));
 
 
-  private final PendingAccountsManager             pendingAccounts;
   private final AccountsManager                    accounts;
+  private final JwtAuthentication                  jwtAuthentication;
   private final UsernamesManager                   usernames;
   private final AbusiveHostRules                   abusiveHostRules;
   private final RateLimiters                       rateLimiters;
@@ -113,9 +105,11 @@ public class AccountController {
   private final GCMSender                          gcmSender;
   private final APNSender                          apnSender;
   private final ExternalServiceCredentialGenerator backupServiceCredentialGenerator;
+  private final PendingAccountsManager             pendingAccounts;
 
   public AccountController(PendingAccountsManager pendingAccounts,
                            AccountsManager accounts,
+                           JwtAuthentication jwtAuthentication,
                            UsernamesManager usernames,
                            AbusiveHostRules abusiveHostRules,
                            RateLimiters rateLimiters,
@@ -130,6 +124,7 @@ public class AccountController {
   {
     this.pendingAccounts                   = pendingAccounts;
     this.accounts                          = accounts;
+    this.jwtAuthentication                 = jwtAuthentication;
     this.usernames                         = usernames;
     this.abusiveHostRules                  = abusiveHostRules;
     this.rateLimiters                      = rateLimiters;
@@ -145,30 +140,29 @@ public class AccountController {
 
   @Timed
   @GET
-  @Path("/{type}/preauth/{token}/{number}")
-  public Response getPreAuth(@PathParam("type")   String pushType,
-                             @PathParam("token")  String pushToken,
-                             @PathParam("number") String number)
-  {
+  @Path("/{type}/prereg/{token}")
+  public Response getPreReg(
+      @HeaderParam("Authorization") String authorizationHeader,
+      @PathParam("type") String pushType,
+      @PathParam("token") String pushToken) {
     if (!"apn".equals(pushType) && !"fcm".equals(pushType)) {
       return Response.status(400).build();
     }
 
-    if (!Util.isValidNumber(number)) {
-      return Response.status(400).build();
-    }
+    UUID accountUuid = getAndValidateAccountUuid(authorizationHeader);
+    String accountId = accountUuid.toString();
 
     String                 pushChallenge          = generatePushChallenge();
     StoredVerificationCode storedVerificationCode = new StoredVerificationCode(null,
-                                                                               System.currentTimeMillis(),
-                                                                               pushChallenge);
+            System.currentTimeMillis(),
+            pushChallenge);
 
-    pendingAccounts.store(number, storedVerificationCode);
+    pendingAccounts.store(accountUuid, storedVerificationCode);
 
     if ("fcm".equals(pushType)) {
-      gcmSender.sendMessage(new GcmMessage(pushToken, number, 0, GcmMessage.Type.CHALLENGE, Optional.of(storedVerificationCode.getPushCode())));
+      gcmSender.sendMessage(new GcmMessage(pushToken, accountId, 0, GcmMessage.Type.CHALLENGE, Optional.of(storedVerificationCode.getPushCode())));
     } else if ("apn".equals(pushType)) {
-      apnSender.sendMessage(new ApnMessage(pushToken, number, 0, true, Optional.of(storedVerificationCode.getPushCode())));
+      apnSender.sendMessage(new ApnMessage(pushToken, accountId, 0, true, Optional.of(storedVerificationCode.getPushCode())));
     } else {
       throw new AssertionError();
     }
@@ -177,29 +171,39 @@ public class AccountController {
   }
 
   @Timed
-  @GET
-  @Path("/{transport}/code/{number}")
-  public Response createAccount(@PathParam("transport")         String transport,
-                                @PathParam("number")            String number,
-                                @HeaderParam("X-Forwarded-For") String forwardedFor,
-                                @HeaderParam("Accept-Language") Optional<String> locale,
-                                @QueryParam("client")           Optional<String> client,
-                                @QueryParam("captcha")          Optional<String> captcha,
-                                @QueryParam("challenge")        Optional<String> pushChallenge)
+  @PUT
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/account")
+  public AccountCreationResult registerAccount(@HeaderParam("Authorization")   String authorizationHeader,
+                                               @HeaderParam(DEVICE_AUTHORIZATION_HEADER)   String deviceAuthorizationHeader,
+                                               @HeaderParam("X-Signal-Agent")  String userAgent,
+                                               @HeaderParam("X-Forwarded-For") String forwardedFor,
+                                               @QueryParam("challenge")        Optional<String> pushChallenge,
+                                               @QueryParam("captcha")          Optional<String> captcha,
+                                               @Valid                          AccountAttributes accountAttributes)
       throws RateLimitExceededException
   {
-    if (!Util.isValidNumber(number)) {
-      logger.info("Invalid number: " + number);
-      throw new WebApplicationException(Response.status(400).build());
+    // account authentication
+    UUID accountUuid = getAndValidateAccountUuid(authorizationHeader);
+    String accountId = accountUuid.toString();
+
+    // device password to be used for subsequent device authentication
+    final DeviceAuthorizationHeader deviceHeader;
+    try {
+      deviceHeader = DeviceAuthorizationHeader.fromFullHeader(deviceAuthorizationHeader);
+    } catch (InvalidAuthorizationHeaderException e) {
+      throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
+    String devicePassword      = deviceHeader.getDevicePassword();
 
     String requester = Arrays.stream(forwardedFor.split(","))
-                             .map(String::trim)
-                             .reduce((a, b) -> b)
-                             .orElseThrow();
+            .map(String::trim)
+            .reduce((a, b) -> b)
+            .orElseThrow();
 
-    Optional<StoredVerificationCode> storedChallenge = pendingAccounts.getCodeForNumber(number);
-    CaptchaRequirement               requirement     = requiresCaptcha(number, transport, forwardedFor, requester, captcha, storedChallenge, pushChallenge);
+    Optional<StoredVerificationCode> storedChallenge = pendingAccounts.getCodeForPendingAccount(accountUuid);
+    CaptchaRequirement               requirement     = requiresCaptcha(accountId, forwardedFor, requester, captcha, storedChallenge, pushChallenge);
 
     if (requirement.isCaptchaRequired()) {
       if (requirement.isAutoBlock() && shouldAutoBlock(requester)) {
@@ -207,100 +211,18 @@ public class AccountController {
         abusiveHostRules.setBlockedHost(requester, "Auto-Block");
       }
 
-      return Response.status(402).build();
+      throw new WebApplicationException(402);
     }
 
-    switch (transport) {
-      case "sms":
-        rateLimiters.getSmsDestinationLimiter().validate(number);
-        break;
-      case "voice":
-        rateLimiters.getVoiceDestinationLimiter().validate(number);
-        rateLimiters.getVoiceDestinationDailyLimiter().validate(number);
-        break;
-      default:
-        throw new WebApplicationException(Response.status(422).build());
-    }
+    rateLimiters.getVerifyLimiter().validate(accountId);
 
-    VerificationCode       verificationCode       = generateVerificationCode(number);
-    StoredVerificationCode storedVerificationCode = new StoredVerificationCode(verificationCode.getVerificationCode(),
-                                                                               System.currentTimeMillis(),
-                                                                               storedChallenge.map(StoredVerificationCode::getPushCode).orElse(null));
+    Optional<Account>                    existingAccount           = accounts.get(accountUuid);
 
-    pendingAccounts.store(number, storedVerificationCode);
+    Account account = createAccount(accountUuid, devicePassword, userAgent, accountAttributes);
 
-    if (testDevices.containsKey(number)) {
-      // noop
-    } else if (transport.equals("sms")) {
-      smsSender.deliverSmsVerification(number, client, verificationCode.getVerificationCodeDisplay());
-    } else if (transport.equals("voice")) {
-      smsSender.deliverVoxVerification(number, verificationCode.getVerificationCode(), locale);
-    }
+    metricRegistry.meter(name(AccountController.class, "create")).mark();
 
-    metricRegistry.meter(name(AccountController.class, "create", Util.getCountryCode(number))).mark();
-
-    return Response.ok().build();
-  }
-
-  @Timed
-  @PUT
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  @Path("/code/{verification_code}")
-  public AccountCreationResult verifyAccount(@PathParam("verification_code") String verificationCode,
-                                             @HeaderParam("Authorization")   String authorizationHeader,
-                                             @HeaderParam("X-Signal-Agent")  String userAgent,
-                                             @Valid                          AccountAttributes accountAttributes)
-      throws RateLimitExceededException
-  {
-    try {
-      AuthorizationHeader header = AuthorizationHeader.fromFullHeader(authorizationHeader);
-      String number              = header.getIdentifier().getNumber();
-      String password            = header.getPassword();
-
-      if (number == null) {
-        throw new WebApplicationException(400);
-      }
-
-      rateLimiters.getVerifyLimiter().validate(number);
-
-      Optional<StoredVerificationCode> storedVerificationCode = pendingAccounts.getCodeForNumber(number);
-
-      if (storedVerificationCode.isEmpty() || !storedVerificationCode.get().isValid(verificationCode)) {
-        throw new WebApplicationException(Response.status(403).build());
-      }
-
-      Optional<Account>                    existingAccount           = accounts.get(number);
-      Optional<StoredRegistrationLock>     existingRegistrationLock  = existingAccount.map(Account::getRegistrationLock);
-      Optional<ExternalServiceCredentials> existingBackupCredentials = existingAccount.map(Account::getUuid)
-                                                                                      .map(uuid -> backupServiceCredentialGenerator.generateFor(uuid.toString()));
-
-      if (existingRegistrationLock.isPresent() && existingRegistrationLock.get().requiresClientRegistrationLock()) {
-        rateLimiters.getVerifyLimiter().clear(number);
-
-        if (!Util.isEmpty(accountAttributes.getRegistrationLock()) || !Util.isEmpty(accountAttributes.getPin())) {
-          rateLimiters.getPinLimiter().validate(number);
-        }
-
-        if (!existingRegistrationLock.get().verify(accountAttributes.getRegistrationLock(), accountAttributes.getPin())) {
-          throw new WebApplicationException(Response.status(423)
-                                                    .entity(new RegistrationLockFailure(existingRegistrationLock.get().getTimeRemaining(),
-                                                                                        existingRegistrationLock.get().needsFailureCredentials() ? existingBackupCredentials.orElseThrow() : null))
-                                                    .build());
-        }
-
-        rateLimiters.getPinLimiter().clear(number);
-      }
-
-      Account account = createAccount(number, password, userAgent, accountAttributes);
-
-      metricRegistry.meter(name(AccountController.class, "verify", Util.getCountryCode(number))).mark();
-
-      return new AccountCreationResult(account.getUuid(), existingAccount.map(Account::isStorageSupported).orElse(false));
-    } catch (InvalidAuthorizationHeaderException e) {
-      logger.info("Bad Authorization Header", e);
-      throw new WebApplicationException(Response.status(401).build());
-    }
+    return new AccountCreationResult(account.getUuid(), existingAccount.map(Account::isStorageSupported).orElse(false));
   }
 
   @Timed
@@ -495,7 +417,8 @@ public class AccountController {
     return Response.ok().build();
   }
 
-  private CaptchaRequirement requiresCaptcha(String number, String transport, String forwardedFor,
+  private CaptchaRequirement requiresCaptcha(String accountId,
+                                             String forwardedFor,
                                              String requester,
                                              Optional<String>                 captchaToken,
                                              Optional<StoredVerificationCode> storedVerificationCode,
@@ -522,37 +445,23 @@ public class AccountController {
       }
     }
 
+    // We don't have to carry many of Signal's abuse rules since additional
+    // abuse checks will be done at login time
     List<AbusiveHostRule> abuseRules = abusiveHostRules.getAbusiveHostRulesFor(requester);
 
     for (AbusiveHostRule abuseRule : abuseRules) {
       if (abuseRule.isBlocked()) {
-        logger.info("Blocked host: " + transport + ", " + number + ", " + requester + " (" + forwardedFor + ")");
+        logger.info("Blocked host: " + accountId + ", " + requester + " (" + forwardedFor + ")");
         blockedHostMeter.mark();
         return new CaptchaRequirement(true, false);
-      }
-
-      if (!abuseRule.getRegions().isEmpty()) {
-        if (abuseRule.getRegions().stream().noneMatch(number::startsWith)) {
-          logger.info("Restricted host: " + transport + ", " + number + ", " + requester + " (" + forwardedFor + ")");
-          filteredHostMeter.mark();
-          return new CaptchaRequirement(true, false);
-        }
       }
     }
 
     try {
       rateLimiters.getSmsVoiceIpLimiter().validate(requester);
     } catch (RateLimitExceededException e) {
-      logger.info("Rate limited exceeded: " + transport + ", " + number + ", " + requester + " (" + forwardedFor + ")");
+      logger.info("Rate limited exceeded: " + accountId + ", " + requester + " (" + forwardedFor + ")");
       rateLimitedHostMeter.mark();
-      return new CaptchaRequirement(true, true);
-    }
-
-    try {
-      rateLimiters.getSmsVoicePrefixLimiter().validate(Util.getNumberPrefix(number));
-    } catch (RateLimitExceededException e) {
-      logger.info("Prefix rate limit exceeded: " + transport + ", " + number + ", (" + forwardedFor + ")");
-      rateLimitedPrefixMeter.mark();
       return new CaptchaRequirement(true, true);
     }
 
@@ -569,10 +478,10 @@ public class AccountController {
     return false;
   }
 
-  private Account createAccount(String number, String password, String userAgent, AccountAttributes accountAttributes) {
+  private Account createAccount(UUID accountUuid, String devicePassword, String userAgent, AccountAttributes accountAttributes) {
     Device device = new Device();
     device.setId(Device.MASTER_ID);
-    device.setAuthenticationCredentials(new AuthenticationCredentials(password));
+    device.setAuthenticationCredentials(new AuthenticationCredentials(devicePassword));
     device.setSignalingKey(accountAttributes.getSignalingKey());
     device.setFetchesMessages(accountAttributes.getFetchesMessages());
     device.setRegistrationId(accountAttributes.getRegistrationId());
@@ -583,8 +492,9 @@ public class AccountController {
     device.setUserAgent(userAgent);
 
     Account account = new Account();
-    account.setNumber(number);
-    account.setUuid(DiskuvUuidUtil.uuidForE164Number(number));
+    // Login by email. So no phone numbers. WAS: account.setNumber(number);
+    account.setNumber("");
+    account.setUuid(accountUuid);
     account.addDevice(device);
     setAccountRegistrationLockFromAttributes(account, accountAttributes);
     account.setUnidentifiedAccessKey(accountAttributes.getUnidentifiedAccessKey());
@@ -594,8 +504,7 @@ public class AccountController {
       newUserMeter.mark();
     }
 
-    messagesManager.clear(number);
-    pendingAccounts.remove(number);
+    messagesManager.clear(accountUuid.toString());
 
     return account;
   }
@@ -612,17 +521,6 @@ public class AccountController {
     }
   }
 
-  @VisibleForTesting protected
-  VerificationCode generateVerificationCode(String number) {
-    if (testDevices.containsKey(number)) {
-      return new VerificationCode(testDevices.get(number));
-    }
-
-    SecureRandom random = new SecureRandom();
-    int randomInt       = 100000 + random.nextInt(900000);
-    return new VerificationCode(randomInt);
-  }
-
   private String generatePushChallenge() {
     SecureRandom random    = new SecureRandom();
     byte[]       challenge = new byte[16];
@@ -631,13 +529,30 @@ public class AccountController {
     return Hex.toStringCondensed(challenge);
   }
 
+  private UUID getAndValidateAccountUuid(String authorizationHeader) {
+    final String bearerToken;
+    try {
+      bearerToken = BearerTokenAuthorizationHeader.fromFullHeader(authorizationHeader);
+    } catch (InvalidAuthorizationHeaderException e) {
+      logger.info("Bad Authorization Header", e);
+      throw new WebApplicationException(Response.status(401).build());
+    }
+    final String emailAddress;
+    try {
+      emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(bearerToken);
+    } catch (IllegalArgumentException e) {
+      throw new WebApplicationException(Response.status(401).build());
+    }
+    return DiskuvUuidUtil.uuidForEmailAddress(emailAddress);
+  }
+
   private static class CaptchaRequirement {
     private final boolean captchaRequired;
     private final boolean autoBlock;
 
     private CaptchaRequirement(boolean captchaRequired, boolean autoBlock) {
       this.captchaRequired = captchaRequired;
-      this.autoBlock       = autoBlock;
+      this.autoBlock = autoBlock;
     }
 
     boolean isCaptchaRequired() {

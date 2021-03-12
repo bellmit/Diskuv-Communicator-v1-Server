@@ -20,6 +20,7 @@ package org.whispersystems.textsecuregcm.storage;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
 import org.whispersystems.textsecuregcm.auth.StoredRegistrationLock;
 
@@ -98,12 +99,22 @@ public class Account implements Principal  {
     this.uuid = uuid;
   }
 
+  /**
+   * To be compatible with the Account API, we only accept a number that is an empty string.
+   * That will cause both Redis and the PostgreSQL databases to store
+   * an empty string via {@link AccountsManager#update(Account)}.
+   */
   public void setNumber(String number) {
+    Preconditions.checkArgument("".equals(number), "The number was '%s' rather than empty", number);
     this.number = number;
   }
 
+  /**
+   * This returns the UUID. This makes it easy to be compatible with the bulk of the original Signal server
+   * code, which expects a phone number.
+   */
   public String getNumber() {
-    return number;
+    return uuid.toString();
   }
 
   public void addDevice(Device device) {
@@ -245,7 +256,7 @@ public class Account implements Principal  {
   public StoredRegistrationLock getRegistrationLock() {
     return new StoredRegistrationLock(Optional.ofNullable(registrationLock), Optional.ofNullable(registrationLockSalt), Optional.ofNullable(pin), getLastSeen());
   }
-  
+
   public Optional<byte[]> getUnidentifiedAccessKey() {
     return Optional.ofNullable(unidentifiedAccessKey);
   }

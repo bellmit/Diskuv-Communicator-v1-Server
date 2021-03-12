@@ -16,7 +16,7 @@ import redis.clients.jedis.exceptions.JedisException;
 
 public class ProfilesManager {
 
-  private final Logger logger = LoggerFactory.getLogger(PendingAccountsManager.class);
+  private final Logger logger = LoggerFactory.getLogger(ProfilesManager.class);
 
   private static final String CACHE_PREFIX = "profiles::";
 

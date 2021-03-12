@@ -10,7 +10,6 @@ import org.whispersystems.textsecuregcm.storage.Accounts;
 import org.whispersystems.textsecuregcm.storage.FaultTolerantDatabase;
 import org.whispersystems.textsecuregcm.storage.Keys;
 import org.whispersystems.textsecuregcm.storage.Messages;
-import org.whispersystems.textsecuregcm.storage.PendingAccounts;
 
 import io.dropwizard.cli.ConfiguredCommand;
 import io.dropwizard.setup.Bootstrap;
@@ -41,14 +40,10 @@ public class VacuumCommand extends ConfiguredCommand<WhisperServerConfiguration>
 
     Accounts        accounts        = new Accounts(accountDatabase);
     Keys            keys            = new Keys(accountDatabase);
-    PendingAccounts pendingAccounts = new PendingAccounts(accountDatabase);
     Messages        messages        = new Messages(messageDatabase);
 
     logger.info("Vacuuming accounts...");
     accounts.vacuum();
-
-    logger.info("Vacuuming pending_accounts...");
-    pendingAccounts.vacuum();
 
     logger.info("Vacuuming keys...");
     keys.vacuum();

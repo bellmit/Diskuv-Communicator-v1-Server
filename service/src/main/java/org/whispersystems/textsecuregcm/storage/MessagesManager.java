@@ -8,6 +8,7 @@ import org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntity;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntityList;
 import org.whispersystems.textsecuregcm.util.Constants;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,11 +36,13 @@ public class MessagesManager {
   }
 
   public void insert(String destination, long destinationDevice, Envelope message) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     UUID guid = UUID.randomUUID();
     messagesCache.insert(guid, destination, destinationDevice, message);
   }
 
   public OutgoingMessageEntityList getMessagesForDevice(String destination, long destinationDevice) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     List<OutgoingMessageEntity> messages = this.messages.load(destination, destinationDevice);
 
     if (messages.size() <= Messages.RESULT_SET_CHUNK_SIZE) {
@@ -50,17 +53,20 @@ public class MessagesManager {
   }
 
   public void clear(String destination) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     this.messagesCache.clear(destination);
     this.messages.clear(destination);
   }
 
   public void clear(String destination, long deviceId) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     this.messagesCache.clear(destination, deviceId);
     this.messages.clear(destination, deviceId);
   }
 
   public Optional<OutgoingMessageEntity> delete(String destination, long destinationDevice, String source, long timestamp)
   {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Optional<OutgoingMessageEntity> removed = this.messagesCache.remove(destination, destinationDevice, source, timestamp);
 
     if (!removed.isPresent()) {
@@ -74,6 +80,7 @@ public class MessagesManager {
   }
 
   public Optional<OutgoingMessageEntity> delete(String destination, long deviceId, UUID guid) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Optional<OutgoingMessageEntity> removed = this.messagesCache.remove(destination, deviceId, guid);
 
     if (!removed.isPresent()) {
@@ -87,6 +94,7 @@ public class MessagesManager {
   }
 
   public void delete(String destination, long deviceId, long id, boolean cached) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     if (cached) {
       this.messagesCache.remove(destination, deviceId, id);
       cacheHitByIdMeter.mark();

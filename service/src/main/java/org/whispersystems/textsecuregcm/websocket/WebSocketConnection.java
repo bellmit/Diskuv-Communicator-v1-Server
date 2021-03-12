@@ -180,8 +180,9 @@ public class WebSocketConnection implements DispatchChannel {
                                               .setTimestamp(message.getTimestamp())
                                               .setServerTimestamp(message.getServerTimestamp());
 
-      if (!Util.isEmpty(message.getSource())) {
-        builder.setSource(message.getSource())
+      // Contact by email address. Instead of message.getSource() which should be empty, use message.getSourceUuid()
+      if (message.getSourceUuid() != null) {
+        builder.setSourceUuid(message.getSourceUuid().toString())
                .setSourceDevice(message.getSourceDevice());
       }
 

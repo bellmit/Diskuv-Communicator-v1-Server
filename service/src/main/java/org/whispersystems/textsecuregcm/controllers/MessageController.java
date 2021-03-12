@@ -246,7 +246,8 @@ public class MessageController {
                     .setServerTimestamp(System.currentTimeMillis());
 
       if (source.isPresent()) {
-        messageBuilder.setSource(source.get().getNumber())
+        // Contact by email address. Not phone number.
+        messageBuilder.setSource("") // WAS: source.get().getNumber()
                       .setSourceUuid(source.get().getUuid().toString())
                       .setSourceDevice((int)source.get().getAuthenticatedDevice().get().getId());
       }

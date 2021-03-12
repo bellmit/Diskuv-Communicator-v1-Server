@@ -512,7 +512,7 @@ public class MessagesCache implements Managed {
                                                                            .build());
 
         if (!notified) {
-          Optional<Account> account = accountsManager.get(key.getAddress());
+          Optional<Account> account = accountsManager.get(UUID.fromString(key.getAddress()));
 
           if (account.isPresent()) {
             Optional<Device> device = account.get().getDevice(key.getDeviceId());

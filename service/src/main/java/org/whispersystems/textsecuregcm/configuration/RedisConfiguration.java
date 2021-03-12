@@ -20,12 +20,15 @@ package org.whispersystems.textsecuregcm.configuration;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.constraints.URL;
+import redis.clients.jedis.Protocol;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
 public class RedisConfiguration {
+  @JsonProperty
+  private int readTimeoutMs = Protocol.DEFAULT_TIMEOUT;
 
   @JsonProperty
   @NotEmpty
@@ -39,6 +42,10 @@ public class RedisConfiguration {
   @NotNull
   @Valid
   private CircuitBreakerConfiguration circuitBreaker = new CircuitBreakerConfiguration();
+
+  public int getReadTimeoutMs() {
+    return readTimeoutMs;
+  }
 
   public String getUrl() {
     return url;

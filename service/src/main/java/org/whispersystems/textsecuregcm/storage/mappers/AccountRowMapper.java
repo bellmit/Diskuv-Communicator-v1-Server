@@ -20,7 +20,8 @@ public class AccountRowMapper implements RowMapper<Account> {
   public Account map(ResultSet resultSet, StatementContext ctx) throws SQLException {
     try {
       Account account = mapper.readValue(resultSet.getString(Accounts.DATA), Account.class);
-      account.setNumber(resultSet.getString(Accounts.NUMBER));
+      // Login by email. Was: account.setNumber(resultSet.getString(Accounts.NUMBER));
+      account.setNumber("");
       account.setUuid(UUID.fromString(resultSet.getString(Accounts.UID)));
       return account;
     } catch (IOException e) {

@@ -24,14 +24,20 @@ import org.whispersystems.textsecuregcm.storage.mappers.StoredVerificationCodeRo
 import org.whispersystems.textsecuregcm.util.Constants;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
+/**
+ * Pending accounts used for skipping CAPTCHA requirements with a "verification_code" during initial registration.
+ * Unlike the original Signal version, the "number" is actually the deterministic account UUID based on email address,
+ * rather than the plaintext phone number. [Diskuv Change] [class]
+ */
 public class PendingAccounts {
 
   private final MetricRegistry metricRegistry        = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
   private final Timer          insertTimer           = metricRegistry.timer(name(PendingAccounts.class, "insert"          ));
-  private final Timer          getCodeForNumberTimer = metricRegistry.timer(name(PendingAccounts.class, "getCodeForNumber"));
+  private final Timer getCodeForPendingAccountTimer  = metricRegistry.timer(name(PendingAccounts.class, "getCodeForPendingAccount"));
   private final Timer          removeTimer           = metricRegistry.timer(name(PendingAccounts.class, "remove"          ));
   private final Timer          vacuumTimer           = metricRegistry.timer(name(PendingAccounts.class, "vacuum"          ));
 
@@ -42,7 +48,7 @@ public class PendingAccounts {
     this.database.getDatabase().registerRowMapper(new StoredVerificationCodeRowMapper());
   }
 
-  public void insert(String number, String verificationCode, long timestamp, String pushCode) {
+  public void insert(UUID accountUuid, String verificationCode, long timestamp, String pushCode) {
     database.use(jdbi -> jdbi.useHandle(handle -> {
       try (Timer.Context ignored = insertTimer.time()) {
         handle.createUpdate("INSERT INTO pending_accounts (number, verification_code, timestamp, push_code) " +
@@ -51,29 +57,29 @@ public class PendingAccounts {
                                 "SET verification_code = EXCLUDED.verification_code, timestamp = EXCLUDED.timestamp, push_code = EXCLUDED.push_code")
               .bind("verification_code", verificationCode)
               .bind("timestamp", timestamp)
-              .bind("number", number)
+              .bind("number", accountUuid.toString())
               .bind("push_code", pushCode)
               .execute();
       }
     }));
   }
 
-  public Optional<StoredVerificationCode> getCodeForNumber(String number) {
+  public Optional<StoredVerificationCode> getCodeForPendingAccount(UUID accountUuid) {
     return database.with(jdbi ->jdbi.withHandle(handle -> {
-      try (Timer.Context ignored = getCodeForNumberTimer.time()) {
+      try (Timer.Context ignored = getCodeForPendingAccountTimer.time()) {
         return handle.createQuery("SELECT verification_code, timestamp, push_code FROM pending_accounts WHERE number = :number")
-                     .bind("number", number)
+                     .bind("number", accountUuid.toString())
                      .mapTo(StoredVerificationCode.class)
                      .findFirst();
       }
     }));
   }
 
-  public void remove(String number) {
+  public void remove(UUID accountUuid) {
     database.use(jdbi-> jdbi.useHandle(handle -> {
       try (Timer.Context ignored = removeTimer.time()) {
         handle.createUpdate("DELETE FROM pending_accounts WHERE number = :number")
-              .bind("number", number)
+              .bind("number", accountUuid.toString())
               .execute();
       }
     }));

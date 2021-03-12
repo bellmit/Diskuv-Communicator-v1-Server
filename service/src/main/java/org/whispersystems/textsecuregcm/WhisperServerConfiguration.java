@@ -173,6 +173,11 @@ public class WhisperServerConfiguration extends Configuration {
   @JsonProperty
   private RemoteConfigConfiguration remoteConfig;
 
+  @Valid
+  @NotNull
+  @JsonProperty
+  private JwtKeysConfiguration jwtKeys;
+
   private Map<String, String> transparentDataIndex = new HashMap<>();
 
   public RecaptchaConfiguration getRecaptchaConfiguration() {
@@ -303,5 +308,9 @@ public class WhisperServerConfiguration extends Configuration {
 
   public RemoteConfigConfiguration getRemoteConfigConfiguration() {
     return remoteConfig;
+  }
+
+  public JwtKeysConfiguration getJwtKeys() {
+    return jwtKeys;
   }
 }

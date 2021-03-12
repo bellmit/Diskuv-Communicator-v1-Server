@@ -1,6 +1,7 @@
 package org.whispersystems.textsecuregcm.websocket;
 
 import org.whispersystems.textsecuregcm.storage.PubSubAddress;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 public class WebsocketAddress implements PubSubAddress {
 
@@ -8,6 +9,7 @@ public class WebsocketAddress implements PubSubAddress {
   private final long   deviceId;
 
   public WebsocketAddress(String number, long deviceId) {
+    DiskuvUuidUtil.verifyDiskuvUuid(number);
     this.number    = number;
     this.deviceId  = deviceId;
   }
@@ -22,11 +24,15 @@ public class WebsocketAddress implements PubSubAddress {
 
       this.number   = parts[0];
       this.deviceId = Long.parseLong(parts[1]);
+      DiskuvUuidUtil.verifyDiskuvUuid(this.number);
     } catch (NumberFormatException e) {
       throw new InvalidWebsocketAddressException(e);
     }
   }
 
+  /**
+   * The 'number' is really the account UUID in Diskuv.
+   */
   public String getNumber() {
     return number;
   }

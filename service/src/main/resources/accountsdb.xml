@@ -193,7 +193,7 @@
                 <constraints nullable="true"/>
             </column>
         </addColumn>
-        
+
         <dropNotNullConstraint tableName="pending_accounts" columnName="verification_code"/>
     </changeSet>
 
@@ -267,7 +267,7 @@
         </createTable>
 
         <addUniqueConstraint tableName="profiles" columnNames="uuid, version" constraintName="uuid_and_version"/>
-        
+
         <createIndex tableName="profiles" indexName="profiles_uuid">
             <column name="uuid"/>
         </createIndex>
@@ -309,6 +309,15 @@
 
     <changeSet id="16" author="moxie">
         <dropColumn tableName="keys" columnName="deleted"/>
+    </changeSet>
+
+    <changeSet id="16+diskuv-1" author="jonah">
+        <dropUniqueConstraint tableName="accounts" constraintName="accounts_number_key" uniqueColumns="number" />
+        <addUniqueConstraint tableName="accounts" constraintName="accounts_uuid_key" columnNames="uuid"/>
+    </changeSet>
+
+    <changeSet id="16+diskuv-2" author="jonah">
+        <dropIndex tableName="accounts" indexName="keys_number_index" />
     </changeSet>
 
 </databaseChangeLog>

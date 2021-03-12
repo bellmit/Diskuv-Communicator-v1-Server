@@ -3,22 +3,19 @@ package org.whispersystems.textsecuregcm.auth;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.util.Constants;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Util;
 
 import java.util.Optional;
 import java.util.UUID;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import io.dropwizard.auth.basic.BasicCredentials;
 
-public class BaseAccountAuthenticator {
-
+public class BaseDiskuvAccountAuthenticator {
   private final MetricRegistry metricRegistry               = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
   private final Meter          authenticationFailedMeter    = metricRegistry.meter(name(getClass(), "authentication", "failed"         ));
   private final Meter          authenticationSucceededMeter = metricRegistry.meter(name(getClass(), "authentication", "succeeded"      ));
@@ -26,27 +23,36 @@ public class BaseAccountAuthenticator {
   private final Meter          noSuchDeviceMeter            = metricRegistry.meter(name(getClass(), "authentication", "noSuchDevice"   ));
   private final Meter          accountDisabledMeter         = metricRegistry.meter(name(getClass(), "authentication", "accountDisabled"));
   private final Meter          deviceDisabledMeter          = metricRegistry.meter(name(getClass(), "authentication", "deviceDisabled" ));
+  private final Meter          invalidJwtTokenMeter         = metricRegistry.meter(name(getClass(), "authentication", "invalidJwtToken"));
   private final Meter          invalidAuthHeaderMeter       = metricRegistry.meter(name(getClass(), "authentication", "invalidHeader"  ));
 
-  private final Logger logger = LoggerFactory.getLogger(AccountAuthenticator.class);
-
   private final AccountsManager accountsManager;
+  private final JwtAuthentication jwtAuthentication;
 
-  public BaseAccountAuthenticator(AccountsManager accountsManager) {
+  public BaseDiskuvAccountAuthenticator(
+      AccountsManager accountsManager, JwtAuthentication jwtAuthentication) {
     this.accountsManager = accountsManager;
+    this.jwtAuthentication = jwtAuthentication;
   }
 
-  public Optional<Account> authenticate(BasicCredentials basicCredentials, boolean enabledRequired) {
+  public Optional<Account> authenticate(DiskuvCredentials credentials, boolean enabledRequired) {
+    final UUID accountId;
     try {
-      AuthorizationHeader authorizationHeader = AuthorizationHeader.fromUserAndPassword(basicCredentials.getUsername(), basicCredentials.getPassword());
-      Optional<Account>   account             = accountsManager.get(authorizationHeader.getIdentifier());
+      String emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(credentials.getBearerToken());
+      accountId = DiskuvUuidUtil.uuidForEmailAddress(emailAddress);
+    } catch (IllegalArgumentException iae) {
+      invalidJwtTokenMeter.mark();
+      return Optional.empty();
+    }
+    try {
+      Optional<Account> account = accountsManager.get(accountId);
 
       if (!account.isPresent()) {
         noSuchAccountMeter.mark();
         return Optional.empty();
       }
 
-      Optional<Device> device = account.get().getDevice(authorizationHeader.getDeviceId());
+      Optional<Device> device = account.get().getDevice(credentials.getDeviceId());
 
       if (!device.isPresent()) {
         noSuchDeviceMeter.mark();
@@ -65,7 +71,7 @@ public class BaseAccountAuthenticator {
         }
       }
 
-      if (device.get().getAuthenticationCredentials().verify(basicCredentials.getPassword())) {
+      if (device.get().getAuthenticationCredentials().verify(credentials.getDevicePassword())) {
         authenticationSucceededMeter.mark();
         account.get().setAuthenticatedDevice(device.get());
         updateLastSeen(account.get(), device.get());
@@ -74,7 +80,7 @@ public class BaseAccountAuthenticator {
 
       authenticationFailedMeter.mark();
       return Optional.empty();
-    } catch (IllegalArgumentException | InvalidAuthorizationHeaderException iae) {
+    } catch (IllegalArgumentException iae) {
       invalidAuthHeaderMeter.mark();
       return Optional.empty();
     }
@@ -86,5 +92,4 @@ public class BaseAccountAuthenticator {
       accountsManager.update(account);
     }
   }
-
 }

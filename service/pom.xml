@@ -136,6 +136,17 @@
             <version>8.11.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
+            <version>3.13.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>jwks-rsa</artifactId>
+            <version>0.15.0</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.glassfish.jersey.test-framework.providers</groupId>

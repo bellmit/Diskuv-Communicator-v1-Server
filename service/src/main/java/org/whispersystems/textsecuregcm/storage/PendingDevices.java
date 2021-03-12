@@ -24,9 +24,15 @@ import org.whispersystems.textsecuregcm.storage.mappers.StoredVerificationCodeRo
 import org.whispersystems.textsecuregcm.util.Constants;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
+/**
+ * Pending device used for proving ownership of a user's device with a "verification_code".
+ * Unlike the original Signal version, the "number" is actually the deterministic account UUID based on email address,
+ * rather than the plaintext phone number. [Diskuv Change] [class]
+ */
 public class PendingDevices {
 
   private final MetricRegistry metricRegistry        = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
@@ -41,12 +47,12 @@ public class PendingDevices {
     this.database.getDatabase().registerRowMapper(new StoredVerificationCodeRowMapper());
   }
 
-  public void insert(String number, String verificationCode, long timestamp) {
+  public void insert(UUID accountUuid, String verificationCode, long timestamp) {
     database.use(jdbi ->jdbi.useHandle(handle -> {
       try (Timer.Context timer = insertTimer.time()) {
         handle.createUpdate("WITH upsert AS (UPDATE pending_devices SET verification_code = :verification_code, timestamp = :timestamp WHERE number = :number RETURNING *) " +
                                 "INSERT INTO pending_devices (number, verification_code, timestamp) SELECT :number, :verification_code, :timestamp WHERE NOT EXISTS (SELECT * FROM upsert)")
-              .bind("number", number)
+              .bind("number", accountUuid.toString())
               .bind("verification_code", verificationCode)
               .bind("timestamp", timestamp)
               .execute();
@@ -54,22 +60,22 @@ public class PendingDevices {
     }));
   }
 
-  public Optional<StoredVerificationCode> getCodeForNumber(String number) {
+  public Optional<StoredVerificationCode> getCodeForPendingDevice(UUID accountUuid) {
     return database.with(jdbi -> jdbi.withHandle(handle -> {
       try (Timer.Context timer = getCodeForNumberTimer.time()) {
         return handle.createQuery("SELECT verification_code, timestamp, NULL as push_code FROM pending_devices WHERE number = :number")
-                     .bind("number", number)
+                     .bind("number", accountUuid.toString())
                      .mapTo(StoredVerificationCode.class)
                      .findFirst();
       }
     }));
   }
 
-  public void remove(String number) {
+  public void remove(UUID accountUuid) {
     database.use(jdbi -> jdbi.useHandle(handle -> {
       try (Timer.Context timer = removeTimer.time()) {
         handle.createUpdate("DELETE FROM pending_devices WHERE number = :number")
-              .bind("number", number)
+              .bind("number", accountUuid.toString())
               .execute();
       }
     }));

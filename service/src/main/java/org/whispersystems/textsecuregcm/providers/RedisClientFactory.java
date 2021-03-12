@@ -30,40 +30,46 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Protocol;
 
 public class RedisClientFactory implements RedisPubSubConnectionFactory {
-
   private final Logger logger = LoggerFactory.getLogger(RedisClientFactory.class);
 
   private final String    host;
   private final int       port;
   private final ReplicatedJedisPool jedisPool;
 
-  public RedisClientFactory(String name, String url, List<String> replicaUrls, CircuitBreakerConfiguration circuitBreakerConfiguration)
+  public RedisClientFactory(String name, int readTimeoutMs, String url, List<String> replicaUrls, CircuitBreakerConfiguration circuitBreakerConfiguration)
       throws URISyntaxException
   {
     JedisPoolConfig poolConfig = new JedisPoolConfig();
     poolConfig.setTestOnBorrow(true);
-    poolConfig.setMaxWaitMillis(10000);
+    poolConfig.setMaxWaitMillis(Math.max(10000, 2 * readTimeoutMs));
 
     URI redisURI = new URI(url);
 
     this.host      = redisURI.getHost();
     this.port      = redisURI.getPort();
+    String fragment = redisURI.getFragment();
 
-    JedisPool       masterPool   = new JedisPool(poolConfig, host, port, Protocol.DEFAULT_TIMEOUT, null);
+    int database = Protocol.DEFAULT_DATABASE;
+    if (fragment != null) {
+      database = Integer.parseInt(fragment);
+    }
+
+    JedisPool       masterPool   = new JedisPool(poolConfig, host, port, readTimeoutMs, null, database);
     List<JedisPool> replicaPools = new LinkedList<>();
 
     for (String replicaUrl : replicaUrls) {
       URI replicaURI = new URI(replicaUrl);
 
       replicaPools.add(new JedisPool(poolConfig, replicaURI.getHost(), replicaURI.getPort(),
-                                     500, Protocol.DEFAULT_TIMEOUT, null,
-                                     Protocol.DEFAULT_DATABASE, null, false, null ,
+                                     500, readTimeoutMs, null,
+                                     database, null, false, null ,
                                      null, null));
     }
 

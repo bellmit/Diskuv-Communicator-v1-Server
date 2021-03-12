@@ -89,16 +89,7 @@ public class AccountsManager {
   }
 
   public Optional<Account> get(String number) {
-    try (Timer.Context ignored = getByNumberTimer.time()) {
-      Optional<Account> account = redisGet(number);
-
-      if (!account.isPresent()) {
-        account = databaseGet(number);
-        account.ifPresent(value -> redisSet(value));
-      }
-
-      return account;
-    }
+    throw new UnsupportedOperationException("Diskuv does not support phone number based accounts");
   }
 
   public Optional<Account> get(UUID uuid) {

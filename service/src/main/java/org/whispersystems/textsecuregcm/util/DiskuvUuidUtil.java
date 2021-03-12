@@ -1,5 +1,10 @@
 package org.whispersystems.textsecuregcm.util;
 
+import com.google.common.base.Preconditions;
+import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator;
+import org.hibernate.validator.internal.engine.constraintvalidation.ConstraintValidatorContextImpl;
+
+import javax.validation.ConstraintValidatorContext;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -15,11 +20,21 @@ import java.util.regex.Pattern;
 public class DiskuvUuidUtil {
     private static final Pattern E164_VALIDATION = Pattern.compile("[+][0-9]+");
 
-    public static UUID uuidForE164Number(String e164number) {
-        // pre-conditions (just a lightweight sanity check)
-        if (!E164_VALIDATION.matcher(e164number).matches()) {
-            throw new IllegalArgumentException("Does not look like a e164 number");
-        }
+    public static void verifyDiskuvUuid(String destination) throws IllegalArgumentException {
+        UUID uuid = UUID.fromString(destination);
+        // UUID version 4
+        Preconditions.checkArgument(uuid.version() == 4);
+        // variant 1 (IETF variant, which is 10 in binary)
+        Preconditions.checkArgument(uuid.variant() == 0b10);
+        // Diskuv UUID version 0
+        Preconditions.checkArgument((uuid.getMostSignificantBits() & 0xc0000000_00000000L) == 0);
+    }
+
+    public static UUID uuidForEmailAddress(String emailAddress) throws IllegalArgumentException {
+        // pre-conditions (lightweight sanity check; no external libraries so works on iOS/Android/server/etc.)
+        Preconditions.checkArgument(emailAddress != null && emailAddress.length() > 3 &&
+                emailAddress.contains("@") && emailAddress.contains("."),
+                "Does not look like an email address");
 
         // we'll use a random-type UUID (Type 4)
         byte[] uuidType4Bytes = new byte[16];
@@ -33,7 +48,7 @@ public class DiskuvUuidUtil {
         } catch (NoSuchAlgorithmException e) {
             throw new AssertionError(e);
         }
-        String e164digits = e164number.substring(1);
+        String e164digits = emailAddress.substring(1);
         byte[]        shaBytes   = digest.digest(e164digits.getBytes(StandardCharsets.US_ASCII));
         System.arraycopy(shaBytes, 0, uuidType4Bytes, 0, uuidType4Bytes.length);
 

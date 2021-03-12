@@ -16,6 +16,8 @@
  */
 package org.whispersystems.textsecuregcm.storage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.redis.LuaScript;
 import org.whispersystems.textsecuregcm.redis.ReplicatedJedisPool;
 
@@ -26,10 +28,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisException;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class AccountDatabaseCrawlerCache {
-
+  private static final Logger logger = LoggerFactory.getLogger(AccountDatabaseCrawlerCache.class);
   private static final String ACTIVE_WORKER_KEY = "account_database_crawler_cache_active_worker";
   private static final String LAST_UUID_KEY     = "account_database_crawler_cache_last_uuid";
   private static final String ACCELERATE_KEY    = "account_database_crawler_cache_accelerate";
@@ -41,7 +44,15 @@ public class AccountDatabaseCrawlerCache {
 
   public AccountDatabaseCrawlerCache(ReplicatedJedisPool jedisPool) throws IOException {
     this.jedisPool = jedisPool;
-    this.luaScript = LuaScript.fromResource(jedisPool, "lua/account_database_crawler/unlock.lua");
+    String resource = "lua/account_database_crawler/unlock.lua";
+    try {
+      logger.info("Getting " + resource + " script from redis");
+      this.luaScript = LuaScript.fromResource(jedisPool, resource);
+      logger.info("Got " + resource + " script from redis");
+    } catch (IOException | JedisException e) {
+      logger.error("Could not get the "+resource+" script from redis. You might need to increase the redis timeout in org.whispersystems.textsecuregcm.WhisperServerConfiguration.getCacheConfiguration()", e);
+      throw e;
+    }
   }
 
   public void clearAccelerate() {
