@@ -112,13 +112,15 @@ their web consoles or CLIs.
 In one terminal, run the following to start a Redis server:
 
 ```bash
-redis-server --port 6379
+install -d /tmp/redis-server/primary
+redis-server --dir /tmp/redis-server/primary --maxclients 100 --port 6379
 ```
 
 In another terminal, run:
 
 ```bash
-redis-server --port 7777 --replicaof 127.0.0.1 6379
+install -d /tmp/redis-server/replica
+redis-server --dir /tmp/redis-server/replica --maxclients 100 --port 7777 --replicaof 127.0.0.1 6379
 ```
 
 After those Redis servers are started, use the following YAML configuration:
