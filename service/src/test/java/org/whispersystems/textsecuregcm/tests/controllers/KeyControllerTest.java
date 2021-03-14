@@ -41,6 +41,7 @@ import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
+import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_BEARER_TOKEN;
 import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
 import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_MISSING;
 
@@ -315,6 +316,8 @@ public class KeyControllerTest {
                                      .target(String.format("/v2/keys/%s/1", EXISTS_NUMBER))
                                      .request()
                                      .header(OptionalAccess.UNIDENTIFIED, AuthHelper.getUnidentifiedAccessHeader("1337".getBytes()))
+                                     .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                                     .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                      .get(PreKeyResponse.class);
 
     assertThat(result.getIdentityKey()).isEqualTo(existsAccount.getIdentityKey());
@@ -333,6 +336,8 @@ public class KeyControllerTest {
                                      .target(String.format("/v2/keys/%s/1", EXISTS_UUID.toString()))
                                      .request()
                                      .header(OptionalAccess.UNIDENTIFIED, AuthHelper.getUnidentifiedAccessHeader("1337".getBytes()))
+                                     .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                                     .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                      .get(PreKeyResponse.class);
 
     assertThat(result.getIdentityKey()).isEqualTo(existsAccount.getIdentityKey());

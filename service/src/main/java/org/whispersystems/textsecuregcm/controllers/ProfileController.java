@@ -136,13 +136,18 @@ public class ProfileController {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("/{uuid}/{version}")
-  public Optional<Profile> getProfile(@Auth                                     Optional<Account>   requestAccount,
+  public Optional<Profile> getProfile(@Auth                                     Account realRequestAccount,
                                       @HeaderParam(OptionalAccess.UNIDENTIFIED) Optional<Anonymous> accessKey,
                                       @PathParam("uuid")                        UUID uuid,
                                       @PathParam("version")                     String version)
       throws RateLimitExceededException
   {
     if (!isZkEnabled) throw new WebApplicationException(Response.Status.NOT_FOUND);
+    // Unlike Signal, we expect every API to fully authenticate the real source, and edge routers are going to authenticate
+    // way before it gets to the Java server. Those edge routers make it possible to stop denial of service.
+    // However, it is perfectly fine if we treat the effective account as unknown from this point onwards; that will
+    // force, among other things, a validation of the anonymous access key.
+    Optional<Account> requestAccount = accessKey.isPresent() ? Optional.empty() : Optional.of(realRequestAccount);
     return getVersionedProfile(requestAccount, accessKey, uuid, version, Optional.empty());
   }
 
@@ -150,7 +155,7 @@ public class ProfileController {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("/{uuid}/{version}/{credentialRequest}")
-  public Optional<Profile> getProfile(@Auth                                     Optional<Account> requestAccount,
+  public Optional<Profile> getProfile(@Auth                                     Account realRequestAccount,
                                       @HeaderParam(OptionalAccess.UNIDENTIFIED) Optional<Anonymous> accessKey,
                                       @PathParam("uuid")                        UUID uuid,
                                       @PathParam("version")                     String version,
@@ -158,6 +163,11 @@ public class ProfileController {
       throws RateLimitExceededException
   {
     if (!isZkEnabled) throw new WebApplicationException(Response.Status.NOT_FOUND);
+    // Unlike Signal, we expect every API to fully authenticate the real source, and edge routers are going to authenticate
+    // way before it gets to the Java server. Those edge routers make it possible to stop denial of service.
+    // However, it is perfectly fine if we treat the effective account as unknown from this point onwards; that will
+    // force, among other things, a validation of the anonymous access key.
+    Optional<Account> requestAccount = accessKey.isPresent() ? Optional.empty() : Optional.of(realRequestAccount);
     return getVersionedProfile(requestAccount, accessKey, uuid, version, Optional.of(credentialRequest));
   }
 
@@ -190,7 +200,7 @@ public class ProfileController {
 
       String                     name     = profile.map(VersionedProfile::getName).orElse(accountProfile.get().getProfileName());
       String                     avatar   = profile.map(VersionedProfile::getAvatar).orElse(accountProfile.get().getAvatar());
-      
+
       Optional<ProfileKeyCredentialResponse> credential = getProfileCredential(credentialRequest, profile, uuid);
 
       return Optional.of(new Profile(name,
@@ -277,12 +287,18 @@ public class ProfileController {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("/{identifier}")
-  public Profile getProfile(@Auth                                     Optional<Account>   requestAccount,
+  public Profile getProfile(@Auth                                     Account             realRequestAccount,
                             @HeaderParam(OptionalAccess.UNIDENTIFIED) Optional<Anonymous> accessKey,
                             @PathParam("identifier")                  AmbiguousIdentifier identifier,
                             @QueryParam("ca")                         boolean useCaCertificate)
       throws RateLimitExceededException
   {
+    // Unlike Signal, we expect every API to fully authenticate the real source, and edge routers are going to authenticate
+    // way before it gets to the Java server. Those edge routers make it possible to stop denial of service.
+    // However, it is perfectly fine if we treat the effective account as unknown from this point onwards; that will
+    // force, among other things, a validation of the anonymous access key.
+    Optional<Account> requestAccount = accessKey.isPresent() ? Optional.empty() : Optional.of(realRequestAccount);
+
     if (!requestAccount.isPresent() && !accessKey.isPresent()) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }

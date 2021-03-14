@@ -110,12 +110,18 @@ public class KeysController {
   @GET
   @Path("/{identifier}/{device_id}")
   @Produces(MediaType.APPLICATION_JSON)
-  public Optional<PreKeyResponse> getDeviceKeys(@Auth                                     Optional<Account> account,
+  public Optional<PreKeyResponse> getDeviceKeys(@Auth                                     Account realAccount,
                                                 @HeaderParam(OptionalAccess.UNIDENTIFIED) Optional<Anonymous> accessKey,
                                                 @PathParam("identifier")                  AmbiguousIdentifier targetName,
                                                 @PathParam("device_id")                   String deviceId)
       throws RateLimitExceededException
   {
+    // Unlike Signal, we expect every API to fully authenticate the real source, and edge routers are going to authenticate
+    // way before it gets to the Java server. Those edge routers make it possible to stop denial of service.
+    // However, it is perfectly fine if we treat the effective account as unknown from this point onwards; that will
+    // force, among other things, a validation of the anonymous access key.
+    Optional<Account> account = accessKey.isPresent() ? Optional.empty() : Optional.of(realAccount);
+
     if (!account.isPresent() && !accessKey.isPresent()) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }

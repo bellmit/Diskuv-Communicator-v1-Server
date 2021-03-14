@@ -45,6 +45,7 @@ import io.dropwizard.testing.junit.ResourceTestRule;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.*;
+import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_BEARER_TOKEN;
 
 public class ProfileControllerTest {
 
@@ -184,7 +185,7 @@ public class ProfileControllerTest {
                                  .request()
                                  .get();
 
-    assertThat(response.getStatus()).isEqualTo(401);
+    assertThat(response.getStatus()).isEqualTo(Response.Status.UNAUTHORIZED);
   }
 
   @Test
@@ -194,9 +195,7 @@ public class ProfileControllerTest {
                                  .request()
                                  .get();
 
-    // Diskuv Change: Do not allow profile retrieval by username, since no access control on profile retrieval
-    // So profile retrieval target path is not present (404).
-    assertThat(response.getStatus()).isEqualTo(404);
+    assertThat(response.getStatus()).isEqualTo(401);
   }
 
 
