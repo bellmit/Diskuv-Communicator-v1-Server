@@ -44,11 +44,9 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 import static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
+import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.*;
 
 public class WebSocketConnectionTest {
-
-  private static final String VALID_USER   = "+14152222222";
-  private static final String INVALID_USER = "+14151111111";
 
   private static final String VALID_PASSWORD      = "secure";
   private static final String INVALID_PASSWORD    = "insecure";
@@ -129,7 +127,8 @@ public class WebSocketConnectionTest {
     when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
-    when(account.getNumber()).thenReturn("+14152222222");
+    when(account.getUuid()).thenReturn(UUID_ALICE);
+    when(account.getNumber()).thenReturn(UUID_ALICE_STRING);
 
     final Device sender1device = mock(Device.class);
 
@@ -140,8 +139,8 @@ public class WebSocketConnectionTest {
     Account sender1 = mock(Account.class);
     when(sender1.getDevices()).thenReturn(sender1devices);
 
-    when(accountsManager.get("sender1")).thenReturn(Optional.of(sender1));
-    when(accountsManager.get("sender2")).thenReturn(Optional.empty());
+    when(accountsManager.get(senderOneUuid)).thenReturn(Optional.of(sender1));
+    when(accountsManager.get(senderTwoUuid)).thenReturn(Optional.empty());
 
     when(storedMessages.getMessagesForDevice(account.getNumber(), device.getId()))
         .thenReturn(outgoingMessagesList);
@@ -176,7 +175,7 @@ public class WebSocketConnectionTest {
     futures.get(2).completeExceptionally(new IOException());
 
     verify(storedMessages, times(1)).delete(eq(account.getNumber()), eq(2L), eq(2L), eq(false));
-    verify(receiptSender, times(1)).sendReceipt(eq(account), eq("sender1"), eq(2222L));
+    verify(receiptSender, times(1)).sendReceipt(eq(account), eq(senderOneUuid.toString()), eq(2222L));
 
     connection.onDispatchUnsubscribed(websocketAddress.serialize());
     verify(client).close(anyInt(), anyString());
@@ -191,7 +190,8 @@ public class WebSocketConnectionTest {
 
     Envelope firstMessage = Envelope.newBuilder()
                                     .setLegacyMessage(ByteString.copyFrom("first".getBytes()))
-                                    .setSource("sender1")
+                                    .setSource("")
+                                    .setSourceUuid(UUID_ALICE_STRING)
                                     .setTimestamp(System.currentTimeMillis())
                                     .setSourceDevice(1)
                                     .setType(Envelope.Type.CIPHERTEXT)
@@ -199,7 +199,8 @@ public class WebSocketConnectionTest {
 
     Envelope secondMessage = Envelope.newBuilder()
                                      .setLegacyMessage(ByteString.copyFrom("second".getBytes()))
-                                     .setSource("sender2")
+                                     .setSource("")
+                                     .setSourceUuid(UUID_BOB_STRING)
                                      .setTimestamp(System.currentTimeMillis())
                                      .setSourceDevice(2)
                                      .setType(Envelope.Type.CIPHERTEXT)
@@ -212,7 +213,7 @@ public class WebSocketConnectionTest {
     when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
-    when(account.getNumber()).thenReturn("+14152222222");
+    when(account.getUuid()).thenReturn(UUID_ALICE);
 
     final Device sender1device = mock(Device.class);
 
@@ -223,8 +224,8 @@ public class WebSocketConnectionTest {
     Account sender1 = mock(Account.class);
     when(sender1.getDevices()).thenReturn(sender1devices);
 
-    when(accountsManager.get("sender1")).thenReturn(Optional.of(sender1));
-    when(accountsManager.get("sender2")).thenReturn(Optional.<Account>empty());
+    when(accountsManager.get(UUID_ALICE)).thenReturn(Optional.of(sender1));
+    when(accountsManager.get(UUID_BOB)).thenReturn(Optional.<Account>empty());
 
     when(storedMessages.getMessagesForDevice(account.getNumber(), device.getId()))
         .thenReturn(pendingMessagesList);
@@ -266,7 +267,7 @@ public class WebSocketConnectionTest {
     futures.get(1).complete(response);
     futures.get(0).completeExceptionally(new IOException());
 
-    verify(receiptSender, times(1)).sendReceipt(eq(account), eq("sender2"), eq(secondMessage.getTimestamp()));
+    verify(receiptSender, times(1)).sendReceipt(eq(account), eq(UUID_BOB_STRING), eq(secondMessage.getTimestamp()));
     verify(websocketSender, times(1)).queueMessage(eq(account), eq(device), any(Envelope.class));
     verify(pushSender, times(1)).sendQueuedNotification(eq(account), eq(device));
 
@@ -286,8 +287,8 @@ public class WebSocketConnectionTest {
 
     final Envelope firstMessage = Envelope.newBuilder()
                                     .setLegacyMessage(ByteString.copyFrom("first".getBytes()))
-                                    .setSource("sender1")
-                                    .setSourceUuid(UUID.randomUUID().toString())
+                                    .setSource("")
+                                    .setSourceUuid(UUID_ALICE_STRING)
                                     .setTimestamp(System.currentTimeMillis())
                                     .setSourceDevice(1)
                                     .setType(Envelope.Type.CIPHERTEXT)
@@ -295,8 +296,8 @@ public class WebSocketConnectionTest {
 
     final Envelope secondMessage = Envelope.newBuilder()
                                      .setLegacyMessage(ByteString.copyFrom("second".getBytes()))
-                                     .setSource("sender2")
-                                     .setSourceUuid(UUID.randomUUID().toString())
+                                     .setSource("")
+                                     .setSourceUuid(UUID_BOB_STRING)
                                      .setTimestamp(System.currentTimeMillis())
                                      .setSourceDevice(2)
                                      .setType(Envelope.Type.CIPHERTEXT)
@@ -319,7 +320,7 @@ public class WebSocketConnectionTest {
     when(device.getSignalingKey()).thenReturn(Base64.encodeBytes(new byte[52]));
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
-    when(account.getNumber()).thenReturn("+14152222222");
+    when(account.getUuid()).thenReturn(UUID_ALICE);
 
     final Device sender1device = mock(Device.class);
 
@@ -330,8 +331,8 @@ public class WebSocketConnectionTest {
     Account sender1 = mock(Account.class);
     when(sender1.getDevices()).thenReturn(sender1devices);
 
-    when(accountsManager.get("sender1")).thenReturn(Optional.of(sender1));
-    when(accountsManager.get("sender2")).thenReturn(Optional.<Account>empty());
+    when(accountsManager.get(UUID_ALICE)).thenReturn(Optional.of(sender1));
+    when(accountsManager.get(UUID_BOB)).thenReturn(Optional.<Account>empty());
 
     when(storedMessages.getMessagesForDevice(account.getNumber(), device.getId()))
         .thenReturn(pendingMessagesList);
@@ -364,7 +365,7 @@ public class WebSocketConnectionTest {
     futures.get(1).complete(response);
     futures.get(0).completeExceptionally(new IOException());
 
-    verify(receiptSender, times(1)).sendReceipt(eq(account), eq("sender2"), eq(secondMessage.getTimestamp()));
+    verify(receiptSender, times(1)).sendReceipt(eq(account), eq(UUID_BOB_STRING), eq(secondMessage.getTimestamp()));
     verifyNoMoreInteractions(websocketSender);
     verifyNoMoreInteractions(pushSender);
 

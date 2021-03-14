@@ -4,6 +4,7 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Util;
 
 import javax.crypto.Mac;
@@ -28,6 +29,7 @@ public class ExternalServiceCredentialGenerator {
   }
 
   public ExternalServiceCredentials generateFor(String number) {
+    DiskuvUuidUtil.verifyDiskuvUuid(number);
     Mac    mac                = getMacInstance();
     String username           = getUserId(number, mac, usernameDerivation);
     long   currentTimeSeconds = System.currentTimeMillis() / 1000;

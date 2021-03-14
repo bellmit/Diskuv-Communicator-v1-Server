@@ -1,7 +1,7 @@
 {
   "messages" : [{
         "type": 1,
-        "destination": "+14151111111",
+        "destination": UUID_BOB,
         "body": "Zm9vYmFyego",
         "timestamp": "1234"
     }]

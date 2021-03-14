@@ -21,7 +21,9 @@ import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
+import org.whispersystems.textsecuregcm.auth.JwtAuthentication;
 import org.whispersystems.textsecuregcm.auth.StoredVerificationCode;
 import org.whispersystems.textsecuregcm.controllers.DeviceController;
 import org.whispersystems.textsecuregcm.entities.AccountAttributes;
@@ -52,18 +54,20 @@ import io.dropwizard.testing.junit.ResourceTestRule;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
+import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.*;
 
 public class DeviceControllerTest {
   @Path("/v1/devices")
   static class DumbVerificationDeviceController extends DeviceController {
     public DumbVerificationDeviceController(PendingDevicesManager pendingDevices,
                                             AccountsManager accounts,
+                                            JwtAuthentication jwtAuthentication,
                                             MessagesManager messages,
                                             DirectoryQueue cdsSender,
                                             RateLimiters rateLimiters,
                                             Map<String, Integer> deviceConfiguration)
     {
-      super(pendingDevices, accounts, messages, rateLimiters, deviceConfiguration);
+      super(pendingDevices, accounts, jwtAuthentication, messages, rateLimiters, deviceConfiguration);
     }
 
     @Override
@@ -74,6 +78,7 @@ public class DeviceControllerTest {
 
   private PendingDevicesManager pendingDevicesManager = mock(PendingDevicesManager.class);
   private AccountsManager       accountsManager       = mock(AccountsManager.class       );
+  private JwtAuthentication     jwtAuthentication     = mock(JwtAuthentication.class);
   private MessagesManager       messagesManager       = mock(MessagesManager.class);
   private DirectoryQueue        directoryQueue        = mock(DirectoryQueue.class);
   private RateLimiters          rateLimiters          = mock(RateLimiters.class          );
@@ -94,6 +99,7 @@ public class DeviceControllerTest {
                                                             .addProvider(new DeviceLimitExceededExceptionMapper())
                                                             .addResource(new DumbVerificationDeviceController(pendingDevicesManager,
                                                                                                               accountsManager,
+                                                                                                              jwtAuthentication,
                                                                                                               messagesManager,
                                                                                                               directoryQueue,
                                                                                                               rateLimiters,
@@ -119,8 +125,11 @@ public class DeviceControllerTest {
 
     when(pendingDevicesManager.getCodeForPendingDevice(AuthHelper.VALID_UUID)).thenReturn(Optional.of(new StoredVerificationCode("5678901", System.currentTimeMillis(), null)));
     when(pendingDevicesManager.getCodeForPendingDevice(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of(new StoredVerificationCode("1112223", System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(31), null)));
-    when(accountsManager.get(AuthHelper.VALID_NUMBER)).thenReturn(Optional.of(account));
-    when(accountsManager.get(AuthHelper.VALID_NUMBER_TWO)).thenReturn(Optional.of(maxedAccount));
+    when(accountsManager.get(AuthHelper.VALID_UUID)).thenReturn(Optional.of(account));
+    when(accountsManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of(maxedAccount));
+
+    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN)).thenReturn(VALID_EMAIL);
+    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN_TWO)).thenReturn(VALID_EMAIL_TWO);
   }
 
   @Test
@@ -128,7 +137,8 @@ public class DeviceControllerTest {
     VerificationCode deviceCode = resources.getJerseyTest()
                                            .target("/v1/devices/provisioning/code")
                                            .request()
-                                           .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                            .get(VerificationCode.class);
 
     assertThat(deviceCode).isEqualTo(new VerificationCode(5678901));
@@ -136,7 +146,8 @@ public class DeviceControllerTest {
     DeviceResponse response = resources.getJerseyTest()
                                        .target("/v1/devices/5678901")
                                        .request()
-                                       .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, "password1"))
+                                       .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                                       .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                        .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 1234, null),
                                                           MediaType.APPLICATION_JSON_TYPE),
                                             DeviceResponse.class);
@@ -163,7 +174,8 @@ public class DeviceControllerTest {
     VerificationCode deviceCode = resources.getJerseyTest()
                                            .target("/v1/devices/provisioning/code")
                                            .request()
-                                           .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                            .get(VerificationCode.class);
 
     assertThat(deviceCode).isEqualTo(new VerificationCode(5678901));
@@ -171,7 +183,8 @@ public class DeviceControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/devices/5678902")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, "password1"))
+                                  .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 1234, null),
                                                     MediaType.APPLICATION_JSON_TYPE));
 
@@ -185,7 +198,8 @@ public class DeviceControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/devices/1112223")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
                                  .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 1234, null),
                                                     MediaType.APPLICATION_JSON_TYPE));
 
@@ -199,7 +213,8 @@ public class DeviceControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/devices/provisioning/code")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+                                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
                                  .get();
 
     assertEquals(411, response.getStatus());
@@ -211,7 +226,8 @@ public class DeviceControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/devices/5678901")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, "password1"))
+                                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .put(Entity.entity(new AccountAttributes("keykeykeykey", false, 1234, "this is a really long name that is longer than 80 characters it's so long that it's even longer than 204 characters. that's a lot of characters. we're talking lots and lots and lots of characters. 12345678", null, null),
                                                     MediaType.APPLICATION_JSON_TYPE));
 

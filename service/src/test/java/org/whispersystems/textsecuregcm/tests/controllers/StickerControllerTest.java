@@ -5,6 +5,7 @@ import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
 import org.whispersystems.textsecuregcm.controllers.RateLimitExceededException;
 import org.whispersystems.textsecuregcm.controllers.StickerController;
@@ -48,7 +49,8 @@ public class StickerControllerTest {
     StickerPackFormUploadAttributes attributes  = resources.getJerseyTest()
                                                            .target("/v1/sticker/pack/form/10")
                                                            .request()
-                                                           .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                                                           .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                                           .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                                            .get(StickerPackFormUploadAttributes.class);
 
     assertThat(attributes.getPackId()).isNotNull();
@@ -86,7 +88,8 @@ public class StickerControllerTest {
     Response response = resources.getJerseyTest()
                         .target("/v1/sticker/pack/form/202")
                         .request()
-                        .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                        .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                        .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                         .get();
 
     assertThat(response.getStatus()).isEqualTo(400);

@@ -1,10 +1,7 @@
 package org.whispersystems.textsecuregcm.util;
 
 import com.google.common.base.Preconditions;
-import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator;
-import org.hibernate.validator.internal.engine.constraintvalidation.ConstraintValidatorContextImpl;
 
-import javax.validation.ConstraintValidatorContext;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -20,7 +17,7 @@ import java.util.regex.Pattern;
 public class DiskuvUuidUtil {
     private static final Pattern E164_VALIDATION = Pattern.compile("[+][0-9]+");
 
-    public static void verifyDiskuvUuid(String destination) throws IllegalArgumentException {
+    public static UUID verifyDiskuvUuid(String destination) throws IllegalArgumentException {
         UUID uuid = UUID.fromString(destination);
         // UUID version 4
         Preconditions.checkArgument(uuid.version() == 4);
@@ -28,6 +25,7 @@ public class DiskuvUuidUtil {
         Preconditions.checkArgument(uuid.variant() == 0b10);
         // Diskuv UUID version 0
         Preconditions.checkArgument((uuid.getMostSignificantBits() & 0xc0000000_00000000L) == 0);
+        return uuid;
     }
 
     public static UUID uuidForEmailAddress(String emailAddress) throws IllegalArgumentException {

@@ -40,3 +40,11 @@ The following change(s) broke API compatibility:
   account, we replaced it with `PUT /v1/accounts/account`. Similar to the Signal API
   `/v1/accounts/{transport}/code/{number}` that was removed, in our new `PUT /v1/accounts/account` API
   we ask for both the push challenge and the captcha; one or the other must be set.
+
+The following significantly changed semantics:
+* The API 'PUT /v1/messages/{destination}' handled by MessageController.sendMessage expects an JWT + device authenticated
+  sender, unlike Signal which can rely purely on anonymous access keys. So Diskuv will, if someone were to mine the logs,
+  know who sent the "unidentified" message. And even though, just like Signal, the recipient does not have the
+  "source" of the unidentified message, there is (or will be) a change to Diskuv Communicator profiles that include
+  email addresses. So the recipient will see the source email address through the sender profile.
+  Net effect: Unidentified messages are essentially unsupported in Diskuv Communicator.

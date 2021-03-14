@@ -14,6 +14,7 @@ import org.whispersystems.textsecuregcm.push.PushSender;
 import org.whispersystems.textsecuregcm.redis.LuaScript;
 import org.whispersystems.textsecuregcm.redis.ReplicatedJedisPool;
 import org.whispersystems.textsecuregcm.util.Constants;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Pair;
 import org.whispersystems.textsecuregcm.util.Util;
 import org.whispersystems.textsecuregcm.websocket.WebsocketAddress;
@@ -70,6 +71,7 @@ public class MessagesCache implements Managed {
   }
 
   public void insert(UUID guid, String destination, long destinationDevice, Envelope message) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     message = message.toBuilder().setServerGuid(guid.toString()).build();
 
     Timer.Context timer = insertTimer.time();
@@ -82,6 +84,7 @@ public class MessagesCache implements Managed {
   }
 
   public void remove(String destination, long destinationDevice, long id) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     try (Jedis         jedis   = jedisPool.getWriteResource();
          Timer.Context ignored = removeByIdTimer.time())
     {
@@ -90,6 +93,8 @@ public class MessagesCache implements Managed {
   }
 
   public Optional<OutgoingMessageEntity> remove(String destination, long destinationDevice, String sender, long timestamp) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
+    DiskuvUuidUtil.verifyDiskuvUuid(sender);
     Timer.Context timer = removeByNameTimer.time();
 
     try {
@@ -109,6 +114,7 @@ public class MessagesCache implements Managed {
   }
 
   public Optional<OutgoingMessageEntity> remove(String destination, long destinationDevice, UUID guid) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Timer.Context timer = removeByGuidTimer.time();
 
     try {
@@ -128,6 +134,7 @@ public class MessagesCache implements Managed {
   }
 
   public List<OutgoingMessageEntity> get(String destination, long destinationDevice, int limit) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Timer.Context timer = getTimer.time();
 
     try {
@@ -152,6 +159,7 @@ public class MessagesCache implements Managed {
   }
 
   public void clear(String destination) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Timer.Context timer = clearAccountTimer.time();
 
     try {
@@ -164,6 +172,7 @@ public class MessagesCache implements Managed {
   }
 
   public void clear(String destination, long deviceId) {
+    DiskuvUuidUtil.verifyDiskuvUuid(destination);
     Timer.Context timer = clearDeviceTimer.time();
 
     try {
@@ -273,7 +282,7 @@ public class MessagesCache implements Managed {
 
     public void insert(UUID guid, String destination, long destinationDevice, long timestamp, Envelope message) {
       Key    key    = new Key(destination, destinationDevice);
-      String sender = message.hasSource() ? (message.getSource() + "::" + message.getTimestamp()) : "nil";
+      String sender = message.hasSourceUuid() ? (message.getSourceUuid() + "::" + message.getTimestamp()) : "nil";
 
       List<byte[]> keys = Arrays.asList(key.getUserMessageQueue(), key.getUserMessageQueueMetadata(), Key.getUserMessageQueueIndex());
       List<byte[]> args = Arrays.asList(message.toByteArray(), String.valueOf(timestamp).getBytes(), sender.getBytes(), guid.toString().getBytes());

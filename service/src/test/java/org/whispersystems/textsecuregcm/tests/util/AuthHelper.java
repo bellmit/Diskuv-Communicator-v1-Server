@@ -20,28 +20,44 @@ import java.util.UUID;
 
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.PolymorphicAuthDynamicFeature;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.EMAIL_ALICE;
 
 public class AuthHelper {
-  public static final String VALID_NUMBER   = "+14150000000";
-  public static final UUID   VALID_UUID     = UUID.randomUUID();
-  public static final String VALID_PASSWORD = "foo";
+  public static final String VALID_BEARER_TOKEN = "blah";
+  public static final String VALID_EMAIL        = "email@test.com";
+  public static final long   VALID_DEVICE_ID    = 1L;
+  public static final String VALID_DEVICE_ID_STRING = Long.toString(VALID_DEVICE_ID);
+  public static final String VALID_NUMBER       = "+14150000000";
+  public static final UUID   VALID_UUID         = DiskuvUuidUtil.uuidForEmailAddress(VALID_EMAIL);
+  public static final String VALID_PASSWORD     = "foo";
 
+  public static final String VALID_BEARER_TOKEN_TWO     = "bliss";
+  public static final String VALID_EMAIL_TWO            = "email2@test.com";
+  public static final long   VALID_DEVICE_ID_TWO        = 1L;
+  public static final String VALID_DEVICE_ID_STRING_TWO = Long.toString(VALID_DEVICE_ID_TWO);
   public static final String VALID_NUMBER_TWO = "+201511111110";
-  public static final UUID   VALID_UUID_TWO    = UUID.randomUUID();
+  public static final UUID   VALID_UUID_TWO    = DiskuvUuidUtil.uuidForEmailAddress(VALID_EMAIL_TWO);
   public static final String VALID_PASSWORD_TWO = "baz";
 
-  public static final String INVVALID_NUMBER  = "+14151111111";
+  public static final String INVALID_BEARER_TOKEN = "bleak";
+  public static final long   INVALID_DEVICE_ID    = 1L;
+  public static final String INVALID_DEVICE_ID_STRING = Long.toString(INVALID_DEVICE_ID);
   public static final UUID   INVALID_UUID     = UUID.randomUUID();
   public static final String INVALID_PASSWORD = "bar";
 
-  public static final String DISABLED_NUMBER = "+78888888";
-  public static final UUID   DISABLED_UUID     = UUID.randomUUID();
-  public static final String DISABLED_PASSWORD = "poof";
+  public static final String DISABLED_BEARER_TOKEN     = "bat";
+  public static final long   DISABLED_DEVICE_ID        = 1L;
+  public static final String DISABLED_DEVICE_ID_STRING = Long.toString(DISABLED_DEVICE_ID);
+  public static final String DISABLED_EMAIL            = "disbled@test.com";
+  public static final String DISABLED_NUMBER           = "+78888888";
+  public static final UUID   DISABLED_UUID             = DiskuvUuidUtil.uuidForEmailAddress(DISABLED_EMAIL);
+  public static final String DISABLED_PASSWORD         = "poof";
 
   public static final String VALID_IDENTITY = "BcxxDU9FGMda70E7+Uvm7pnQcEdXQ64aJCpPUeRSfcFo";
   public static JwtAuthentication JWT_AUTHENTICATION = mock(JwtAuthentication.class);
@@ -60,6 +76,10 @@ public class AuthHelper {
   private static AuthenticationCredentials DISABLED_CREDENTIALS  = mock(AuthenticationCredentials.class);
 
   public static PolymorphicAuthDynamicFeature getAuthFilter() {
+    when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN)).thenReturn(VALID_EMAIL);
+    when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN_TWO)).thenReturn(VALID_EMAIL_TWO);
+    when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(DISABLED_BEARER_TOKEN)).thenReturn(DISABLED_EMAIL);
+
     when(VALID_CREDENTIALS.verify("foo")).thenReturn(true);
     when(VALID_CREDENTIALS_TWO.verify("baz")).thenReturn(true);
     when(DISABLED_CREDENTIALS.verify(DISABLED_PASSWORD)).thenReturn(true);
@@ -72,17 +92,17 @@ public class AuthHelper {
     when(VALID_DEVICE_TWO.isMaster()).thenReturn(true);
     when(DISABLED_DEVICE.isMaster()).thenReturn(true);
 
-    when(VALID_DEVICE.getId()).thenReturn(1L);
-    when(VALID_DEVICE_TWO.getId()).thenReturn(1L);
-    when(DISABLED_DEVICE.getId()).thenReturn(1L);
+    when(VALID_DEVICE.getId()).thenReturn(VALID_DEVICE_ID);
+    when(VALID_DEVICE_TWO.getId()).thenReturn(VALID_DEVICE_ID);
+    when(DISABLED_DEVICE.getId()).thenReturn(VALID_DEVICE_ID);
 
     when(VALID_DEVICE.isEnabled()).thenReturn(true);
     when(VALID_DEVICE_TWO.isEnabled()).thenReturn(true);
     when(DISABLED_DEVICE.isEnabled()).thenReturn(false);
 
-    when(VALID_ACCOUNT.getDevice(1L)).thenReturn(Optional.of(VALID_DEVICE));
-    when(VALID_ACCOUNT_TWO.getDevice(eq(1L))).thenReturn(Optional.of(VALID_DEVICE_TWO));
-    when(DISABLED_ACCOUNT.getDevice(eq(1L))).thenReturn(Optional.of(DISABLED_DEVICE));
+    when(VALID_ACCOUNT.getDevice(VALID_DEVICE_ID)).thenReturn(Optional.of(VALID_DEVICE));
+    when(VALID_ACCOUNT_TWO.getDevice(eq(VALID_DEVICE_ID_TWO))).thenReturn(Optional.of(VALID_DEVICE_TWO));
+    when(DISABLED_ACCOUNT.getDevice(eq(DISABLED_DEVICE_ID))).thenReturn(Optional.of(DISABLED_DEVICE));
 
     when(VALID_ACCOUNT_TWO.getEnabledDeviceCount()).thenReturn(6);
 
@@ -130,6 +150,10 @@ public class AuthHelper {
 
   public static String getAuthHeader(String number, String password) {
     return "Basic " + Base64.encodeBytes((number + ":" + password).getBytes());
+  }
+
+  public static String getAccountAuthHeader(String bearerToken) {
+    return "Bearer " + bearerToken;
   }
 
   public static String getUnidentifiedAccessHeader(byte[] key) {

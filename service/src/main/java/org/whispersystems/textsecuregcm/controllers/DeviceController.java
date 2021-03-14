@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
 import org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.InvalidAuthorizationHeaderException;
+import org.whispersystems.textsecuregcm.auth.JwtAuthentication;
 import org.whispersystems.textsecuregcm.auth.StoredVerificationCode;
 import org.whispersystems.textsecuregcm.entities.AccountAttributes;
 import org.whispersystems.textsecuregcm.entities.DeviceInfo;
@@ -70,18 +71,21 @@ public class DeviceController {
 
   private final PendingDevicesManager pendingDevices;
   private final AccountsManager       accounts;
+  private final JwtAuthentication     jwtAuthentication;
   private final MessagesManager       messages;
   private final RateLimiters          rateLimiters;
   private final Map<String, Integer>  maxDeviceConfiguration;
 
   public DeviceController(PendingDevicesManager pendingDevices,
                           AccountsManager accounts,
+                          JwtAuthentication jwtAuthentication,
                           MessagesManager messages,
                           RateLimiters rateLimiters,
                           Map<String, Integer> maxDeviceConfiguration)
   {
     this.pendingDevices         = pendingDevices;
     this.accounts               = accounts;
+    this.jwtAuthentication      = jwtAuthentication;
     this.messages               = messages;
     this.rateLimiters           = rateLimiters;
     this.maxDeviceConfiguration = maxDeviceConfiguration;
@@ -156,15 +160,17 @@ public class DeviceController {
   @Consumes(MediaType.APPLICATION_JSON)
   @Path("/{verification_code}")
   public DeviceResponse verifyDeviceToken(@PathParam("verification_code") String verificationCode,
+                                          @HeaderParam("Authorization")   String authorizationHeader,
                                           @HeaderParam(DEVICE_AUTHORIZATION_HEADER)   String deviceAuthorizationHeader,
-                                          @Auth                           Account account,
                                           @Valid                          AccountAttributes accountAttributes)
       throws RateLimitExceededException, DeviceLimitExceededException
   {
-    UUID accountUuid = account.getUuid();
+    // account authentication
+    UUID accountUuid = AuthHeaderSupport.getAndValidateAccountUuid(jwtAuthentication, authorizationHeader);
     String accountId = accountUuid.toString();
 
-    // device password to be used for subsequent device authentication
+    // device password to be used for subsequent device authentication.
+    // ignore any device id from the device header though. we will create the "next" device id a bit later in this method
     final DeviceAuthorizationHeader deviceHeader;
     try {
       deviceHeader = DeviceAuthorizationHeader.fromFullHeader(deviceAuthorizationHeader);
@@ -178,7 +184,13 @@ public class DeviceController {
     Optional<StoredVerificationCode> storedVerificationCode = pendingDevices.getCodeForPendingDevice(accountUuid);
 
     if (!storedVerificationCode.isPresent() || !storedVerificationCode.get().isValid(verificationCode)) {
-      throw new WebApplicationException(Response.status(403).build());
+      throw new WebApplicationException(Response.Status.FORBIDDEN);
+    }
+
+    Optional<Account> account = accounts.get(accountUuid);
+
+    if (!account.isPresent()) {
+      throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
 
     int maxDeviceLimit = MAX_DEVICES;
@@ -187,8 +199,8 @@ public class DeviceController {
       maxDeviceLimit = maxDeviceConfiguration.get(accountId);
     }
 
-    if (account.getEnabledDeviceCount() >= maxDeviceLimit) {
-      throw new DeviceLimitExceededException(account.getDevices().size(), MAX_DEVICES);
+    if (account.get().getEnabledDeviceCount() >= maxDeviceLimit) {
+      throw new DeviceLimitExceededException(account.get().getDevices().size(), MAX_DEVICES);
     }
 
     Device device = new Device();
@@ -196,14 +208,14 @@ public class DeviceController {
     device.setAuthenticationCredentials(new AuthenticationCredentials(devicePassword));
     device.setSignalingKey(accountAttributes.getSignalingKey());
     device.setFetchesMessages(accountAttributes.getFetchesMessages());
-    device.setId(account.getNextDeviceId());
+    device.setId(account.get().getNextDeviceId());
     device.setRegistrationId(accountAttributes.getRegistrationId());
     device.setLastSeen(Util.todayInMillis());
     device.setCreated(System.currentTimeMillis());
 
-    account.addDevice(device);
+    account.get().addDevice(device);
     messages.clear(accountId, device.getId());
-    accounts.update(account);
+    accounts.update(account.get());
 
     pendingDevices.remove(accountUuid);
 

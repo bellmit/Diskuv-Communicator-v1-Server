@@ -67,6 +67,7 @@ public class MessagesManager {
   public Optional<OutgoingMessageEntity> delete(String destination, long destinationDevice, String source, long timestamp)
   {
     DiskuvUuidUtil.verifyDiskuvUuid(destination);
+    DiskuvUuidUtil.verifyDiskuvUuid(source);
     Optional<OutgoingMessageEntity> removed = this.messagesCache.remove(destination, destinationDevice, source, timestamp);
 
     if (!removed.isPresent()) {

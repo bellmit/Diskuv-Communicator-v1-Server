@@ -5,11 +5,13 @@ import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
+import org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
 import org.whispersystems.textsecuregcm.auth.ExternalServiceCredentialGenerator;
 import org.whispersystems.textsecuregcm.auth.JwtAuthentication;
@@ -68,6 +70,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_BEARER_TOKEN;
+import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_EMAIL;
 
 public class AccountControllerTest {
 
@@ -187,6 +191,8 @@ public class AccountControllerTest {
     when(recaptchaClient.verify(eq(INVALID_CAPTCHA_TOKEN), anyString())).thenReturn(false);
     when(recaptchaClient.verify(eq(VALID_CAPTCHA_TOKEN), anyString())).thenReturn(true);
 
+    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN)).thenReturn(VALID_EMAIL);
+
     doThrow(new RateLimitExceededException(SENDER_OVER_PIN)).when(pinLimiter).validate(eq(SENDER_OVER_PIN));
 
     doThrow(new RateLimitExceededException(RATE_LIMITED_PREFIX_HOST)).when(autoBlockLimiter).validate(eq(RATE_LIMITED_PREFIX_HOST));
@@ -198,10 +204,11 @@ public class AccountControllerTest {
   }
 
   @Test
-  public void testGetFcmPreauth() throws Exception {
+  public void testGetFcmPrereg() throws Exception {
     Response response = resources.getJerseyTest()
-                                 .target("/v1/accounts/fcm/preauth/mytoken/+14152222222")
+                                 .target("/v1/accounts/fcm/prereg/mytoken")
                                  .request()
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
                                  .get();
 
     assertThat(response.getStatus()).isEqualTo(200);
@@ -217,10 +224,11 @@ public class AccountControllerTest {
   }
 
   @Test
-  public void testGetApnPreauth() throws Exception {
+  public void testGetApnPrereg() throws Exception {
     Response response = resources.getJerseyTest()
-                                 .target("/v1/accounts/apn/preauth/mytoken/+14152222222")
+                                 .target("/v1/accounts/apn/prereg/mytoken")
                                  .request()
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
                                  .get();
 
     assertThat(response.getStatus()).isEqualTo(200);
@@ -237,6 +245,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendCode() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -252,6 +261,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendCodeWithValidPreauth() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -268,6 +278,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendCodeWithInvalidPreauth() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -284,6 +295,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendCodeWithNoPreauth() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -300,6 +312,7 @@ public class AccountControllerTest {
 
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendiOSCode() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -315,6 +328,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendAndroidNgCode() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -330,6 +344,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendAbusiveHost() {
     Response response =
         resources.getJerseyTest()
@@ -345,6 +360,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendAbusiveHostWithValidCaptcha() throws IOException {
     Response response =
         resources.getJerseyTest()
@@ -362,6 +378,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendAbusiveHostWithInvalidCaptcha() {
     Response response =
         resources.getJerseyTest()
@@ -379,6 +396,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendRateLimitedHostAutoBlock() {
     Response response =
         resources.getJerseyTest()
@@ -398,6 +416,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendRateLimitedPrefixAutoBlock() {
     Response response =
         resources.getJerseyTest()
@@ -417,6 +436,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendRateLimitedHostNoAutoBlock() {
     Response response =
         resources.getJerseyTest()
@@ -436,6 +456,7 @@ public class AccountControllerTest {
 
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendMultipleHost() {
     Response response =
         resources.getJerseyTest()
@@ -454,6 +475,7 @@ public class AccountControllerTest {
 
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendRestrictedHostOut() {
     Response response =
         resources.getJerseyTest()
@@ -469,6 +491,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testSendRestrictedIn() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -483,6 +506,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyCode() throws Exception {
     AccountCreationResult result =
         resources.getJerseyTest()
@@ -499,6 +523,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifySupportsStorage() throws Exception {
     AccountCreationResult result =
         resources.getJerseyTest()
@@ -515,6 +540,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyCodeOld() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -530,6 +556,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyBadCode() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -545,6 +572,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyPin() throws Exception {
     AccountCreationResult result =
         resources.getJerseyTest()
@@ -560,6 +588,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyRegistrationLock() throws Exception {
     AccountCreationResult result =
         resources.getJerseyTest()
@@ -575,6 +604,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyRegistrationLockSetsRegistrationLockOnNewAccount() throws Exception {
 
     AccountCreationResult result =
@@ -605,6 +635,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyRegistrationLockOld() throws Exception {
     StoredRegistrationLock lock = senderRegLockAccount.getRegistrationLock();
 
@@ -628,6 +659,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyWrongPin() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -643,6 +675,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyWrongRegistrationLock() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -658,6 +691,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyNoPin() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -676,6 +710,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyNoRegistrationLock() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -699,6 +734,7 @@ public class AccountControllerTest {
 
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyLimitPin() throws Exception {
     Response response =
         resources.getJerseyTest()
@@ -714,6 +750,7 @@ public class AccountControllerTest {
   }
 
   @Test
+  @Ignore("Deleted the REST endpoint")
   public void testVerifyOldPin() throws Exception {
     try {
       when(senderPinAccount.getRegistrationLock()).thenReturn(new StoredRegistrationLock(Optional.empty(), Optional.empty(), Optional.of("31337"), System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)));
@@ -740,7 +777,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/pin/")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.json(new DeprecatedPin("31337")));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -755,7 +793,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/registration_lock/")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_PASSWORD))
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.json(new RegistrationLock("1234567890123456789012345678901234567890123456789012345678901234")));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -790,7 +829,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/pin/")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.json(new DeprecatedPin("313")));
 
     assertThat(response.getStatus()).isEqualTo(422);
@@ -802,7 +842,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/registration_lock/")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.json(new RegistrationLock("313")));
 
     assertThat(response.getStatus()).isEqualTo(422);
@@ -839,7 +880,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/gcm/")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.DISABLED_NUMBER, AuthHelper.DISABLED_PASSWORD))
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                  .put(Entity.json(new GcmRegistrationId("c00lz0rz")));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -854,7 +896,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/gcm/")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.DISABLED_UUID.toString(), AuthHelper.DISABLED_PASSWORD))
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                  .put(Entity.json(new GcmRegistrationId("z000")));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -869,7 +912,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/apn/")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.DISABLED_NUMBER, AuthHelper.DISABLED_PASSWORD))
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                  .put(Entity.json(new ApnRegistrationId("first", "second")));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -885,7 +929,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/apn/")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.DISABLED_UUID.toString(), AuthHelper.DISABLED_PASSWORD))
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                  .put(Entity.json(new ApnRegistrationId("third", "fourth")));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -901,7 +946,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/whoami/")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .get(AccountCreationResult.class);
 
     assertThat(response.getUuid()).isEqualTo(AuthHelper.VALID_UUID);
@@ -913,7 +959,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/n00bkiller")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.text(""));
 
     assertThat(response.getStatus()).isEqualTo(200);
@@ -925,7 +972,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/takenusername")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.text(""));
 
     assertThat(response.getStatus()).isEqualTo(409);
@@ -937,7 +985,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/pаypal")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.text(""));
 
     assertThat(response.getStatus()).isEqualTo(400);
@@ -949,7 +998,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/0n00bkiller")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.text(""));
 
     assertThat(response.getStatus()).isEqualTo(400);
@@ -961,7 +1011,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/n00bkiller")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.INVALID_PASSWORD))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.INVALID_BEARER_TOKEN))
+                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.INVALID_DEVICE_ID_STRING, AuthHelper.INVALID_PASSWORD))
                  .put(Entity.text(""));
 
     assertThat(response.getStatus()).isEqualTo(401);
@@ -973,7 +1024,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
+                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .delete();
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -986,7 +1038,8 @@ public class AccountControllerTest {
         resources.getJerseyTest()
                  .target("/v1/accounts/username/")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.INVALID_PASSWORD))
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.INVALID_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.INVALID_DEVICE_ID_STRING, AuthHelper.INVALID_PASSWORD))
                  .delete();
 
     assertThat(response.getStatus()).isEqualTo(401);

@@ -149,7 +149,7 @@ public class AccountController {
       return Response.status(400).build();
     }
 
-    UUID accountUuid = getAndValidateAccountUuid(authorizationHeader);
+    UUID accountUuid = AuthHeaderSupport.getAndValidateAccountUuid(jwtAuthentication, authorizationHeader);
     String accountId = accountUuid.toString();
 
     String                 pushChallenge          = generatePushChallenge();
@@ -185,7 +185,7 @@ public class AccountController {
       throws RateLimitExceededException
   {
     // account authentication
-    UUID accountUuid = getAndValidateAccountUuid(authorizationHeader);
+    UUID accountUuid = AuthHeaderSupport.getAndValidateAccountUuid(jwtAuthentication, authorizationHeader);
     String accountId = accountUuid.toString();
 
     // device password to be used for subsequent device authentication
@@ -527,23 +527,6 @@ public class AccountController {
     random.nextBytes(challenge);
 
     return Hex.toStringCondensed(challenge);
-  }
-
-  private UUID getAndValidateAccountUuid(String authorizationHeader) {
-    final String bearerToken;
-    try {
-      bearerToken = BearerTokenAuthorizationHeader.fromFullHeader(authorizationHeader);
-    } catch (InvalidAuthorizationHeaderException e) {
-      logger.info("Bad Authorization Header", e);
-      throw new WebApplicationException(Response.status(401).build());
-    }
-    final String emailAddress;
-    try {
-      emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(bearerToken);
-    } catch (IllegalArgumentException e) {
-      throw new WebApplicationException(Response.status(401).build());
-    }
-    return DiskuvUuidUtil.uuidForEmailAddress(emailAddress);
   }
 
   private static class CaptchaRequirement {

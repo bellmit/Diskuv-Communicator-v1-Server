@@ -16,15 +16,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.*;
 
 public class PendingDevicesTest {
-  private static final UUID uuidAlice = UUID.fromString("25dec2e4-81a4-49c1-a182-a07fa9faf30f");
-  private static final UUID uuidBob = UUID.fromString("a623c041-fd05-4b0a-a34a-761bf2f88f36");
-  private static final UUID uuidMissing = UUID.fromString("85b47879-2c64-42e9-9a7b-960a6393b9f1");
-
   @Rule
   public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(LiquibasePreparer.forClasspathLocation("accountsdb.xml"));
 
@@ -37,10 +33,10 @@ public class PendingDevicesTest {
 
   @Test
   public void testStore() throws SQLException {
-    pendingDevices.insert(uuidAlice, "1234", 1111);
+    pendingDevices.insert(UUID_ALICE, "1234", 1111);
 
     PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM pending_devices WHERE number = ?");
-    statement.setString(1, uuidAlice.toString());
+    statement.setString(1, UUID_ALICE_STRING);
 
     ResultSet resultSet = statement.executeQuery();
 
@@ -56,25 +52,25 @@ public class PendingDevicesTest {
 
   @Test
   public void testRetrieve() throws Exception {
-    pendingDevices.insert(uuidAlice, "4321", 2222);
-    pendingDevices.insert(uuidBob, "1212", 5555);
+    pendingDevices.insert(UUID_ALICE, "4321", 2222);
+    pendingDevices.insert(UUID_BOB, "1212", 5555);
 
-    Optional<StoredVerificationCode> verificationCode = pendingDevices.getCodeForPendingDevice(uuidAlice);
+    Optional<StoredVerificationCode> verificationCode = pendingDevices.getCodeForPendingDevice(UUID_ALICE);
 
     assertThat(verificationCode.isPresent()).isTrue();
     assertThat(verificationCode.get().getCode()).isEqualTo("4321");
     assertThat(verificationCode.get().getTimestamp()).isEqualTo(2222);
 
-    Optional<StoredVerificationCode> missingCode = pendingDevices.getCodeForPendingDevice(uuidMissing);
+    Optional<StoredVerificationCode> missingCode = pendingDevices.getCodeForPendingDevice(UUID_MISSING);
     assertThat(missingCode.isPresent()).isFalse();
   }
 
   @Test
   public void testOverwrite() throws Exception {
-    pendingDevices.insert(uuidAlice, "4321", 2222);
-    pendingDevices.insert(uuidAlice, "4444", 3333);
+    pendingDevices.insert(UUID_ALICE, "4321", 2222);
+    pendingDevices.insert(UUID_ALICE, "4444", 3333);
 
-    Optional<StoredVerificationCode> verificationCode = pendingDevices.getCodeForPendingDevice(uuidAlice);
+    Optional<StoredVerificationCode> verificationCode = pendingDevices.getCodeForPendingDevice(UUID_ALICE);
 
     assertThat(verificationCode.isPresent()).isTrue();
     assertThat(verificationCode.get().getCode()).isEqualTo("4444");
@@ -83,21 +79,21 @@ public class PendingDevicesTest {
 
   @Test
   public void testRemove() {
-    pendingDevices.insert(uuidAlice, "4321", 2222);
-    pendingDevices.insert(uuidBob, "1212", 5555);
+    pendingDevices.insert(UUID_ALICE, "4321", 2222);
+    pendingDevices.insert(UUID_BOB, "1212", 5555);
 
-    Optional<StoredVerificationCode> verificationCode = pendingDevices.getCodeForPendingDevice(uuidAlice);
+    Optional<StoredVerificationCode> verificationCode = pendingDevices.getCodeForPendingDevice(UUID_ALICE);
 
     assertThat(verificationCode.isPresent()).isTrue();
     assertThat(verificationCode.get().getCode()).isEqualTo("4321");
     assertThat(verificationCode.get().getTimestamp()).isEqualTo(2222);
 
-    pendingDevices.remove(uuidAlice);
+    pendingDevices.remove(UUID_ALICE);
 
-    verificationCode = pendingDevices.getCodeForPendingDevice(uuidAlice);
+    verificationCode = pendingDevices.getCodeForPendingDevice(UUID_ALICE);
     assertThat(verificationCode.isPresent()).isFalse();
 
-    verificationCode = pendingDevices.getCodeForPendingDevice(uuidBob);
+    verificationCode = pendingDevices.getCodeForPendingDevice(UUID_BOB);
     assertThat(verificationCode.isPresent()).isTrue();
     assertThat(verificationCode.get().getCode()).isEqualTo("1212");
     assertThat(verificationCode.get().getTimestamp()).isEqualTo(5555);

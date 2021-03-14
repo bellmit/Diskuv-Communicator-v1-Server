@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
+import org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
 import org.whispersystems.textsecuregcm.auth.OptionalAccess;
 import org.whispersystems.textsecuregcm.controllers.KeysController;
@@ -40,14 +41,16 @@ import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
+import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
+import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_MISSING;
 
 public class KeyControllerTest {
 
-  private static final String EXISTS_NUMBER = "+14152222222";
-  private static final UUID   EXISTS_UUID   = UUID.randomUUID();
+  private static final UUID   EXISTS_UUID   = UUID_ALICE;
+  private static final String EXISTS_NUMBER = EXISTS_UUID.toString();
 
-  private static String NOT_EXISTS_NUMBER = "+14152222220";
-  private static UUID   NOT_EXISTS_UUID   = UUID.randomUUID();
+  private static UUID   NOT_EXISTS_UUID   = UUID_MISSING;
+  private static String NOT_EXISTS_NUMBER = NOT_EXISTS_UUID.toString();
 
   private static int SAMPLE_REGISTRATION_ID  =  999;
   private static int SAMPLE_REGISTRATION_ID2 = 1002;
@@ -157,8 +160,8 @@ public class KeyControllerTest {
     PreKeyCount result = resources.getJerseyTest()
                                   .target("/v2/keys")
                                   .request()
-                                  .header("Authorization",
-                                          AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                   .get(PreKeyCount.class);
 
     assertThat(result.getCount()).isEqualTo(4);
@@ -171,8 +174,8 @@ public class KeyControllerTest {
     PreKeyCount result = resources.getJerseyTest()
                                   .target("/v2/keys")
                                   .request()
-                                  .header("Authorization",
-                                          AuthHelper.getAuthHeader(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                   .get(PreKeyCount.class);
 
     assertThat(result.getCount()).isEqualTo(4);
@@ -186,7 +189,8 @@ public class KeyControllerTest {
     SignedPreKey result = resources.getJerseyTest()
                                    .target("/v2/keys/signed")
                                    .request()
-                                   .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                    .get(SignedPreKey.class);
 
     assertThat(result.getSignature()).isEqualTo(VALID_DEVICE_SIGNED_KEY.getSignature());
@@ -199,7 +203,8 @@ public class KeyControllerTest {
     SignedPreKey result = resources.getJerseyTest()
                                    .target("/v2/keys/signed")
                                    .request()
-                                   .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                    .get(SignedPreKey.class);
 
     assertThat(result.getSignature()).isEqualTo(VALID_DEVICE_SIGNED_KEY.getSignature());
@@ -213,7 +218,8 @@ public class KeyControllerTest {
     Response response = resources.getJerseyTest()
                                        .target("/v2/keys/signed")
                                        .request()
-                                       .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                        .put(Entity.entity(test, MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -228,7 +234,8 @@ public class KeyControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v2/keys/signed")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .put(Entity.entity(test, MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -268,7 +275,8 @@ public class KeyControllerTest {
     PreKeyResponse result = resources.getJerseyTest()
                                      .target(String.format("/v2/keys/%s/1", EXISTS_NUMBER))
                                      .request()
-                                     .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                      .get(PreKeyResponse.class);
 
     assertThat(result.getIdentityKey()).isEqualTo(existsAccount.getIdentityKey());
@@ -286,7 +294,8 @@ public class KeyControllerTest {
     PreKeyResponse result = resources.getJerseyTest()
                                      .target(String.format("/v2/keys/%s/1", EXISTS_UUID))
                                      .request()
-                                     .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_PASSWORD))
+                                      .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                      .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                      .get(PreKeyResponse.class);
 
     assertThat(result.getIdentityKey()).isEqualTo(existsAccount.getIdentityKey());
@@ -367,7 +376,8 @@ public class KeyControllerTest {
     PreKeyResponse results = resources.getJerseyTest()
                                       .target(String.format("/v2/keys/%s/*", EXISTS_NUMBER))
                                       .request()
-                                      .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                       .get(PreKeyResponse.class);
 
     assertThat(results.getDevicesCount()).isEqualTo(3);
@@ -417,7 +427,8 @@ public class KeyControllerTest {
     PreKeyResponse results = resources.getJerseyTest()
                                       .target(String.format("/v2/keys/%s/*", EXISTS_UUID.toString()))
                                       .request()
-                                      .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_UUID.toString(), AuthHelper.VALID_PASSWORD))
+                                      .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                      .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                       .get(PreKeyResponse.class);
 
     assertThat(results.getDevicesCount()).isEqualTo(3);
@@ -468,7 +479,8 @@ public class KeyControllerTest {
     Response response = resources.getJerseyTest()
                                  .target(String.format("/v2/keys/%s", NOT_EXISTS_NUMBER))
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .get();
 
     assertThat(response.getStatusInfo().getStatusCode()).isEqualTo(404);
@@ -479,7 +491,8 @@ public class KeyControllerTest {
     Response response = resources.getJerseyTest()
                                  .target(String.format("/v2/keys/%s/22", EXISTS_NUMBER))
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .get();
 
     // Diskuv Change: Do UNAUTHORIZED rather than NOT_FOUND when an account is not present
@@ -522,7 +535,8 @@ public class KeyControllerTest {
         resources.getJerseyTest()
                  .target("/v2/keys")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                  .put(Entity.entity(preKeyState, MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -556,7 +570,8 @@ public class KeyControllerTest {
         resources.getJerseyTest()
                  .target("/v2/keys")
                  .request()
-                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.DISABLED_NUMBER, AuthHelper.DISABLED_PASSWORD))
+                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                  .put(Entity.entity(preKeyState, MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(204);

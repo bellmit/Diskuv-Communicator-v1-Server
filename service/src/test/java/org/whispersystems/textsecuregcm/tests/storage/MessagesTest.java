@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.*;
 
 public class MessagesTest {
 
@@ -41,10 +42,10 @@ public class MessagesTest {
     Envelope envelope = generateEnvelope();
     UUID     guid     = UUID.randomUUID();
 
-    messages.store(guid, envelope, "+14151112222", 1);
+    messages.store(guid, envelope, UUID_ALICE_STRING, 1);
 
     PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM messages WHERE destination = ?");
-    statement.setString(1, "+14151112222");
+    statement.setString(1, UUID_ALICE_STRING);
 
     ResultSet resultSet = statement.executeQuery();
     assertThat(resultSet.next()).isTrue();
@@ -58,7 +59,7 @@ public class MessagesTest {
     assertThat(resultSet.getLong("source_device")).isEqualTo(envelope.getSourceDevice());
     assertThat(resultSet.getBytes("message")).isEqualTo(envelope.getLegacyMessage().toByteArray());
     assertThat(resultSet.getBytes("content")).isEqualTo(envelope.getContent().toByteArray());
-    assertThat(resultSet.getString("destination")).isEqualTo("+14151112222");
+    assertThat(resultSet.getString("destination")).isEqualTo(UUID_ALICE_STRING);
     assertThat(resultSet.getLong("destination_device")).isEqualTo(1);
 
     assertThat(resultSet.next()).isFalse();
@@ -72,12 +73,12 @@ public class MessagesTest {
       MessageToStore message = generateMessageToStore();
       inserted.add(message);
 
-      messages.store(message.guid, message.envelope, "+14151112222", 1);
+      messages.store(message.guid, message.envelope, UUID_ALICE_STRING, 1);
     }
 
     inserted.sort(Comparator.comparingLong(o -> o.envelope.getTimestamp()));
 
-    List<OutgoingMessageEntity> retrieved = messages.load("+14151112222", 1);
+    List<OutgoingMessageEntity> retrieved = messages.load(UUID_ALICE_STRING, 1);
 
     assertThat(retrieved.size()).isEqualTo(inserted.size());
 
@@ -89,111 +90,111 @@ public class MessagesTest {
 
   @Test
   public void removeBySourceDestinationTimestamp() {
-    List<MessageToStore>            inserted = insertRandom("+14151112222", 1);
-    List<MessageToStore>            unrelated = insertRandom("+14151114444", 3);
+    List<MessageToStore>            inserted = insertRandom(UUID_ALICE, 1);
+    List<MessageToStore>            unrelated = insertRandom(UUID_BOB, 3);
     MessageToStore                  toRemove = inserted.remove(new Random(System.currentTimeMillis()).nextInt(inserted.size() - 1));
-    Optional<OutgoingMessageEntity> removed  = messages.remove("+14151112222", 1, toRemove.envelope.getSource(), toRemove.envelope.getTimestamp());
+    Optional<OutgoingMessageEntity> removed  = messages.remove(UUID_ALICE_STRING, 1, toRemove.envelope.getSource(), toRemove.envelope.getTimestamp());
 
     assertThat(removed.isPresent()).isTrue();
     verifyExpected(removed.get(), toRemove.envelope, toRemove.guid);
 
-    verifyInTact(inserted, "+14151112222", 1);
-    verifyInTact(unrelated, "+14151114444", 3);
+    verifyInTact(inserted, UUID_ALICE, 1);
+    verifyInTact(unrelated, UUID_BOB, 3);
   }
 
   @Test
   public void removeByDestinationGuid() {
-    List<MessageToStore>            unrelated = insertRandom("+14151113333", 2);
-    List<MessageToStore>            inserted = insertRandom("+14151112222", 1);
+    List<MessageToStore>            unrelated = insertRandom(UUID_BOB, 2);
+    List<MessageToStore>            inserted = insertRandom(UUID_ALICE, 1);
     MessageToStore                  toRemove = inserted.remove(new Random(System.currentTimeMillis()).nextInt(inserted.size() - 1));
-    Optional<OutgoingMessageEntity> removed  = messages.remove("+14151112222", toRemove.guid);
+    Optional<OutgoingMessageEntity> removed  = messages.remove(UUID_ALICE_STRING, toRemove.guid);
 
     assertThat(removed.isPresent()).isTrue();
     verifyExpected(removed.get(), toRemove.envelope, toRemove.guid);
 
-    verifyInTact(inserted, "+14151112222", 1);
-    verifyInTact(unrelated, "+14151113333", 2);
+    verifyInTact(inserted, UUID_ALICE, 1);
+    verifyInTact(unrelated, UUID_BOB, 2);
   }
 
   @Test
   public void removeByDestinationRowId() {
-    List<MessageToStore> unrelatedInserted = insertRandom("+14151111111", 1);
-    List<MessageToStore> inserted          = insertRandom("+14151112222", 1);
+    List<MessageToStore> unrelatedInserted = insertRandom(UUID_BOB, 1);
+    List<MessageToStore> inserted          = insertRandom(UUID_ALICE, 1);
 
     inserted.sort(Comparator.comparingLong(o -> o.envelope.getTimestamp()));
 
-    List<OutgoingMessageEntity> retrieved = messages.load("+14151112222", 1);
+    List<OutgoingMessageEntity> retrieved = messages.load(UUID_ALICE_STRING, 1);
 
     int toRemoveIndex = new Random(System.currentTimeMillis()).nextInt(inserted.size() - 1);
 
     inserted.remove(toRemoveIndex);
 
-    messages.remove("+14151112222", retrieved.get(toRemoveIndex).getId());
+    messages.remove(UUID_ALICE_STRING, retrieved.get(toRemoveIndex).getId());
 
-    verifyInTact(inserted, "+14151112222", 1);
-    verifyInTact(unrelatedInserted, "+14151111111", 1);
+    verifyInTact(inserted, UUID_ALICE, 1);
+    verifyInTact(unrelatedInserted, UUID_BOB, 1);
   }
 
   @Test
   public void testLoadEmpty() {
-    List<MessageToStore> inserted = insertRandom("+14151112222", 1);
+    List<MessageToStore> inserted = insertRandom(UUID_ALICE, 1);
     List<OutgoingMessageEntity> loaded = messages.load("+14159999999", 1);
     assertThat(loaded.isEmpty()).isTrue();
   }
 
   @Test
   public void testClearDestination() {
-    insertRandom("+14151112222", 1);
-    insertRandom("+14151112222", 2);
+    insertRandom(UUID_ALICE, 1);
+    insertRandom(UUID_ALICE, 2);
 
-    List<MessageToStore> unrelated = insertRandom("+14151111111", 1);
+    List<MessageToStore> unrelated = insertRandom(UUID_BOB, 1);
 
-    messages.clear("+14151112222");
+    messages.clear(UUID_ALICE_STRING);
 
-    assertThat(messages.load("+14151112222", 1).isEmpty()).isTrue();
+    assertThat(messages.load(UUID_ALICE_STRING, 1).isEmpty()).isTrue();
 
-    verifyInTact(unrelated, "+14151111111", 1);
+    verifyInTact(unrelated, UUID_BOB, 1);
   }
 
   @Test
   public void testClearDestinationDevice() {
-    insertRandom("+14151112222", 1);
-    List<MessageToStore> inserted = insertRandom("+14151112222", 2);
+    insertRandom(UUID_ALICE, 1);
+    List<MessageToStore> inserted = insertRandom(UUID_ALICE, 2);
 
-    List<MessageToStore> unrelated = insertRandom("+14151111111", 1);
+    List<MessageToStore> unrelated = insertRandom(UUID_BOB, 1);
 
-    messages.clear("+14151112222", 1);
+    messages.clear(UUID_ALICE_STRING, 1);
 
-    assertThat(messages.load("+14151112222", 1).isEmpty()).isTrue();
+    assertThat(messages.load(UUID_ALICE_STRING, 1).isEmpty()).isTrue();
 
-    verifyInTact(inserted, "+14151112222", 2);
-    verifyInTact(unrelated, "+14151111111", 1);
+    verifyInTact(inserted, UUID_ALICE, 2);
+    verifyInTact(unrelated, UUID_BOB, 1);
   }
 
   @Test
   public void testVacuum() {
-    List<MessageToStore> inserted = insertRandom("+14151112222", 2);
+    List<MessageToStore> inserted = insertRandom(UUID_ALICE, 2);
     messages.vacuum();
-    verifyInTact(inserted, "+14151112222", 2);
+    verifyInTact(inserted, UUID_ALICE, 2);
   }
 
-  private List<MessageToStore> insertRandom(String destination, int destinationDevice) {
+  private List<MessageToStore> insertRandom(UUID destination, int destinationDevice) {
     List<MessageToStore> inserted = new ArrayList<>(50);
 
     for (int i=0;i<50;i++) {
       MessageToStore message = generateMessageToStore();
       inserted.add(message);
 
-      messages.store(message.guid, message.envelope, destination, destinationDevice);
+      messages.store(message.guid, message.envelope, destination.toString(), destinationDevice);
     }
 
     return inserted;
   }
 
-  private void verifyInTact(List<MessageToStore> inserted, String destination, int destinationDevice) {
+  private void verifyInTact(List<MessageToStore> inserted, UUID destination, int destinationDevice) {
     inserted.sort(Comparator.comparingLong(o -> o.envelope.getTimestamp()));
 
-    List<OutgoingMessageEntity> retrieved = messages.load(destination, destinationDevice);
+    List<OutgoingMessageEntity> retrieved = messages.load(destination.toString(), destinationDevice);
 
     assertThat(retrieved.size()).isEqualTo(inserted.size());
 

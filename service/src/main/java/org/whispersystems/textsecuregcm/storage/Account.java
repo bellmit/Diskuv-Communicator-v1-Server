@@ -76,8 +76,8 @@ public class Account implements Principal  {
   public Account() {}
 
   @VisibleForTesting
-  public Account(String number, UUID uuid, Set<Device> devices, byte[] unidentifiedAccessKey) {
-    this.number                = number;
+  public Account(UUID uuid, Set<Device> devices, byte[] unidentifiedAccessKey) {
+    this.number                = "";
     this.uuid                  = uuid;
     this.devices               = devices;
     this.unidentifiedAccessKey = unidentifiedAccessKey;

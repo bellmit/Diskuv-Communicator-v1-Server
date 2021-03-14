@@ -119,6 +119,9 @@ public class KeysController {
     if (!account.isPresent() && !accessKey.isPresent()) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
+    if (!targetName.hasUuid()) {
+      throw new WebApplicationException(Response.Status.BAD_REQUEST);
+    }
 
     Optional<Account> target = accounts.get(targetName);
     OptionalAccess.verify(account, accessKey, target, deviceId);

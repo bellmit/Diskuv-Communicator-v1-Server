@@ -268,7 +268,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     environment.jersey().register(new PolymorphicAuthValueFactoryProvider.Binder<>(ImmutableSet.of(Account.class, DisabledPermittedAccount.class)));
 
     environment.jersey().register(new AccountController(pendingAccountsManager, accountsManager, jwtAuthentication, usernamesManager, abusiveHostRules, rateLimiters, smsSender, messagesManager, turnTokenGenerator, config.getTestDevices(), recaptchaClient, gcmSender, apnSender, backupCredentialsGenerator));
-    environment.jersey().register(new DeviceController(pendingDevicesManager, accountsManager, messagesManager, rateLimiters, config.getMaxDevices()));
+    environment.jersey().register(new DeviceController(pendingDevicesManager, accountsManager, jwtAuthentication, messagesManager, rateLimiters, config.getMaxDevices()));
     environment.jersey().register(new ProvisioningController(rateLimiters, pushSender));
     environment.jersey().register(new CertificateController(new CertificateGenerator(config.getDeliveryCertificate().getCertificate(), config.getDeliveryCertificate().getPrivateKey(), config.getDeliveryCertificate().getExpiresDays()), zkAuthOperations, isZkEnabled));
     environment.jersey().register(new VoiceVerificationController(config.getVoiceVerificationConfiguration().getUrl(), config.getVoiceVerificationConfiguration().getLocales()));

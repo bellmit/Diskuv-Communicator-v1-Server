@@ -154,10 +154,10 @@ public class WebSocketConnection implements DispatchChannel {
   }
 
   private void sendDeliveryReceiptFor(Envelope message) {
-    if (!message.hasSource()) return;
+    if (!message.hasSourceUuid()) return;
 
     try {
-      receiptSender.sendReceipt(account, message.getSource(), message.getTimestamp());
+      receiptSender.sendReceipt(account, message.getSourceUuid(), message.getTimestamp());
     } catch (NoSuchUserException | NotPushRegisteredException  e) {
       logger.info("No longer registered " + e.getMessage());
     } catch (WebApplicationException e) {

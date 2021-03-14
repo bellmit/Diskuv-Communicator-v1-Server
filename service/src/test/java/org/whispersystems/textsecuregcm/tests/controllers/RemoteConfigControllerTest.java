@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
 import org.whispersystems.textsecuregcm.controllers.RemoteConfigController;
 import org.whispersystems.textsecuregcm.entities.UserRemoteConfigList;
@@ -78,7 +79,8 @@ public class RemoteConfigControllerTest {
     UserRemoteConfigList configuration = resources.getJerseyTest()
                                                   .target("/v1/config/")
                                                   .request()
-                                                  .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                                   .get(UserRemoteConfigList.class);
 
     verify(remoteConfigsManager, times(1)).getAll();
@@ -96,7 +98,8 @@ public class RemoteConfigControllerTest {
     UserRemoteConfigList configuration = resources.getJerseyTest()
                                                   .target("/v1/config/")
                                                   .request()
-                                                  .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+                                                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
                                                   .get(UserRemoteConfigList.class);
 
     verify(remoteConfigsManager, times(1)).getAll();
@@ -115,7 +118,8 @@ public class RemoteConfigControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/config/")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.INVALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.INVALID_PASSWORD))
                                  .get();
 
     assertThat(response.getStatus()).isEqualTo(401);

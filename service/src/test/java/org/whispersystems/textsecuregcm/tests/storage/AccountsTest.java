@@ -4,7 +4,6 @@ import com.fasterxml.uuid.UUIDComparator;
 import com.opentable.db.postgres.embedded.LiquibasePreparer;
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
 import com.opentable.db.postgres.junit.PreparedDbRule;
-import org.jdbi.v3.core.HandleCallback;
 import org.jdbi.v3.core.HandleConsumer;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.transaction.TransactionException;
@@ -18,8 +17,6 @@ import org.whispersystems.textsecuregcm.storage.Accounts;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.FaultTolerantDatabase;
 import org.whispersystems.textsecuregcm.storage.mappers.AccountRowMapper;
-import org.whispersystems.textsecuregcm.util.Conversions;
-import org.whispersystems.textsecuregcm.util.Util;
 
 import java.io.IOException;
 import java.sql.PreparedStatement;
@@ -28,7 +25,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -37,10 +33,13 @@ import java.util.Set;
 import java.util.UUID;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.*;
 
 public class AccountsTest {
 
@@ -61,12 +60,12 @@ public class AccountsTest {
   @Test
   public void testStore() throws SQLException, IOException {
     Device  device  = generateDevice (1                                            );
-    Account account = generateAccount("+14151112222", UUID.randomUUID(), Collections.singleton(device));
+    Account account = generateAccount(UUID_ALICE, Collections.singleton(device));
 
     accounts.create(account);
 
-    PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM accounts WHERE number = ?");
-    verifyStoredState(statement, "+14151112222", account.getUuid(), account);
+    PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM accounts WHERE uuid = ?");
+    verifyStoredState(statement, account.getUuid(), account);
   }
 
   @Test
@@ -75,12 +74,12 @@ public class AccountsTest {
     devices.add(generateDevice(1));
     devices.add(generateDevice(2));
 
-    Account account = generateAccount("+14151112222", UUID.randomUUID(), devices);
+    Account account = generateAccount(UUID.randomUUID(), devices);
 
     accounts.create(account);
 
-    PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM accounts WHERE number = ?");
-    verifyStoredState(statement, "+14151112222", account.getUuid(), account);
+    PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM accounts WHERE uuid = ?");
+    verifyStoredState(statement, account.getUuid(), account);
   }
 
   @Test
@@ -89,62 +88,57 @@ public class AccountsTest {
     devicesFirst.add(generateDevice(1));
     devicesFirst.add(generateDevice(2));
 
-    UUID uuidFirst = UUID.randomUUID();
-    Account accountFirst = generateAccount("+14151112222", uuidFirst, devicesFirst);
+    Account accountFirst = generateAccount(UUID_ALICE, devicesFirst);
 
     Set<Device> devicesSecond = new HashSet<>();
     devicesSecond.add(generateDevice(1));
     devicesSecond.add(generateDevice(2));
 
-    UUID uuidSecond = UUID.randomUUID();
-    Account accountSecond = generateAccount("+14152221111", uuidSecond, devicesSecond);
+    Account accountSecond = generateAccount(UUID_BOB, devicesSecond);
 
     accounts.create(accountFirst);
     accounts.create(accountSecond);
 
-    Optional<Account> retrievedFirst = accounts.get("+14151112222");
-    Optional<Account> retrievedSecond = accounts.get("+14152221111");
+    Optional<Account> retrievedFirst = accounts.get(UUID_ALICE);
+    Optional<Account> retrievedSecond = accounts.get(UUID_BOB);
 
     assertThat(retrievedFirst.isPresent()).isTrue();
     assertThat(retrievedSecond.isPresent()).isTrue();
 
-    verifyStoredState("+14151112222", uuidFirst, retrievedFirst.get(), accountFirst);
-    verifyStoredState("+14152221111", uuidSecond, retrievedSecond.get(), accountSecond);
+    verifyStoredState(UUID_ALICE, retrievedFirst.get(), accountFirst);
+    verifyStoredState(UUID_BOB, retrievedSecond.get(), accountSecond);
 
-    retrievedFirst = accounts.get(uuidFirst);
-    retrievedSecond = accounts.get(uuidSecond);
+    retrievedFirst = accounts.get(UUID_ALICE);
+    retrievedSecond = accounts.get(UUID_BOB);
 
     assertThat(retrievedFirst.isPresent()).isTrue();
     assertThat(retrievedSecond.isPresent()).isTrue();
 
-    verifyStoredState("+14151112222", uuidFirst, retrievedFirst.get(), accountFirst);
-    verifyStoredState("+14152221111", uuidSecond, retrievedSecond.get(), accountSecond);
+    verifyStoredState(UUID_ALICE, retrievedFirst.get(), accountFirst);
+    verifyStoredState(UUID_BOB, retrievedSecond.get(), accountSecond);
   }
 
   @Test
   public void testOverwrite() throws Exception {
     Device  device  = generateDevice (1                                            );
-    UUID    firstUuid = UUID.randomUUID();
-    Account account   = generateAccount("+14151112222", firstUuid, Collections.singleton(device));
+    Account account   = generateAccount(UUID_ALICE, Collections.singleton(device));
 
     accounts.create(account);
 
-    PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM accounts WHERE number = ?");
-    verifyStoredState(statement, "+14151112222", account.getUuid(), account);
-
-    UUID secondUuid = UUID.randomUUID();
+    PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM accounts WHERE uuid = ?");
+    verifyStoredState(statement, account.getUuid(), account);
 
     device = generateDevice(1);
-    account = generateAccount("+14151112222", secondUuid, Collections.singleton(device));
+    account = generateAccount(UUID_ALICE, Collections.singleton(device));
 
     accounts.create(account);
-    verifyStoredState(statement, "+14151112222", firstUuid, account);
+    verifyStoredState(statement, UUID_ALICE, account);
   }
 
   @Test
   public void testUpdate() {
     Device  device  = generateDevice (1                                            );
-    Account account = generateAccount("+14151112222", UUID.randomUUID(), Collections.singleton(device));
+    Account account = generateAccount(UUID_ALICE, Collections.singleton(device));
 
     accounts.create(account);
 
@@ -152,15 +146,15 @@ public class AccountsTest {
 
     accounts.update(account);
 
-    Optional<Account> retrieved = accounts.get("+14151112222");
+    Optional<Account> retrieved = accounts.get(UUID_ALICE);
 
     assertThat(retrieved.isPresent()).isTrue();
-    verifyStoredState("+14151112222", account.getUuid(), retrieved.get(), account);
+    verifyStoredState(account.getUuid(), retrieved.get(), account);
 
     retrieved = accounts.get(account.getUuid());
 
     assertThat(retrieved.isPresent()).isTrue();
-    verifyStoredState("+14151112222", account.getUuid(), retrieved.get(), account);
+    verifyStoredState(account.getUuid(), retrieved.get(), account);
   }
 
   @Test
@@ -168,7 +162,7 @@ public class AccountsTest {
     List<Account> users = new ArrayList<>();
 
     for (int i=1;i<=100;i++) {
-      Account account = generateAccount("+1" + String.format("%03d", i), UUID.randomUUID());
+      Account account = generateAccount(DiskuvUuidUtil.uuidForEmailAddress(String.format("my-%03d@test.com", i)));
       users.add(account);
       accounts.create(account);
     }
@@ -179,7 +173,7 @@ public class AccountsTest {
     assertThat(retrieved.size()).isEqualTo(10);
 
     for (int i=0;i<retrieved.size();i++) {
-      verifyStoredState(users.get(i).getNumber(), users.get(i).getUuid(), retrieved.get(i), users.get(i));
+      verifyStoredState(users.get(i).getUuid(), retrieved.get(i), users.get(i));
     }
 
     for (int j=0;j<9;j++) {
@@ -187,7 +181,7 @@ public class AccountsTest {
       assertThat(retrieved.size()).isEqualTo(10);
 
       for (int i=0;i<retrieved.size();i++) {
-        verifyStoredState(users.get(10 + (j * 10) + i).getNumber(), users.get(10 + (j * 10) + i).getUuid(), retrieved.get(i), users.get(10 + (j * 10) + i));
+        verifyStoredState(users.get(10 + (j * 10) + i).getUuid(), retrieved.get(i), users.get(10 + (j * 10) + i));
       }
     }
   }
@@ -195,25 +189,25 @@ public class AccountsTest {
   @Test
   public void testVacuum() {
     Device  device  = generateDevice (1                                            );
-    Account account = generateAccount("+14151112222", UUID.randomUUID(), Collections.singleton(device));
+    Account account = generateAccount(UUID_ALICE, Collections.singleton(device));
 
     accounts.create(account);
     accounts.vacuum();
 
-    Optional<Account> retrieved = accounts.get("+14151112222");
+    Optional<Account> retrieved = accounts.get(UUID_ALICE);
     assertThat(retrieved.isPresent()).isTrue();
 
-    verifyStoredState("+14151112222", account.getUuid(), retrieved.get(), account);
+    verifyStoredState(account.getUuid(), retrieved.get(), account);
   }
 
   @Test
   public void testMissing() {
     Device  device  = generateDevice (1                                            );
-    Account account = generateAccount("+14151112222", UUID.randomUUID(), Collections.singleton(device));
+    Account account = generateAccount(UUID_ALICE, Collections.singleton(device));
 
     accounts.create(account);
 
-    Optional<Account> retrieved = accounts.get("+11111111");
+    Optional<Account> retrieved = accounts.get(UUID_MISSING);
     assertThat(retrieved.isPresent()).isFalse();
 
     retrieved = accounts.get(UUID.randomUUID());
@@ -232,7 +226,7 @@ public class AccountsTest {
     configuration.setFailureRateThreshold(50);
 
     Accounts accounts = new Accounts(new FaultTolerantDatabase("testAccountBreaker", jdbi, configuration));
-    Account  account  = generateAccount("+14151112222", UUID.randomUUID());
+    Account  account  = generateAccount(UUID_ALICE);
 
     try {
       accounts.update(account);
@@ -273,23 +267,23 @@ public class AccountsTest {
     return new Device(id, "testName-" + random.nextInt(), "testAuthToken-" + random.nextInt(), "testSalt-" + random.nextInt(), null, "testGcmId-" + random.nextInt(), "testApnId-" + random.nextInt(), "testVoipApnId-" + random.nextInt(), random.nextBoolean(), random.nextInt(), signedPreKey, random.nextInt(), random.nextInt(), "testUserAgent-" + random.nextInt() , 0, new Device.DeviceCapabilities(random.nextBoolean(), random.nextBoolean(), random.nextBoolean()));
   }
 
-  private Account generateAccount(String number, UUID uuid) {
+  private Account generateAccount(UUID uuid) {
     Device device = generateDevice(1);
-    return generateAccount(number, uuid, Collections.singleton(device));
+    return generateAccount(uuid, Collections.singleton(device));
   }
 
-  private Account generateAccount(String number, UUID uuid, Set<Device> devices) {
+  private Account generateAccount(UUID uuid, Set<Device> devices) {
     byte[]       unidentifiedAccessKey = new byte[16];
     Random random = new Random(System.currentTimeMillis());
     Arrays.fill(unidentifiedAccessKey, (byte)random.nextInt(255));
 
-    return new Account(number, uuid, devices, unidentifiedAccessKey);
+    return new Account(uuid, devices, unidentifiedAccessKey);
   }
 
-  private void verifyStoredState(PreparedStatement statement, String number, UUID uuid, Account expecting)
+  private void verifyStoredState(PreparedStatement statement, UUID uuid, Account expecting)
       throws SQLException, IOException
   {
-    statement.setString(1, number);
+    statement.setObject(1, uuid);
 
     ResultSet resultSet = statement.executeQuery();
 
@@ -298,7 +292,7 @@ public class AccountsTest {
       assertThat(data).isNotEmpty();
 
       Account result = new AccountRowMapper().map(resultSet, null);
-      verifyStoredState(number, uuid, result, expecting);
+      verifyStoredState(uuid, result, expecting);
     } else {
       throw new AssertionError("No data");
     }
@@ -306,8 +300,8 @@ public class AccountsTest {
     assertThat(resultSet.next()).isFalse();
   }
 
-  private void verifyStoredState(String number, UUID uuid, Account result, Account expecting) {
-    assertThat(result.getNumber()).isEqualTo(number);
+  private void verifyStoredState(UUID uuid, Account result, Account expecting) {
+    assertThat(result.getNumber()).isEqualTo(uuid.toString());
     assertThat(result.getLastSeen()).isEqualTo(expecting.getLastSeen());
     assertThat(result.getUuid()).isEqualTo(uuid);
     assertThat(Arrays.equals(result.getUnidentifiedAccessKey().get(), expecting.getUnidentifiedAccessKey().get())).isTrue();

@@ -40,6 +40,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
+import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
 
 public class AccountCleanerTest {
 
@@ -72,8 +73,8 @@ public class AccountCleanerTest {
     when(undeletedDisabledAccount.isEnabled()).thenReturn(false);
     when(undeletedDisabledAccount.getLastSeen()).thenReturn(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(366));
     when(undeletedDisabledAccount.getMasterDevice()).thenReturn(Optional.of(undeletedDisabledDevice));
-    when(undeletedDisabledAccount.getNumber()).thenReturn("+14152222222");
     when(undeletedDisabledAccount.getUuid()).thenReturn(UUID.randomUUID());
+    when(undeletedDisabledAccount.getNumber()).thenAnswer(m -> undeletedDisabledAccount.getUuid().toString());
 
     when(undeletedEnabledDevice.isEnabled()).thenReturn(true);
     when(undeletedEnabledDevice.getApnId()).thenReturn("bar");

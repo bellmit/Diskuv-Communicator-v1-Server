@@ -5,9 +5,11 @@ import org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 public class ReceiptSender {
 
@@ -24,7 +26,8 @@ public class ReceiptSender {
   public void sendReceipt(Account source, String destination, long messageId)
       throws NoSuchUserException, NotPushRegisteredException
   {
-    if (source.getNumber().equals(destination)) {
+    UUID destinationUuid = DiskuvUuidUtil.verifyDiskuvUuid(destination);
+    if (source.getUuid().equals(destinationUuid)) {
       return;
     }
 

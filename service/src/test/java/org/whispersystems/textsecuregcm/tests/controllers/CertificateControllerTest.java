@@ -12,6 +12,7 @@ import org.signal.zkgroup.auth.AuthCredentialResponse;
 import org.signal.zkgroup.auth.ClientZkAuthOperations;
 import org.signal.zkgroup.auth.ServerZkAuthOperations;
 import org.whispersystems.textsecuregcm.auth.CertificateGenerator;
+import org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
 import org.whispersystems.textsecuregcm.auth.OptionalAccess;
 import org.whispersystems.textsecuregcm.controllers.CertificateController;
@@ -73,7 +74,8 @@ public class CertificateControllerTest {
     DeliveryCertificate certificateObject = resources.getJerseyTest()
                                                      .target("/v1/certificate/delivery")
                                                      .request()
-                                                     .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                                                    .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                                    .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                                      .get(DeliveryCertificate.class);
 
 
@@ -98,7 +100,8 @@ public class CertificateControllerTest {
                                                      .target("/v1/certificate/delivery")
                                                      .queryParam("includeUuid", "true")
                                                      .request()
-                                                     .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                                                    .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                                    .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                                      .get(DeliveryCertificate.class);
 
 
@@ -167,7 +170,8 @@ public class CertificateControllerTest {
     GroupCredentials credentials = resources.getJerseyTest()
                                             .target("/v1/certificate/group/" + Util.currentDaysSinceEpoch() + "/" + Util.currentDaysSinceEpoch())
                                             .request()
-                                            .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                             .get(GroupCredentials.class);
 
     assertThat(credentials.getCredentials().size()).isEqualTo(1);
@@ -182,7 +186,8 @@ public class CertificateControllerTest {
     GroupCredentials credentials = resources.getJerseyTest()
                                             .target("/v1/certificate/group/" + Util.currentDaysSinceEpoch() + "/" + (Util.currentDaysSinceEpoch() + 7))
                                             .request()
-                                            .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                             .get(GroupCredentials.class);
 
     assertThat(credentials.getCredentials().size()).isEqualTo(8);
@@ -200,7 +205,8 @@ public class CertificateControllerTest {
     Response response = resources.getJerseyTest()
                                             .target("/v1/certificate/group/" + Util.currentDaysSinceEpoch() + "/" + (Util.currentDaysSinceEpoch() + 8))
                                             .request()
-                                            .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                             .get();
 
     assertThat(response.getStatus()).isEqualTo(400);
@@ -211,7 +217,8 @@ public class CertificateControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/certificate/group/" + (Util.currentDaysSinceEpoch() - 1) + "/" + (Util.currentDaysSinceEpoch() + 7))
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .get();
 
     assertThat(response.getStatus()).isEqualTo(400);

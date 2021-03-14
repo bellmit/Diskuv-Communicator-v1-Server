@@ -16,14 +16,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.*;
 
 public class PendingAccountsTest {
-  private static final UUID uuidAlice = UUID.fromString("25dec2e4-81a4-49c1-a182-a07fa9faf30f");
-  private static final UUID uuidBob = UUID.fromString("a623c041-fd05-4b0a-a34a-761bf2f88f36");
-  private static final UUID uuidMissing = UUID.fromString("85b47879-2c64-42e9-9a7b-960a6393b9f1");
 
   @Rule
   public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(LiquibasePreparer.forClasspathLocation("accountsdb.xml"));
@@ -37,10 +34,10 @@ public class PendingAccountsTest {
 
   @Test
   public void testStore() throws SQLException {
-    pendingAccounts.insert(uuidAlice, "1234", 1111, null);
+    pendingAccounts.insert(UUID_ALICE, "1234", 1111, null);
 
     PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM pending_accounts WHERE number = ?");
-    statement.setString(1, uuidAlice.toString());
+    statement.setString(1, UUID_ALICE_STRING);
 
     ResultSet resultSet = statement.executeQuery();
 
@@ -57,10 +54,10 @@ public class PendingAccountsTest {
 
   @Test
   public void testStoreWithPushChallenge() throws SQLException {
-    pendingAccounts.insert(uuidAlice, null, 1111,  "112233");
+    pendingAccounts.insert(UUID_ALICE, null, 1111,  "112233");
 
     PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM pending_accounts WHERE number = ?");
-    statement.setString(1, "+14151112222");
+    statement.setString(1, UUID_ALICE_STRING);
 
     ResultSet resultSet = statement.executeQuery();
 
@@ -77,41 +74,41 @@ public class PendingAccountsTest {
 
   @Test
   public void testRetrieve() {
-    pendingAccounts.insert(uuidAlice, "4321", 2222, null);
-    pendingAccounts.insert(uuidBob, "1212", 5555, null);
+    pendingAccounts.insert(UUID_ALICE, "4321", 2222, null);
+    pendingAccounts.insert(UUID_BOB, "1212", 5555, null);
 
-    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(uuidAlice);
+    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(UUID_ALICE);
 
     assertThat(verificationCode.isPresent()).isTrue();
     assertThat(verificationCode.get().getCode()).isEqualTo("4321");
     assertThat(verificationCode.get().getTimestamp()).isEqualTo(2222);
 
-    Optional<StoredVerificationCode> missingCode = pendingAccounts.getCodeForPendingAccount(uuidMissing);
+    Optional<StoredVerificationCode> missingCode = pendingAccounts.getCodeForPendingAccount(UUID_MISSING);
     assertThat(missingCode.isPresent()).isFalse();
   }
 
   @Test
   public void testRetrieveWithPushChallenge() {
-    pendingAccounts.insert(uuidAlice, "4321", 2222, "bar");
-    pendingAccounts.insert(uuidBob, "1212", 5555, "bang");
+    pendingAccounts.insert(UUID_ALICE, "4321", 2222, "bar");
+    pendingAccounts.insert(UUID_BOB, "1212", 5555, "bang");
 
-    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(uuidAlice);
+    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(UUID_ALICE);
 
     assertThat(verificationCode.isPresent()).isTrue();
     assertThat(verificationCode.get().getCode()).isEqualTo("4321");
     assertThat(verificationCode.get().getTimestamp()).isEqualTo(2222);
     assertThat(verificationCode.get().getPushCode()).isEqualTo("bar");
 
-    Optional<StoredVerificationCode> missingCode = pendingAccounts.getCodeForPendingAccount(uuidMissing);
+    Optional<StoredVerificationCode> missingCode = pendingAccounts.getCodeForPendingAccount(UUID_MISSING);
     assertThat(missingCode.isPresent()).isFalse();
   }
 
   @Test
   public void testOverwrite() {
-    pendingAccounts.insert(uuidAlice, "4321", 2222, null);
-    pendingAccounts.insert(uuidAlice, "4444", 3333, null);
+    pendingAccounts.insert(UUID_ALICE, "4321", 2222, null);
+    pendingAccounts.insert(UUID_ALICE, "4444", 3333, null);
 
-    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(uuidAlice);
+    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(UUID_ALICE);
 
     assertThat(verificationCode.isPresent()).isTrue();
     assertThat(verificationCode.get().getCode()).isEqualTo("4444");
@@ -120,10 +117,10 @@ public class PendingAccountsTest {
 
   @Test
   public void testOverwriteWithPushToken() {
-    pendingAccounts.insert(uuidAlice, "4321", 2222, "bar");
-    pendingAccounts.insert(uuidAlice, "4444", 3333, "bang");
+    pendingAccounts.insert(UUID_ALICE, "4321", 2222, "bar");
+    pendingAccounts.insert(UUID_ALICE, "4444", 3333, "bang");
 
-    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(uuidAlice);
+    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(UUID_ALICE);
 
     assertThat(verificationCode.isPresent()).isTrue();
     assertThat(verificationCode.get().getCode()).isEqualTo("4444");
@@ -134,11 +131,11 @@ public class PendingAccountsTest {
 
   @Test
   public void testVacuum() {
-    pendingAccounts.insert(uuidAlice, "4321", 2222, null);
-    pendingAccounts.insert(uuidAlice, "4444", 3333, null);
+    pendingAccounts.insert(UUID_ALICE, "4321", 2222, null);
+    pendingAccounts.insert(UUID_ALICE, "4444", 3333, null);
     pendingAccounts.vacuum();
 
-    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(uuidAlice);
+    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(UUID_ALICE);
 
     assertThat(verificationCode.isPresent()).isTrue();
     assertThat(verificationCode.get().getCode()).isEqualTo("4444");
@@ -147,21 +144,21 @@ public class PendingAccountsTest {
 
   @Test
   public void testRemove() {
-    pendingAccounts.insert(uuidAlice, "4321", 2222, "bar");
-    pendingAccounts.insert(uuidBob, "1212", 5555, null);
+    pendingAccounts.insert(UUID_ALICE, "4321", 2222, "bar");
+    pendingAccounts.insert(UUID_BOB, "1212", 5555, null);
 
-    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(uuidAlice);
+    Optional<StoredVerificationCode> verificationCode = pendingAccounts.getCodeForPendingAccount(UUID_ALICE);
 
     assertThat(verificationCode.isPresent()).isTrue();
     assertThat(verificationCode.get().getCode()).isEqualTo("4321");
     assertThat(verificationCode.get().getTimestamp()).isEqualTo(2222);
 
-    pendingAccounts.remove(uuidAlice);
+    pendingAccounts.remove(UUID_ALICE);
 
-    verificationCode = pendingAccounts.getCodeForPendingAccount(uuidAlice);
+    verificationCode = pendingAccounts.getCodeForPendingAccount(UUID_ALICE);
     assertThat(verificationCode.isPresent()).isFalse();
 
-    verificationCode = pendingAccounts.getCodeForPendingAccount(uuidBob);
+    verificationCode = pendingAccounts.getCodeForPendingAccount(UUID_BOB);
     assertThat(verificationCode.isPresent()).isTrue();
     assertThat(verificationCode.get().getCode()).isEqualTo("1212");
     assertThat(verificationCode.get().getTimestamp()).isEqualTo(5555);

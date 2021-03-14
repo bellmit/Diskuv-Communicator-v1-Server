@@ -33,22 +33,6 @@ public class Util {
 
   private static final Pattern COUNTRY_CODE_PATTERN = Pattern.compile("^\\+([17]|2[07]|3[0123469]|4[013456789]|5[12345678]|6[0123456]|8[1246]|9[0123458]|\\d{3})");
 
-  public static byte[] getContactToken(String number) {
-    try {
-      MessageDigest digest    = MessageDigest.getInstance("SHA1");
-      byte[]        result    = digest.digest(number.getBytes());
-      byte[]        truncated = Util.truncate(result, 10);
-
-      return truncated;
-    } catch (NoSuchAlgorithmException e) {
-      throw new AssertionError(e);
-    }
-  }
-
-  public static String getEncodedContactToken(String number) {
-    return Base64.encodeBytesWithoutPadding(getContactToken(number));
-  }
-
   public static boolean isValidNumber(String number) {
     return number.matches("^\\+[0-9]+") && PhoneNumberUtil.getInstance().isPossibleNumber(number, null);
   }

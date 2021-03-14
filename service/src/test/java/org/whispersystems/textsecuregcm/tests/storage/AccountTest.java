@@ -6,7 +6,6 @@ import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Device;
 
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -64,21 +63,21 @@ public class AccountTest {
 
   @Test
   public void testAccountActive() {
-    Account recentAccount = new Account("+14152222222", UUID.randomUUID(), new HashSet<Device>() {{
+    Account recentAccount = new Account(UUID.randomUUID(), new HashSet<Device>() {{
       add(recentMasterDevice);
       add(recentSecondaryDevice);
     }}, "1234".getBytes());
 
     assertTrue(recentAccount.isEnabled());
 
-    Account oldSecondaryAccount = new Account("+14152222222", UUID.randomUUID(), new HashSet<Device>() {{
+    Account oldSecondaryAccount = new Account(UUID.randomUUID(), new HashSet<Device>() {{
       add(recentMasterDevice);
       add(agingSecondaryDevice);
     }}, "1234".getBytes());
 
     assertTrue(oldSecondaryAccount.isEnabled());
 
-    Account agingPrimaryAccount = new Account("+14152222222", UUID.randomUUID(), new HashSet<Device>() {{
+    Account agingPrimaryAccount = new Account(UUID.randomUUID(), new HashSet<Device>() {{
       add(oldMasterDevice);
       add(agingSecondaryDevice);
     }}, "1234".getBytes());
@@ -88,7 +87,7 @@ public class AccountTest {
 
   @Test
   public void testAccountInactive() {
-    Account oldPrimaryAccount = new Account("+14152222222", UUID.randomUUID(), new HashSet<Device>() {{
+    Account oldPrimaryAccount = new Account(UUID.randomUUID(), new HashSet<Device>() {{
       add(oldMasterDevice);
       add(oldSecondaryDevice);
     }}, "1234".getBytes());
@@ -98,16 +97,16 @@ public class AccountTest {
 
   @Test
   public void testCapabilities() {
-    Account uuidCapable = new Account("+14152222222", UUID.randomUUID(), new HashSet<Device>() {{
+    Account uuidCapable = new Account(UUID.randomUUID(), new HashSet<Device>() {{
       add(uuidCapableDevice);
     }}, "1234".getBytes());
 
-    Account uuidIncapable = new Account("+14152222222", UUID.randomUUID(), new HashSet<Device>() {{
+    Account uuidIncapable = new Account(UUID.randomUUID(), new HashSet<Device>() {{
       add(uuidCapableDevice);
       add(uuidIncapableDevice);
     }}, "1234".getBytes());
 
-    Account uuidCapableWithExpiredIncapable = new Account("+14152222222", UUID.randomUUID(), new HashSet<Device>() {{
+    Account uuidCapableWithExpiredIncapable = new Account(UUID.randomUUID(), new HashSet<Device>() {{
       add(uuidCapableDevice);
       add(uuidIncapableExpiredDevice);
     }}, "1234".getBytes());

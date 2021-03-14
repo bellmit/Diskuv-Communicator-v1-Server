@@ -108,14 +108,25 @@ public class MessageController {
   @PUT
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  public SendMessageResponse sendMessage(@Auth                                     Optional<Account>   source,
+  public SendMessageResponse sendMessage(@Auth                                     Account             realSource,
                                          @HeaderParam(OptionalAccess.UNIDENTIFIED) Optional<Anonymous> accessKey,
                                          @PathParam("destination")                 AmbiguousIdentifier destinationName,
                                          @Valid                                    IncomingMessageList messages)
       throws RateLimitExceededException
   {
+    // Unlike Signal, we expect every API to fully authenticate the real source, and edge routers are going to authenticate
+    // way before it gets to the Java server. Those edge routers make it possible to stop denial of service.
+    // However, it is fine if the effective source ... the source seen by a
+    // recipient in the Envelope after we send a message ... is not present as long as the sender shows a valid
+    // anonymous key.
+    Optional<Account>   source = accessKey.isPresent() ? Optional.empty() : Optional.of(realSource);
+
     if (!source.isPresent() && !accessKey.isPresent()) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+    }
+
+    if (!destinationName.hasUuid()) {
+      throw new WebApplicationException(Response.Status.BAD_REQUEST);
     }
 
     if (source.isPresent() && !source.get().isFor(destinationName)) {
@@ -189,6 +200,11 @@ public class MessageController {
                                    @PathParam("timestamp") long timestamp)
   {
     try {
+      UUID.fromString(source);
+    } catch (Exception e) {
+      throw new WebApplicationException(Response.Status.BAD_REQUEST);
+    }
+    try {
       WebSocketConnection.messageTime.update(System.currentTimeMillis() - timestamp);
 
       Optional<OutgoingMessageEntity> message = messagesManager.delete(account.getNumber(),
@@ -197,7 +213,7 @@ public class MessageController {
 
       if (message.isPresent() && message.get().getType() != Envelope.Type.RECEIPT_VALUE) {
         receiptSender.sendReceipt(account,
-                                  message.get().getSource(),
+                                  message.get().getSourceUuid().toString(),
                                   message.get().getTimestamp());
       }
     } catch (NotPushRegisteredException e) {
@@ -219,7 +235,7 @@ public class MessageController {
       message.ifPresent(outgoingMessageEntity -> WebSocketConnection.messageTime.update(System.currentTimeMillis() - outgoingMessageEntity.getTimestamp()));
 
       if (message.isPresent() && !Util.isEmpty(message.get().getSource()) && message.get().getType() != Envelope.Type.RECEIPT_VALUE) {
-        receiptSender.sendReceipt(account, message.get().getSource(), message.get().getTimestamp());
+        receiptSender.sendReceipt(account, message.get().getSourceUuid().toString(), message.get().getTimestamp());
       }
     } catch (NoSuchUserException e) {
       logger.warn("Sending delivery receipt", e);

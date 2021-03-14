@@ -14,6 +14,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
 import org.whispersystems.textsecuregcm.controllers.AttachmentControllerV1;
 import org.whispersystems.textsecuregcm.controllers.AttachmentControllerV2;
@@ -113,7 +114,8 @@ public class AttachmentControllerTest {
     AttachmentDescriptorV3 descriptor = resources.getJerseyTest()
             .target("/v3/attachments/form/upload")
             .request()
-            .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
             .get(AttachmentDescriptorV3.class);
 
     assertThat(descriptor.getKey()).isNotBlank();
@@ -180,7 +182,8 @@ public class AttachmentControllerTest {
     AttachmentDescriptorV2 descriptor = resources.getJerseyTest()
                                                  .target("/v2/attachments/form/upload")
                                                  .request()
-                                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                                                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                                  .get(AttachmentDescriptorV2.class);
 
     assertThat(descriptor.getKey()).isEqualTo(descriptor.getAttachmentIdString());
@@ -220,7 +223,8 @@ public class AttachmentControllerTest {
     AttachmentDescriptorV1 descriptor = resources.getJerseyTest()
                                                  .target("/v1/attachments/")
                                                  .request()
-                                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                                                .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                                .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                                  .get(AttachmentDescriptorV1.class);
 
     assertThat(descriptor.getLocation()).startsWith("https://attachment-bucket.s3-accelerate.amazonaws.com");
@@ -233,7 +237,8 @@ public class AttachmentControllerTest {
     AttachmentDescriptorV1 descriptor = resources.getJerseyTest()
                                                  .target("/v1/attachments/")
                                                  .request()
-                                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+                                                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
                                                  .get(AttachmentDescriptorV1.class);
 
     assertThat(descriptor.getLocation()).startsWith("https://s3.amazonaws.com");
@@ -246,7 +251,8 @@ public class AttachmentControllerTest {
     AttachmentUri uri = resources.getJerseyTest()
                                         .target("/v1/attachments/1234")
                                         .request()
-                                        .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+                                        .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                        .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                         .get(AttachmentUri.class);
 
     assertThat(uri.getLocation().getHost()).isEqualTo("attachment-bucket.s3-accelerate.amazonaws.com");
@@ -257,7 +263,8 @@ public class AttachmentControllerTest {
     AttachmentUri uri = resources.getJerseyTest()
                                  .target("/v1/attachments/1234")
                                  .request()
-                                 .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+                                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
                                  .get(AttachmentUri.class);
 
     assertThat(uri.getLocation().getHost()).isEqualTo("s3.amazonaws.com");
