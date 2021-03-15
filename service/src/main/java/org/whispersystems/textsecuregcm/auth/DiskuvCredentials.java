@@ -1,6 +1,7 @@
 package org.whispersystems.textsecuregcm.auth;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class DiskuvCredentials {
@@ -8,9 +9,9 @@ public class DiskuvCredentials {
     private final String bearerToken;
     private final long deviceId;
     @Nonnull
-    private final String devicePassword;
+    private final byte[] devicePassword;
 
-    public DiskuvCredentials(@Nonnull String bearerToken, long deviceId, @Nonnull String devicePassword) {
+    public DiskuvCredentials(@Nonnull String bearerToken, long deviceId, @Nonnull byte[] devicePassword) {
         this.bearerToken = bearerToken;
         this.deviceId = deviceId;
         this.devicePassword = devicePassword;
@@ -21,12 +22,15 @@ public class DiskuvCredentials {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DiskuvCredentials that = (DiskuvCredentials) o;
-        return deviceId == that.deviceId && bearerToken.equals(that.bearerToken) && devicePassword.equals(that.devicePassword);
+        return deviceId == that.deviceId && bearerToken.equals(that.bearerToken) && Arrays.equals(devicePassword,
+                                                                                                  that.devicePassword);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(bearerToken, deviceId, devicePassword);
+        int result = Objects.hash(bearerToken, deviceId);
+        result = 31 * result + Arrays.hashCode(devicePassword);
+        return result;
     }
 
     @Override
@@ -34,7 +38,7 @@ public class DiskuvCredentials {
         return "DiskuvCredentials{" +
                 "bearerToken='" + bearerToken + '\'' +
                 ", deviceId=" + deviceId +
-                ", devicePassword='" + devicePassword + '\'' +
+                ", devicePassword=" + Arrays.toString(devicePassword) +
                 '}';
     }
 
@@ -46,7 +50,7 @@ public class DiskuvCredentials {
         return deviceId;
     }
 
-    public String getDevicePassword() {
+    public byte[] getDevicePassword() {
         return devicePassword;
     }
 }

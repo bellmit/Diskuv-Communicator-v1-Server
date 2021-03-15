@@ -17,6 +17,7 @@
 package org.whispersystems.textsecuregcm.auth;
 
 import org.apache.commons.codec.binary.Hex;
+import org.whispersystems.textsecuregcm.util.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -38,6 +39,11 @@ public class AuthenticationCredentials {
     this.hashedAuthenticationToken = getHashedValue(salt, authenticationToken);
   }
 
+  public AuthenticationCredentials(byte[] authenticationToken) {
+    this.salt                      = String.valueOf(Math.abs(new SecureRandom().nextInt()));
+    this.hashedAuthenticationToken = getHashedValue(salt, authenticationToken);
+  }
+
   public String getHashedAuthenticationToken() {
     return hashedAuthenticationToken;
   }
@@ -51,6 +57,11 @@ public class AuthenticationCredentials {
     return MessageDigest.isEqual(theirValue.getBytes(StandardCharsets.UTF_8), this.hashedAuthenticationToken.getBytes(StandardCharsets.UTF_8));
   }
 
+  public boolean verify(byte[] authenticationToken) {
+    String theirValue = getHashedValue(salt, authenticationToken);
+    return MessageDigest.isEqual(theirValue.getBytes(StandardCharsets.UTF_8), this.hashedAuthenticationToken.getBytes(StandardCharsets.UTF_8));
+  }
+
   private static String getHashedValue(String salt, String token) {
     try {
       return new String(Hex.encodeHex(MessageDigest.getInstance("SHA1").digest((salt + token).getBytes(StandardCharsets.UTF_8))));
@@ -59,4 +70,12 @@ public class AuthenticationCredentials {
     }
   }
 
+  private static String getHashedValue(String salt, byte[] token) {
+    try {
+      byte[] contents = ByteUtil.combine(salt.getBytes(StandardCharsets.UTF_8), token);
+      return new String(Hex.encodeHex(MessageDigest.getInstance("SHA1").digest(contents)));
+    } catch (NoSuchAlgorithmException e) {
+      throw new AssertionError(e);
+    }
+  }
 }

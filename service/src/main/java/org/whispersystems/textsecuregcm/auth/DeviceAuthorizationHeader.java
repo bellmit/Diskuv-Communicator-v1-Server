@@ -30,20 +30,20 @@ import java.io.IOException;
  * The HTTP header is expected to be {@value #DEVICE_AUTHORIZATION_HEADER}. The format is:
  *
  * <pre>
- *     Basic Base64{DEVICE_ID:DEVICE_PASSWORD}
+ *     Basic Base64{DEVICE_ID:Base64{DEVICE_PASSWORD}}
  * </pre>
  */
 public class DeviceAuthorizationHeader {
   public static final String        DEVICE_AUTHORIZATION_HEADER = "X-Diskuv-Device-Authorization";
   private final long                deviceId;
-  private final String              password;
+  private final byte[]              password;
 
-  private DeviceAuthorizationHeader(long deviceId, String password) {
+  private DeviceAuthorizationHeader(long deviceId, byte[] password) {
     this.deviceId   = deviceId;
     this.password   = password;
   }
 
-  public static DeviceAuthorizationHeader fromUserAndPassword(String user, String password) throws InvalidAuthorizationHeaderException {
+  public static DeviceAuthorizationHeader fromUserAndPassword(String user, byte[] password) throws InvalidAuthorizationHeaderException {
     try {
       return new DeviceAuthorizationHeader(Long.parseLong(user), password);
     } catch (NumberFormatException nfe) {
@@ -79,7 +79,7 @@ public class DeviceAuthorizationHeader {
         throw new InvalidAuthorizationHeaderException("Badly formatted credentials: " + concatenatedValues);
       }
 
-      return fromUserAndPassword(credentialParts[0], credentialParts[1]);
+      return fromUserAndPassword(credentialParts[0], Base64.decode(credentialParts[1]));
     } catch (IOException ioe) {
       throw new InvalidAuthorizationHeaderException(ioe);
     }
@@ -89,7 +89,7 @@ public class DeviceAuthorizationHeader {
     return deviceId;
   }
 
-  public String getDevicePassword() {
+  public byte[] getDevicePassword() {
     return password;
   }
 }

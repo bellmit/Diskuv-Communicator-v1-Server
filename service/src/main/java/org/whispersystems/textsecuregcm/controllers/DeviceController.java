@@ -177,7 +177,7 @@ public class DeviceController {
     } catch (InvalidAuthorizationHeaderException e) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
-    String devicePassword      = deviceHeader.getDevicePassword();
+    byte[] devicePassword      = deviceHeader.getDevicePassword();
 
     rateLimiters.getVerifyDeviceLimiter().validate(accountId);
 

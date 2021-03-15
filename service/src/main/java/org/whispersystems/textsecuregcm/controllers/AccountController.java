@@ -195,7 +195,7 @@ public class AccountController {
     } catch (InvalidAuthorizationHeaderException e) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
-    String devicePassword      = deviceHeader.getDevicePassword();
+    byte[] devicePassword      = deviceHeader.getDevicePassword();
 
     String requester = Arrays.stream(forwardedFor.split(","))
             .map(String::trim)
@@ -478,7 +478,7 @@ public class AccountController {
     return false;
   }
 
-  private Account createAccount(UUID accountUuid, String devicePassword, String userAgent, AccountAttributes accountAttributes) {
+  private Account createAccount(UUID accountUuid, byte[] devicePassword, String userAgent, AccountAttributes accountAttributes) {
     Device device = new Device();
     device.setId(Device.MASTER_ID);
     device.setAuthenticationCredentials(new AuthenticationCredentials(devicePassword));

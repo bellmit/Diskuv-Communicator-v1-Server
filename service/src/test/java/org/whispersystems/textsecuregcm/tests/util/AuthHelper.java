@@ -15,6 +15,7 @@ import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.util.Base64;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -80,9 +81,9 @@ public class AuthHelper {
     when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(VALID_BEARER_TOKEN_TWO)).thenReturn(VALID_EMAIL_TWO);
     when(JWT_AUTHENTICATION.verifyBearerTokenAndGetEmailAddress(DISABLED_BEARER_TOKEN)).thenReturn(DISABLED_EMAIL);
 
-    when(VALID_CREDENTIALS.verify("foo")).thenReturn(true);
-    when(VALID_CREDENTIALS_TWO.verify("baz")).thenReturn(true);
-    when(DISABLED_CREDENTIALS.verify(DISABLED_PASSWORD)).thenReturn(true);
+    when(VALID_CREDENTIALS.verify("foo".getBytes(StandardCharsets.UTF_8))).thenReturn(true);
+    when(VALID_CREDENTIALS_TWO.verify("baz".getBytes(StandardCharsets.UTF_8))).thenReturn(true);
+    when(DISABLED_CREDENTIALS.verify(DISABLED_PASSWORD.getBytes(StandardCharsets.UTF_8))).thenReturn(true);
 
     when(VALID_DEVICE.getAuthenticationCredentials()).thenReturn(VALID_CREDENTIALS);
     when(VALID_DEVICE_TWO.getAuthenticationCredentials()).thenReturn(VALID_CREDENTIALS_TWO);
@@ -149,7 +150,8 @@ public class AuthHelper {
   }
 
   public static String getAuthHeader(String number, String password) {
-    return "Basic " + Base64.encodeBytes((number + ":" + password).getBytes());
+    String encodedPassword = Base64.encodeBytes(password.getBytes(StandardCharsets.UTF_8));
+    return "Basic " + Base64.encodeBytes((number + ":" + encodedPassword).getBytes(StandardCharsets.UTF_8));
   }
 
   public static String getAccountAuthHeader(String bearerToken) {

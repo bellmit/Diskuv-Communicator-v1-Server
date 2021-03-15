@@ -5,7 +5,9 @@ import org.whispersystems.textsecuregcm.auth.DiskuvAccountAuthenticator;
 import org.whispersystems.textsecuregcm.auth.DiskuvCredentials;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.websocket.auth.WebSocketAuthenticator;
+import org.whispersystems.websocket.util.Base64;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,8 +36,29 @@ public class WebSocketAccountAuthenticator implements WebSocketAuthenticator<Acc
       return new AuthenticationResult<>(Optional.empty(), false);
     }
 
-    DiskuvCredentials credentials = new DiskuvCredentials(jwtTokens.get(0), Long.parseLong(deviceIds.get(0)), devicePasswords.get(0));
-    return new AuthenticationResult<>(accountAuthenticator.authenticate(credentials), true);
+    // -------------------------
+    // from here on a valid authentication is required because the user sent the credentials
+    final boolean AUTH_IS_REQUIRED = true;
+
+    // validate password
+    String encodedDevicePassword = devicePasswords.get(0);
+    byte[] devicePassword;
+    try {
+      devicePassword = Base64.decode(encodedDevicePassword, Base64.URL_SAFE);
+    } catch (IOException e) {
+      return new AuthenticationResult<>(Optional.empty(), AUTH_IS_REQUIRED);
+    }
+
+    // validate device id
+    long deviceId;
+    try {
+      deviceId = Long.parseLong(deviceIds.get(0));
+    } catch (NumberFormatException e) {
+      return new AuthenticationResult<>(Optional.empty(), AUTH_IS_REQUIRED);
+    }
+
+    DiskuvCredentials credentials = new DiskuvCredentials(jwtTokens.get(0), deviceId, devicePassword);
+    return new AuthenticationResult<>(accountAuthenticator.authenticate(credentials), AUTH_IS_REQUIRED);
   }
 
 }

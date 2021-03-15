@@ -48,8 +48,8 @@ import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.*;
 
 public class WebSocketConnectionTest {
 
-  private static final String VALID_PASSWORD      = "secure";
-  private static final String INVALID_PASSWORD    = "insecure";
+  private static final byte[] VALID_PASSWORD      = new byte[] {1, 2, 3};
+  private static final byte[] INVALID_PASSWORD    = new byte[] {4, 5, 6};
 
   private static final String VALID_JWT_TOKEN     = "quality";
   private static final String INVALID_JWT_TOKEN   = "sketchy";
@@ -86,7 +86,7 @@ public class WebSocketConnectionTest {
 
     when(upgradeRequest.getParameterMap()).thenReturn(new HashMap<String, List<String>>() {{
       put("device-id", new LinkedList<String>() {{add(VALID_DEVICE_ID);}});
-      put("device-password", new LinkedList<String>() {{add(VALID_PASSWORD);}});
+      put("device-password", new LinkedList<String>() {{add(Base64.encodeBytes(VALID_PASSWORD, Base64.URL_SAFE));}});
       put("jwt-token", new LinkedList<String>() {{add(VALID_JWT_TOKEN);}});
     }});
 
@@ -97,10 +97,52 @@ public class WebSocketConnectionTest {
 
     verify(sessionContext).addListener(any(WebSocketSessionContext.WebSocketEventListener.class));
 
+    // --------------------
+    // invalid password
+
     when(upgradeRequest.getParameterMap()).thenReturn(new HashMap<String, List<String>>() {{
       put("device-id", new LinkedList<String>() {{add(INVALID_DEVICE_ID);}});
-      put("device-password", new LinkedList<String>() {{add(INVALID_PASSWORD);}});
+      put("device-password", new LinkedList<String>() {{add(Base64.encodeBytes(INVALID_PASSWORD, Base64.URL_SAFE));}});
       put("jwt-token", new LinkedList<String>() {{add(INVALID_JWT_TOKEN);}});
+    }});
+
+    account = webSocketAuthenticator.authenticate(upgradeRequest);
+    assertFalse(account.getUser().isPresent());
+    assertTrue(account.isRequired());
+
+    // --------------------
+    // invalid password base64 encoding
+
+    when(upgradeRequest.getParameterMap()).thenReturn(new HashMap<String, List<String>>() {{
+      put("device-id", new LinkedList<String>() {{add(VALID_DEVICE_ID);}});
+      put("device-password", new LinkedList<String>() {{add("!!bad base64 encoding!!");}});
+      put("jwt-token", new LinkedList<String>() {{add(VALID_JWT_TOKEN);}});
+    }});
+
+    account = webSocketAuthenticator.authenticate(upgradeRequest);
+    assertFalse(account.getUser().isPresent());
+    assertTrue(account.isRequired());
+
+    // --------------------
+    // invalid password base64 url-safe encoding
+
+    when(upgradeRequest.getParameterMap()).thenReturn(new HashMap<String, List<String>>() {{
+      put("device-id", new LinkedList<String>() {{add(VALID_DEVICE_ID);}});
+      put("device-password", new LinkedList<String>() {{add("hQUjeNfICbyRWzjdy5+Z6g==");}});
+      put("jwt-token", new LinkedList<String>() {{add(VALID_JWT_TOKEN);}});
+    }});
+
+    account = webSocketAuthenticator.authenticate(upgradeRequest);
+    assertFalse(account.getUser().isPresent());
+    assertTrue(account.isRequired());
+
+    // --------------------
+    // invalid device id encoding
+
+    when(upgradeRequest.getParameterMap()).thenReturn(new HashMap<String, List<String>>() {{
+      put("device-id", new LinkedList<String>() {{add(VALID_DEVICE_ID + " not a number");}});
+      put("device-password", new LinkedList<String>() {{add(Base64.encodeBytes(VALID_PASSWORD, Base64.URL_SAFE));}});
+      put("jwt-token", new LinkedList<String>() {{add(VALID_JWT_TOKEN);}});
     }});
 
     account = webSocketAuthenticator.authenticate(upgradeRequest);
