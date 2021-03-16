@@ -38,6 +38,9 @@ public class TwilioConfiguration {
   @NotEmpty
   private String nanpaMessagingServiceSid;
 
+  @NotEmpty
+  private String verifyServiceSid;
+
   @NotNull
   @Valid
   private CircuitBreakerConfiguration circuitBreaker = new CircuitBreakerConfiguration();
@@ -60,6 +63,9 @@ public class TwilioConfiguration {
 
   @NotEmpty
   private String genericVerificationText;
+
+  @NotEmpty
+  private String androidAppHash;
 
   public String getAccountId() {
     return accountId;
@@ -103,6 +109,15 @@ public class TwilioConfiguration {
   @VisibleForTesting
   public void setNanpaMessagingServiceSid(String nanpaMessagingServiceSid) {
     this.nanpaMessagingServiceSid = nanpaMessagingServiceSid;
+  }
+
+  public String getVerifyServiceSid() {
+    return verifyServiceSid;
+  }
+
+  @VisibleForTesting
+  public void setVerifyServiceSid(String verifyServiceSid) {
+    this.verifyServiceSid = verifyServiceSid;
   }
 
   public CircuitBreakerConfiguration getCircuitBreaker() {
@@ -166,5 +181,13 @@ public class TwilioConfiguration {
   @VisibleForTesting
   public void setGenericVerificationText(String genericVerificationText) {
     this.genericVerificationText = genericVerificationText;
+  }
+
+  public String getAndroidAppHash() {
+    return androidAppHash;
+  }
+
+  public void setAndroidAppHash(String androidAppHash) {
+    this.androidAppHash = androidAppHash;
   }
 }
