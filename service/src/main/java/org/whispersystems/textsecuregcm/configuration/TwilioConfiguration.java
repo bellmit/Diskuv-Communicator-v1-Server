@@ -17,11 +17,9 @@
 package org.whispersystems.textsecuregcm.configuration;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.util.List;
 
 public class TwilioConfiguration {
 
@@ -30,9 +28,6 @@ public class TwilioConfiguration {
 
   @NotEmpty
   private String accountToken;
-
-  @NotNull
-  private List<String> numbers;
 
   @NotEmpty
   private String localDomain;
@@ -80,16 +75,6 @@ public class TwilioConfiguration {
   public void setAccountToken(String accountToken) {
     this.accountToken = accountToken;
   }
-
-  public List<String> getNumbers() {
-    return numbers;
-  }
-
-  @VisibleForTesting
-  public void setNumbers(List<String> numbers) {
-    this.numbers = numbers;
-  }
-
   public String getLocalDomain() {
     return localDomain;
   }
