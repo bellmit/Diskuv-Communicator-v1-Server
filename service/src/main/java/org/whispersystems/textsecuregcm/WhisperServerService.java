@@ -171,6 +171,7 @@ import org.whispersystems.textsecuregcm.securebackup.SecureBackupClient;
 import org.whispersystems.textsecuregcm.securestorage.SecureStorageClient;
 import org.whispersystems.textsecuregcm.sms.SmsSender;
 import org.whispersystems.textsecuregcm.sms.TwilioSmsSender;
+import org.whispersystems.textsecuregcm.sms.TwilioVerifyExperimentEnrollmentManager;
 import org.whispersystems.textsecuregcm.storage.AbusiveHostRules;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountCleaner;
@@ -416,6 +417,9 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     ExperimentEnrollmentManager experimentEnrollmentManager = new ExperimentEnrollmentManager(dynamicConfigurationManager);
 
+    TwilioVerifyExperimentEnrollmentManager verifyExperimentEnrollmentManager = new TwilioVerifyExperimentEnrollmentManager(
+        config.getVoiceVerificationConfiguration(), experimentEnrollmentManager);
+
     ExternalServiceCredentialGenerator storageCredentialsGenerator   = new ExternalServiceCredentialGenerator(config.getSecureStorageServiceConfiguration().getUserAuthenticationTokenSharedSecret(), new byte[0], false);
     ExternalServiceCredentialGenerator backupCredentialsGenerator    = new ExternalServiceCredentialGenerator(config.getSecureBackupServiceConfiguration().getUserAuthenticationTokenSharedSecret(), new byte[0], false);
     ExternalServiceCredentialGenerator paymentsCredentialsGenerator  = new ExternalServiceCredentialGenerator(config.getPaymentsServiceConfiguration().getUserAuthenticationTokenSharedSecret(), new byte[0], false);
@@ -533,7 +537,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     environment.jersey().register(new TimestampResponseFilter());
 
-    environment.jersey().register(new AccountController(pendingAccountsManager, accountsManager, jwtAuthentication, usernamesManager, abusiveHostRules, rateLimiters, smsSender, messagesManager, dynamicConfigurationManager, turnTokenGenerator, config.getTestDevices(), recaptchaClient, gcmSender, apnSender, backupCredentialsGenerator));
+    environment.jersey().register(new AccountController(pendingAccountsManager, accountsManager, jwtAuthentication, usernamesManager, abusiveHostRules, rateLimiters, smsSender, messagesManager, dynamicConfigurationManager, turnTokenGenerator, config.getTestDevices(), recaptchaClient, gcmSender, apnSender, backupCredentialsGenerator, verifyExperimentEnrollmentManager));
     environment.jersey().register(new DeviceController(pendingDevicesManager, accountsManager, jwtAuthentication, messagesManager, rateLimiters, config.getMaxDevices()));
     environment.jersey().register(new ProvisioningController(rateLimiters, provisioningManager));
     environment.jersey().register(new CertificateController(new CertificateGenerator(config.getDeliveryCertificate().getCertificate(), config.getDeliveryCertificate().getPrivateKey(), config.getDeliveryCertificate().getExpiresDays()), zkAuthOperations, isZkEnabled));

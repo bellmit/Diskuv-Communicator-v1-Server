@@ -35,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -76,6 +77,7 @@ import org.whispersystems.textsecuregcm.push.GCMSender;
 import org.whispersystems.textsecuregcm.push.GcmMessage;
 import org.whispersystems.textsecuregcm.recaptcha.RecaptchaClient;
 import org.whispersystems.textsecuregcm.sms.SmsSender;
+import org.whispersystems.textsecuregcm.sms.TwilioVerifyExperimentEnrollmentManager;
 import org.whispersystems.textsecuregcm.storage.AbusiveHostRule;
 import org.whispersystems.textsecuregcm.storage.AbusiveHostRules;
 import org.whispersystems.textsecuregcm.storage.Account;
@@ -121,10 +123,14 @@ public class AccountController {
   private static final String ACCOUNT_CREATE_COUNTER_NAME = name(AccountController.class, "create");
   private static final String ACCOUNT_VERIFY_COUNTER_NAME = name(AccountController.class, "verify");
 
+  private static final String TWILIO_VERIFY_ERROR_COUNTER_NAME = name(AccountController.class, "twilioVerifyError");
+
   private static final String CHALLENGE_PRESENT_TAG_NAME = "present";
   private static final String CHALLENGE_MATCH_TAG_NAME = "matches";
   private static final String COUNTRY_CODE_TAG_NAME = "countryCode";
   private static final String VERFICATION_TRANSPORT_TAG_NAME = "transport";
+
+  private static final String VERIFY_EXPERIMENT_TAG_NAME = "twilioVerify";
 
   private final AccountsManager                    accounts;
   private final JwtAuthentication                  jwtAuthentication;
@@ -142,6 +148,8 @@ public class AccountController {
   private final ExternalServiceCredentialGenerator backupServiceCredentialGenerator;
   private final PendingAccountsManager             pendingAccounts;
 
+  private final TwilioVerifyExperimentEnrollmentManager verifyExperimentEnrollmentManager;
+
   public AccountController(PendingAccountsManager pendingAccounts,
                            AccountsManager accounts,
                            JwtAuthentication jwtAuthentication,
@@ -156,7 +164,8 @@ public class AccountController {
                            RecaptchaClient recaptchaClient,
                            GCMSender gcmSender,
                            APNSender apnSender,
-                           ExternalServiceCredentialGenerator backupServiceCredentialGenerator)
+                           ExternalServiceCredentialGenerator backupServiceCredentialGenerator,
+                           TwilioVerifyExperimentEnrollmentManager verifyExperimentEnrollmentManager)
   {
     this.pendingAccounts                   = pendingAccounts;
     this.accounts                          = accounts;
@@ -173,6 +182,7 @@ public class AccountController {
     this.gcmSender                         = gcmSender;
     this.apnSender                         = apnSender;
     this.backupServiceCredentialGenerator  = backupServiceCredentialGenerator;
+    this.verifyExperimentEnrollmentManager = verifyExperimentEnrollmentManager;
   }
 
   @Timed
@@ -355,6 +365,9 @@ public class AccountController {
         throw new WebApplicationException(Response.status(403).build());
       }
 
+      storedVerificationCode.flatMap(StoredVerificationCode::getTwilioVerificationSid)
+          .ifPresent(smsSender::reportVerificationSucceeded);
+
       Optional<Account>                    existingAccount           = accounts.get(number);
       Optional<StoredRegistrationLock>     existingRegistrationLock  = existingAccount.map(Account::getRegistrationLock);
       Optional<ExternalServiceCredentials> existingBackupCredentials = existingAccount.map(Account::getUuid)
@@ -389,6 +402,7 @@ public class AccountController {
         final List<Tag> tags = new ArrayList<>();
         tags.add(Tag.of(COUNTRY_CODE_TAG_NAME, Util.getCountryCode(number)));
         tags.add(UserAgentTagUtil.getPlatformTag(userAgent));
+        tags.add(Tag.of(VERIFY_EXPERIMENT_TAG_NAME, String.valueOf(storedVerificationCode.get().getTwilioVerificationSid().isPresent())));
 
         Metrics.counter(ACCOUNT_VERIFY_COUNTER_NAME, tags).increment();
       }

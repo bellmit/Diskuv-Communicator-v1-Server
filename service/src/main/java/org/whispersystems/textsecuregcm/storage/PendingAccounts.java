@@ -16,17 +16,18 @@
  */
 package org.whispersystems.textsecuregcm.storage;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.Timer;
+import java.util.Optional;
+import com.google.common.annotations.VisibleForTesting;
 import org.whispersystems.textsecuregcm.auth.StoredVerificationCode;
 import org.whispersystems.textsecuregcm.storage.mappers.StoredVerificationCodeRowMapper;
 import org.whispersystems.textsecuregcm.util.Constants;
 
-import java.util.Optional;
 import java.util.UUID;
-
-import static com.codahale.metrics.MetricRegistry.name;
 
 /**
  * Pending accounts used for skipping CAPTCHA requirements with a "verification_code" during initial registration.
@@ -48,17 +49,23 @@ public class PendingAccounts {
     this.database.getDatabase().registerRowMapper(new StoredVerificationCodeRowMapper());
   }
 
+  @VisibleForTesting
   public void insert(UUID accountUuid, String verificationCode, long timestamp, String pushCode) {
+    insert(accountUuid, verificationCode, timestamp, pushCode, null);
+  }
+
+  public void insert(UUID accountUuid, String verificationCode, long timestamp, String pushCode, String twilioVerificationSid) {
     database.use(jdbi -> jdbi.useHandle(handle -> {
       try (Timer.Context ignored = insertTimer.time()) {
-        handle.createUpdate("INSERT INTO pending_accounts (number, verification_code, timestamp, push_code) " +
-                                "VALUES (:number, :verification_code, :timestamp, :push_code) " +
+        handle.createUpdate("INSERT INTO pending_accounts (number, verification_code, timestamp, push_code, twilio_verification_sid) " +
+                                "VALUES (:number, :verification_code, :timestamp, :push_code, :twilio_verification_sid) " +
                                 "ON CONFLICT(number) DO UPDATE " +
-                                "SET verification_code = EXCLUDED.verification_code, timestamp = EXCLUDED.timestamp, push_code = EXCLUDED.push_code")
+                                "SET verification_code = EXCLUDED.verification_code, timestamp = EXCLUDED.timestamp, push_code = EXCLUDED.push_code, twilio_verification_sid = EXCLUDED.twilio_verification_sid")
               .bind("verification_code", verificationCode)
               .bind("timestamp", timestamp)
               .bind("number", accountUuid.toString())
               .bind("push_code", pushCode)
+              .bind("twilio_verification_sid", twilioVerificationSid)
               .execute();
       }
     }));
@@ -67,7 +74,7 @@ public class PendingAccounts {
   public Optional<StoredVerificationCode> getCodeForPendingAccount(UUID accountUuid) {
     return database.with(jdbi ->jdbi.withHandle(handle -> {
       try (Timer.Context ignored = getCodeForPendingAccountTimer.time()) {
-        return handle.createQuery("SELECT verification_code, timestamp, push_code FROM pending_accounts WHERE number = :number")
+        return handle.createQuery("SELECT verification_code, timestamp, push_code, twilio_verification_sid FROM pending_accounts WHERE number = :number")
                      .bind("number", accountUuid.toString())
                      .mapTo(StoredVerificationCode.class)
                      .findFirst();
