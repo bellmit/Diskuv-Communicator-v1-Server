@@ -308,7 +308,7 @@ java -jar service/target/TextSecureServer-*.jar abusedb status local.yml
 java -jar service/target/TextSecureServer-*.jar abusedb migrate local.yml
 
 # Start the TextSecureServer
-java -jar service/target/TextSecureServer-*.jar server local.yml
+java -Duser.timezone=GMT -jar service/target/TextSecureServer-*.jar server local.yml
 ```
 
 ### Production
