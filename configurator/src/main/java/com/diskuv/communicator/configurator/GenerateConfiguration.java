@@ -30,6 +30,7 @@ import org.whispersystems.textsecuregcm.crypto.ECPrivateKey;
 import org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate;
 import org.whispersystems.textsecuregcm.metrics.CollectdMetricsReporterFactory;
 import org.whispersystems.textsecuregcm.util.Constants;
+import org.whispersystems.textsecuregcm.util.Util;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -188,6 +189,11 @@ public class GenerateConfiguration implements Callable<Integer> {
         remoteConfig(config);
         accountDatabaseCrawler(config);
         metrics(config);
+
+        // Diskuv specific configurations
+        diskuvSyntheticAccounts(config);
+        jwtKeys(config);
+
         return config;
     }
 
@@ -478,6 +484,20 @@ public class GenerateConfiguration implements Callable<Integer> {
         RemoteConfigConfiguration value = new RemoteConfigConfiguration();
 
         setField(config, "remoteConfig", value);
+    }
+
+    private void jwtKeys(WhisperServerConfiguration config) throws IllegalAccessException {
+        JwtKeysConfiguration value = new JwtKeysConfiguration();
+        value.setDomain("TODO");
+
+        setField(config, "jwtKeys", value);
+    }
+
+    private void diskuvSyntheticAccounts(WhisperServerConfiguration config) throws IllegalAccessException {
+        DiskuvSyntheticAccountsConfiguration value = new DiskuvSyntheticAccountsConfiguration();
+        value.setSharedEntropyInput(Util.generateSecretBytes(48));
+
+        setField(config, "diskuvSyntheticAccounts", value);
     }
 
     private String generateDatabasePassword() {

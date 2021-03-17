@@ -22,7 +22,7 @@ public class DiskuvSyntheticAccountsConfiguration {
    *
    * Example: <pre>openssl rand -base64 48</pre>
    */
-  @JsonProperty
+  @JsonProperty(required = true)
   @JsonSerialize(using = ByteArrayAdapter.Serializing.class)
   @JsonDeserialize(using = ByteArrayAdapter.Deserializing.class)
   @NotNull
@@ -31,5 +31,9 @@ public class DiskuvSyntheticAccountsConfiguration {
   @JsonIgnore
   public byte[] getSharedEntropyInput() {
     return sharedEntropyInput;
+  }
+
+  public void setSharedEntropyInput(byte[] sharedEntropyInput) {
+    this.sharedEntropyInput = sharedEntropyInput;
   }
 }

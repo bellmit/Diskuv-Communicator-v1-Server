@@ -8,9 +8,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class JwtKeysConfiguration {
-  @JsonProperty @NotNull private String domain;
+  @JsonProperty(required = true) @NotNull private String domain;
 
-  @JsonProperty @NotNull private List<String> appClientIds = new LinkedList<>();
+  @JsonProperty(required = true) @NotNull private List<String> appClientIds = new LinkedList<>();
 
   @JsonIgnore
   public String getDomain() {
@@ -20,5 +20,9 @@ public class JwtKeysConfiguration {
   @JsonIgnore
   public List<String> getAppClientIds() {
     return appClientIds;
+  }
+
+  public void setDomain(String domain) {
+    this.domain = domain;
   }
 }
