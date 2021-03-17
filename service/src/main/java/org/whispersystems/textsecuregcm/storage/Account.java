@@ -52,6 +52,9 @@ public class Account implements Principal, PossiblySyntheticAccount {
   private String name;
 
   @JsonProperty
+  private String emailAddress;
+
+  @JsonProperty
   private String avatar;
 
   @JsonProperty
@@ -233,6 +236,14 @@ public class Account implements Principal, PossiblySyntheticAccount {
 
   public void setProfileName(String name) {
     this.name = name;
+  }
+
+  public String getProfileEmailAddress() {
+    return emailAddress;
+  }
+
+  public void setProfileEmailAddress(String emailAddress) {
+    this.emailAddress = emailAddress;
   }
 
   public String getAvatar() {

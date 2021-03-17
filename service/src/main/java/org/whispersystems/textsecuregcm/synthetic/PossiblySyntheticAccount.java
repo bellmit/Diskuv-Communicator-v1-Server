@@ -30,13 +30,15 @@ public interface PossiblySyntheticAccount {
 
     String getIdentityKey();
 
-    String getProfileName();
-
-    String getAvatar();
-
     boolean isUnrestrictedUnidentifiedAccess();
 
     boolean isUuidAddressingSupported();
 
     boolean isGroupsV2Supported();
+
+    String getProfileName();
+
+    String getProfileEmailAddress();
+
+    String getAvatar();
 }

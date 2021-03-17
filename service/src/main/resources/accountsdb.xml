@@ -320,4 +320,12 @@
         <dropIndex tableName="accounts" indexName="keys_number_index" />
     </changeSet>
 
+    <changeSet id="16+diskuv-3" author="jonah">
+        <addColumn tableName="profiles">
+            <column name="email_address" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

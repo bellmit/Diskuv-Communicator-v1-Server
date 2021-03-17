@@ -54,7 +54,7 @@ public class ProfilesManagerTest {
     Profiles            profiles    = mock(Profiles.class           );
 
     UUID             uuid    = UUID.randomUUID();
-    VersionedProfile profile = new VersionedProfile("someversion", "somename", "someavatar", "somecommitment".getBytes());
+    VersionedProfile profile = new VersionedProfile("someversion", "somename", "someavatar", "someemail", "somecommitment".getBytes());
 
     when(cacheClient.getReadResource()).thenReturn(jedis);
     when(cacheClient.getWriteResource()).thenReturn(jedis);
@@ -83,7 +83,7 @@ public class ProfilesManagerTest {
     Profiles            profiles    = mock(Profiles.class           );
 
     UUID             uuid    = UUID.randomUUID();
-    VersionedProfile profile = new VersionedProfile("someversion", "somename", "someavatar", "somecommitment".getBytes());
+    VersionedProfile profile = new VersionedProfile("someversion", "somename", "someavatar", "someemail", "somecommitment".getBytes());
 
     when(cacheClient.getReadResource()).thenReturn(jedis);
     when(cacheClient.getWriteResource()).thenReturn(jedis);

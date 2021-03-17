@@ -18,6 +18,7 @@ public class Profiles {
   public static final String VERSION       = "version";
   public static final String NAME          = "name";
   public static final String AVATAR        = "avatar";
+  public static final String EMAIL_ADDRESS = "email_address";
   public static final String COMMITMENT    = "commitment";
 
   private final MetricRegistry metricRegistry = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
@@ -36,11 +37,12 @@ public class Profiles {
   public void set(UUID uuid, VersionedProfile profile) {
     database.use(jdbi -> jdbi.useHandle(handle -> {
       try (Timer.Context ignored = setTimer.time()) {
-        handle.createUpdate("INSERT INTO profiles (" + UID + ", " + VERSION + ", " + NAME + ", " + AVATAR + ", " + COMMITMENT + ") VALUES (:uuid, :version, :name, :avatar, :commitment) ON CONFLICT (" + UID + ", " + VERSION + ") DO UPDATE SET " + NAME + " = EXCLUDED." + NAME + ", " + AVATAR + " = EXCLUDED." + AVATAR)
+        handle.createUpdate("INSERT INTO profiles (" + UID + ", " + VERSION + ", " + NAME + ", " + AVATAR + ", " + EMAIL_ADDRESS + ", " + COMMITMENT + ") VALUES (:uuid, :version, :name, :avatar, :email_address, :commitment) ON CONFLICT (" + UID + ", " + VERSION + ") DO UPDATE SET " + NAME + " = EXCLUDED." + NAME + ", " + AVATAR + " = EXCLUDED." + AVATAR + ", " + EMAIL_ADDRESS + " = EXCLUDED." + EMAIL_ADDRESS)
               .bind("uuid", uuid)
               .bind("version", profile.getVersion())
               .bind("name", profile.getName())
               .bind("avatar", profile.getAvatar())
+              .bind("email_address", profile.getEmailAddress())
               .bind("commitment", profile.getCommitment())
               .execute();
       }

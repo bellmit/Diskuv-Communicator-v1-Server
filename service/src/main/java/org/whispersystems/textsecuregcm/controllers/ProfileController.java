@@ -25,17 +25,15 @@ import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.s3.PolicySigner;
 import org.whispersystems.textsecuregcm.s3.PostPolicyGenerator;
 import org.whispersystems.textsecuregcm.storage.Account;
-import org.whispersystems.textsecuregcm.storage.AccountsManager;
-import org.whispersystems.textsecuregcm.storage.ProfilesManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.storage.VersionedProfile;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
-import org.whispersystems.textsecuregcm.util.ExactlySize;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticVersionedProfile;
 import org.whispersystems.textsecuregcm.util.Pair;
 
 import javax.validation.Valid;
-import javax.validation.valueextraction.Unwrapping;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -52,6 +50,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import io.dropwizard.auth.Auth;
 
@@ -62,7 +61,7 @@ public class ProfileController {
   private final Logger logger = LoggerFactory.getLogger(ProfileController.class);
 
   private final RateLimiters     rateLimiters;
-  private final ProfilesManager  profilesManager;
+  private final PossiblySyntheticProfilesManager profilesManager;
   private final PossiblySyntheticAccountsManager accountsManager;
   private final UsernamesManager usernamesManager;
 
@@ -76,7 +75,7 @@ public class ProfileController {
 
   public ProfileController(RateLimiters rateLimiters,
                            PossiblySyntheticAccountsManager accountsManager,
-                           ProfilesManager profilesManager,
+                           PossiblySyntheticProfilesManager profilesManager,
                            UsernamesManager usernamesManager,
                            AmazonS3 s3client,
                            PostPolicyGenerator policyGenerator,
@@ -104,11 +103,11 @@ public class ProfileController {
   public Response setProfile(@Auth Account account, @Valid CreateProfileRequest request) {
     if (!isZkEnabled) throw new WebApplicationException(Response.Status.NOT_FOUND);
 
-    Optional<VersionedProfile>              currentProfile = profilesManager.get(account.getUuid(), request.getVersion());
+    Optional<? extends PossiblySyntheticVersionedProfile> currentProfile = profilesManager.get(account.getUuid(), request.getVersion());
     String                                  avatar         = request.isAvatar() ? generateAvatarObjectName() : null;
     Optional<ProfileAvatarUploadAttributes> response       = Optional.empty();
 
-    profilesManager.set(account.getUuid(), new VersionedProfile(request.getVersion(), request.getName(), avatar, request.getCommitment().serialize()));
+    profilesManager.set(account.getUuid(), new VersionedProfile(request.getVersion(), request.getName(), avatar, request.getEmailAddress(), request.getCommitment().serialize()));
 
     if (request.isAvatar()) {
       Optional<String> currentAvatar = Optional.empty();
@@ -127,6 +126,7 @@ public class ProfileController {
     }
 
     account.setProfileName(request.getName());
+    account.setProfileEmailAddress(request.getEmailAddress());
     if (avatar != null) account.setAvatar(avatar);
     accountsManager.update(account);
 
@@ -195,11 +195,12 @@ public class ProfileController {
       PossiblySyntheticAccount accountProfile = accountsManager.get(uuid);
       OptionalAccess.verify(requestAccount, accessKey, accountProfile);
 
-      Optional<String>           username = usernamesManager.get(accountProfile.getUuid());
-      Optional<VersionedProfile> profile  = profilesManager.get(uuid, version);
+      Optional<String>                                      username = usernamesManager.get(accountProfile.getUuid());
+      Optional<? extends PossiblySyntheticVersionedProfile> profile  = profilesManager.get(uuid, version);
 
-      String                     name     = profile.map(VersionedProfile::getName).orElse(accountProfile.getProfileName());
-      String                     avatar   = profile.map(VersionedProfile::getAvatar).orElse(accountProfile.getAvatar());
+      String           name         = profile.map(PossiblySyntheticVersionedProfile::getName).orElse(accountProfile.getProfileName());
+      String           emailAddress = profile.map(PossiblySyntheticVersionedProfile::getEmailAddress).orElse(accountProfile.getProfileEmailAddress());
+      String           avatar       = profile.map(PossiblySyntheticVersionedProfile::getAvatar).orElse(accountProfile.getAvatar());
 
       Optional<ProfileKeyCredentialResponse> credential = getProfileCredential(credentialRequest, profile, uuid);
 
@@ -210,16 +211,18 @@ public class ProfileController {
                                      accountProfile.isUnrestrictedUnidentifiedAccess(),
                                      new UserCapabilities(accountProfile.isUuidAddressingSupported(), accountProfile.isGroupsV2Supported()),
                                      username.orElse(null),
-                                     null, credential.orElse(null)));
+                                     null,
+                                     emailAddress,
+                                     credential.orElse(null)));
     } catch (InvalidInputException e) {
       logger.info("Bad profile request", e);
       throw new WebApplicationException(Response.Status.BAD_REQUEST);
     }
   }
 
-  private Optional<ProfileKeyCredentialResponse> getProfileCredential(Optional<String>           encodedProfileCredentialRequest,
-                                                                      Optional<VersionedProfile> profile,
-                                                                      UUID                       uuid)
+  private Optional<ProfileKeyCredentialResponse> getProfileCredential(Optional<String>                                      encodedProfileCredentialRequest,
+                                                                      Optional<? extends PossiblySyntheticVersionedProfile> profile,
+                                                                      UUID                                                  uuid)
       throws InvalidInputException
   {
     if (!encodedProfileCredentialRequest.isPresent()) return Optional.empty();
@@ -239,26 +242,18 @@ public class ProfileController {
 
   // Old profile endpoints. Replaced by versioned profile endpoints (above)
 
-  @Deprecated
-  @Timed
-  @PUT
-  @Produces(MediaType.APPLICATION_JSON)
-  @Path("/name/{name}")
-  public void setProfile(@Auth Account account, @PathParam("name") @ExactlySize(value = {72, 108}, payload = {Unwrapping.Unwrap.class}) Optional<String> name) {
-    account.setProfileName(name.orElse(null));
-    accountsManager.update(account);
-  }
-
-  @Deprecated
+  // This method was marked deprecated, but the protocol requires that you can
+  // download an encrypted profile without knowing the latest version
+  //     WAS: @Deprecated
   @Timed
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("/{identifier}")
   public Profile getProfile(@Auth                                     Account             realRequestAccount,
                             @HeaderParam(OptionalAccess.UNIDENTIFIED) Optional<Anonymous> accessKey,
-                            @PathParam("identifier")                  AmbiguousIdentifier identifier,
+                            @PathParam("identifier") AmbiguousIdentifier identifier,
                             @QueryParam("ca")                         boolean useCaCertificate)
-      throws RateLimitExceededException
+          throws RateLimitExceededException
   {
     // Unlike Signal, we expect every API to fully authenticate the real source, and edge routers are going to authenticate
     // way before it gets to the Java server. Those edge routers make it possible to stop denial of service.
@@ -280,7 +275,7 @@ public class ProfileController {
     PossiblySyntheticAccount accountProfile = accountsManager.get(identifier.getUuid());
     OptionalAccess.verify(requestAccount, accessKey, accountProfile);
 
-    Optional<String> username = usernamesManager.get(accountProfile.getUuid());;
+    Optional<String> username = usernamesManager.get(accountProfile.getUuid());
 
     return new Profile(accountProfile.getProfileName(),
                        accountProfile.getAvatar(),
@@ -289,31 +284,10 @@ public class ProfileController {
                        accountProfile.isUnrestrictedUnidentifiedAccess(),
                        new UserCapabilities(accountProfile.isUuidAddressingSupported(), accountProfile.isGroupsV2Supported()),
                        username.orElse(null),
-                       null, null);
+                       null,
+                       accountProfile.getProfileEmailAddress(),
+                       null);
   }
-
-
-  @Deprecated
-  @Timed
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Path("/form/avatar")
-  public ProfileAvatarUploadAttributes getAvatarUploadForm(@Auth Account account) {
-    String                        previousAvatar                = account.getAvatar();
-    String                        objectName                    = generateAvatarObjectName();
-    ProfileAvatarUploadAttributes profileAvatarUploadAttributes = generateAvatarUploadForm(objectName);
-
-    if (previousAvatar != null && previousAvatar.startsWith("profiles/")) {
-      s3client.deleteObject(bucket, previousAvatar);
-    }
-
-    account.setAvatar(objectName);
-    accountsManager.update(account);
-
-    return profileAvatarUploadAttributes;
-  }
-
-  ////
 
   private ProfileAvatarUploadAttributes generateAvatarUploadForm(String objectName) {
     ZonedDateTime        now            = ZonedDateTime.now(ZoneOffset.UTC);
@@ -326,8 +300,12 @@ public class ProfileController {
   }
 
   private String generateAvatarObjectName() {
+    return generateAvatarObjectName(bytes -> new SecureRandom().nextBytes(bytes));
+  }
+
+  public static String generateAvatarObjectName(Consumer<byte[]> randomSetterOfBytes) {
     byte[] object = new byte[16];
-    new SecureRandom().nextBytes(object);
+    randomSetterOfBytes.accept(object);
 
     return "profiles/" + Base64.encodeBase64URLSafeString(object);
   }

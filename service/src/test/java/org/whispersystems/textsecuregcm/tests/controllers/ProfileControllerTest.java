@@ -2,10 +2,12 @@ package org.whispersystems.textsecuregcm.tests.controllers;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
@@ -32,7 +34,10 @@ import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.ProfilesManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.storage.VersionedProfile;
+import org.whispersystems.textsecuregcm.synthetic.HmacDrbg;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager;
+import org.whispersystems.textsecuregcm.synthetic.SyntheticVersionedProfile;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
 import org.whispersystems.textsecuregcm.util.SystemMapper;
 
@@ -51,11 +56,12 @@ import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_BEARE
 public class ProfileControllerTest {
 
   private static PossiblySyntheticAccountsManager  accountsManager     = mock(PossiblySyntheticAccountsManager.class );
-  private static ProfilesManager  profilesManager     = mock(ProfilesManager.class);
+  private static PossiblySyntheticProfilesManager  profilesManager     = mock(PossiblySyntheticProfilesManager.class);
   private static UsernamesManager usernamesManager    = mock(UsernamesManager.class);
   private static RateLimiters     rateLimiters        = mock(RateLimiters.class    );
   private static RateLimiter      rateLimiter         = mock(RateLimiter.class     );
   private static RateLimiter      usernameRateLimiter = mock(RateLimiter.class     );
+  private static String           someEmail           = Strings.repeat("1234567890", 46) + "1234";
 
   private static AmazonS3                  s3client            = mock(AmazonS3.class);
   private static PostPolicyGenerator       postPolicyGenerator = new PostPolicyGenerator("us-west-1", "profile-bucket", "accessKey");
@@ -109,8 +115,8 @@ public class ProfileControllerTest {
     when(usernamesManager.get(AuthHelper.VALID_UUID_TWO)).thenReturn(Optional.of("n00bkiller"));
     when(usernamesManager.get("n00bkiller")).thenReturn(Optional.of(AuthHelper.VALID_UUID_TWO));
 
-    when(profilesManager.get(eq(AuthHelper.VALID_UUID), eq("someversion"))).thenReturn(Optional.empty());
-    when(profilesManager.get(eq(AuthHelper.VALID_UUID_TWO), eq("validversion"))).thenReturn(Optional.of(new VersionedProfile("validversion", "validname", "profiles/validavatar", "validcommitmnet".getBytes())));
+    when((Optional<SyntheticVersionedProfile>)profilesManager.get(eq(AuthHelper.VALID_UUID), eq("someversion"))).     thenReturn(Optional.of(new SyntheticVersionedProfile(new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES], AuthHelper.VALID_UUID)));
+    when((Optional<VersionedProfile>)         profilesManager.get(eq(AuthHelper.VALID_UUID_TWO), eq("validversion"))).thenReturn(Optional.of(new VersionedProfile("validversion", "validname", "profiles/validavatar", "profiles/validemail", "validcommitmnet".getBytes())));
 
     clearInvocations(rateLimiter);
     clearInvocations(accountsManager);
@@ -138,24 +144,15 @@ public class ProfileControllerTest {
   }
 
   @Test
-  public void testProfileGetByNumber() throws RateLimitExceededException {
-    Profile profile= resources.getJerseyTest()
+  public void testProfileGetByNumberBadRequest() throws RateLimitExceededException {
+    Response response = resources.getJerseyTest()
                               .target("/v1/profile/" + AuthHelper.VALID_NUMBER_TWO)
                               .request()
-            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
-                              .get(Profile.class);
+                              .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                              .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                              .get();
 
-    assertThat(profile.getIdentityKey()).isEqualTo("bar");
-    assertThat(profile.getName()).isEqualTo("baz");
-    assertThat(profile.getAvatar()).isEqualTo("profiles/bang");
-    assertThat(profile.getCapabilities().isUuid()).isFalse();
-    assertThat(profile.getUsername()).isNull();
-    assertThat(profile.getUuid()).isNull();
-
-    verify(accountsManager, times(1)).get(AuthHelper.VALID_UUID_TWO);
-    verifyNoMoreInteractions(usernamesManager);
-    verify(rateLimiter, times(1)).validate(eq(AuthHelper.VALID_NUMBER));
+    assertThat(response.getStatus()).isEqualTo(Response.Status.BAD_REQUEST.getStatusCode());
   }
 
   @Test
@@ -173,13 +170,13 @@ public class ProfileControllerTest {
   }
 
   @Test
-  public void testProfileGetUnauthorized() throws Exception {
+  public void testProfileGetByUuidUnauthorized() throws Exception {
     Response response = resources.getJerseyTest()
-                                 .target("/v1/profile/" + AuthHelper.VALID_NUMBER_TWO)
+                                 .target("/v1/profile/" + AuthHelper.VALID_UUID_TWO)
                                  .request()
                                  .get();
 
-    assertThat(response.getStatus()).isEqualTo(Response.Status.UNAUTHORIZED);
+    assertThat(response.getStatus()).isEqualTo(Response.Status.UNAUTHORIZED.getStatusCode());
   }
 
   @Test
@@ -209,9 +206,9 @@ public class ProfileControllerTest {
 
 
   @Test
-  public void testProfileGetDisabled() throws Exception {
+  public void testProfileGetByUuidDisabled() throws Exception {
     Response response = resources.getJerseyTest()
-                                 .target("/v1/profile/" + AuthHelper.VALID_NUMBER_TWO)
+                                 .target("/v1/profile/" + AuthHelper.VALID_UUID_TWO)
                                  .request()
                                  .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.DISABLED_NUMBER, AuthHelper.DISABLED_PASSWORD))
                                  .get();
@@ -220,6 +217,7 @@ public class ProfileControllerTest {
   }
 
   @Test
+  @Ignore("Deleted deprecated non-versioned REST endpoints in ProfileController")
   public void testProfileCapabilities() throws Exception {
     Profile profile= resources.getJerseyTest()
                               .target("/v1/profile/" + AuthHelper.VALID_NUMBER)
@@ -232,6 +230,7 @@ public class ProfileControllerTest {
   }
 
   @Test
+  @Ignore("Deleted deprecated non-versioned REST endpoints in ProfileController")
   public void testSetProfileNameDeprecated() {
     Response response = resources.getJerseyTest()
                                  .target("/v1/profile/name/123456789012345678901234567890123456789012345678901234567890123456789012")
@@ -246,6 +245,7 @@ public class ProfileControllerTest {
   }
 
   @Test
+  @Ignore("Deleted deprecated non-versioned REST endpoints in ProfileController")
   public void testSetProfileNameExtendedDeprecated() {
     Response response = resources.getJerseyTest()
                                  .target("/v1/profile/name/123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678")
@@ -260,6 +260,7 @@ public class ProfileControllerTest {
   }
 
   @Test
+  @Ignore("Deleted deprecated non-versioned REST endpoints in ProfileController")
   public void testSetProfileNameWrongSizeDeprecated() {
     Response response = resources.getJerseyTest()
                                  .target("/v1/profile/name/1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
@@ -281,9 +282,9 @@ public class ProfileControllerTest {
     ProfileAvatarUploadAttributes uploadAttributes = resources.getJerseyTest()
                                                               .target("/v1/profile/")
                                                               .request()
-            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
-                                                              .put(Entity.entity(new CreateProfileRequest(commitment, "someversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", true), MediaType.APPLICATION_JSON_TYPE), ProfileAvatarUploadAttributes.class);
+                                                              .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                                              .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                                              .put(Entity.entity(new CreateProfileRequest(commitment, "someversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", true, someEmail), MediaType.APPLICATION_JSON_TYPE), ProfileAvatarUploadAttributes.class);
 
     ArgumentCaptor<VersionedProfile> profileArgumentCaptor = ArgumentCaptor.forClass(VersionedProfile.class);
 
@@ -296,6 +297,7 @@ public class ProfileControllerTest {
     assertThat(profileArgumentCaptor.getValue().getAvatar()).isEqualTo(uploadAttributes.getKey());
     assertThat(profileArgumentCaptor.getValue().getVersion()).isEqualTo("someversion");
     assertThat(profileArgumentCaptor.getValue().getName()).isEqualTo("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678");
+    assertThat(profileArgumentCaptor.getValue().getEmailAddress()).isEqualTo(someEmail);
   }
 
   @Test
@@ -307,7 +309,7 @@ public class ProfileControllerTest {
                                  .request()
             .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
             .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
-                                 .put(Entity.entity(new CreateProfileRequest(commitment, "someversion", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", true), MediaType.APPLICATION_JSON_TYPE));
+                                 .put(Entity.entity(new CreateProfileRequest(commitment, "someversion", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", true, "someemail"), MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(422);
   }
@@ -319,9 +321,9 @@ public class ProfileControllerTest {
     Response response = resources.getJerseyTest()
                                  .target("/v1/profile/")
                                  .request()
-                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
-                                  .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
-                                 .put(Entity.entity(new CreateProfileRequest(commitment, "anotherversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", false), MediaType.APPLICATION_JSON_TYPE));
+                                 .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+                                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                                 .put(Entity.entity(new CreateProfileRequest(commitment, "anotherversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", false, someEmail), MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.hasEntity()).isFalse();
@@ -337,6 +339,7 @@ public class ProfileControllerTest {
     assertThat(profileArgumentCaptor.getValue().getAvatar()).isNull();
     assertThat(profileArgumentCaptor.getValue().getVersion()).isEqualTo("anotherversion");
     assertThat(profileArgumentCaptor.getValue().getName()).isEqualTo("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678");
+    assertThat(profileArgumentCaptor.getValue().getEmailAddress()).isEqualTo(someEmail);
   }
 
   @Test
@@ -346,9 +349,9 @@ public class ProfileControllerTest {
     ProfileAvatarUploadAttributes uploadAttributes= resources.getJerseyTest()
                                                              .target("/v1/profile/")
                                                              .request()
-                                                              .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
-                                                              .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
-                                                             .put(Entity.entity(new CreateProfileRequest(commitment, "validversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", true), MediaType.APPLICATION_JSON_TYPE), ProfileAvatarUploadAttributes.class);
+                                                             .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN_TWO))
+                                                             .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING_TWO, AuthHelper.VALID_PASSWORD_TWO))
+                                                             .put(Entity.entity(new CreateProfileRequest(commitment, "validversion", "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", true, someEmail), MediaType.APPLICATION_JSON_TYPE), ProfileAvatarUploadAttributes.class);
 
     ArgumentCaptor<VersionedProfile> profileArgumentCaptor = ArgumentCaptor.forClass(VersionedProfile.class);
 
@@ -360,6 +363,7 @@ public class ProfileControllerTest {
     assertThat(profileArgumentCaptor.getValue().getAvatar()).startsWith("profiles/");
     assertThat(profileArgumentCaptor.getValue().getVersion()).isEqualTo("validversion");
     assertThat(profileArgumentCaptor.getValue().getName()).isEqualTo("123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678");
+    assertThat(profileArgumentCaptor.getValue().getEmailAddress()).isEqualTo(someEmail);
   }
 
   @Test

@@ -36,6 +36,9 @@ public class Profile {
   private UUID uuid;
 
   @JsonProperty
+  private String emailAddress;
+
+  @JsonProperty
   @JsonSerialize(using = ProfileKeyCredentialResponseAdapter.Serializing.class)
   @JsonDeserialize(using = ProfileKeyCredentialResponseAdapter.Deserializing.class)
   private ProfileKeyCredentialResponse credential;
@@ -45,6 +48,7 @@ public class Profile {
   public Profile(String name, String avatar, String identityKey,
                  String unidentifiedAccess, boolean unrestrictedUnidentifiedAccess,
                  UserCapabilities capabilities, String username, UUID uuid,
+                 String emailAddress,
                  ProfileKeyCredentialResponse credential)
   {
     this.name                           = name;
@@ -55,6 +59,7 @@ public class Profile {
     this.capabilities                   = capabilities;
     this.username                       = username;
     this.uuid                           = uuid;
+    this.emailAddress                   = emailAddress;
     this.credential                     = credential;
   }
 
@@ -96,5 +101,10 @@ public class Profile {
   @VisibleForTesting
   public UUID getUuid() {
     return uuid;
+  }
+
+  @VisibleForTesting
+  public String getEmailAddress() {
+    return emailAddress;
   }
 }

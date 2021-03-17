@@ -89,6 +89,7 @@ import org.whispersystems.textsecuregcm.sms.SmsSender;
 import org.whispersystems.textsecuregcm.sms.TwilioSmsSender;
 import org.whispersystems.textsecuregcm.storage.*;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
+import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager;
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.websocket.AuthenticatedConnectListener;
 import org.whispersystems.textsecuregcm.websocket.DeadLetterHandler;
@@ -197,6 +198,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     PossiblySyntheticAccountsManager syntheticAccountsManager = new PossiblySyntheticAccountsManager(accountsManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
     UsernamesManager           usernamesManager           = new UsernamesManager(usernames, reservedUsernames, cacheClient);
     ProfilesManager            profilesManager            = new ProfilesManager(profiles, cacheClient);
+    PossiblySyntheticProfilesManager syntheticProfilesManager = new PossiblySyntheticProfilesManager(profilesManager, config.getDiskuvSyntheticAccounts().getSharedEntropyInput());
     MessagesCache              messagesCache              = new MessagesCache(messagesClient, messages, accountsManager, config.getMessageCacheConfiguration().getPersistDelayMinutes());
     MessagesManager            messagesManager            = new MessagesManager(messages, messagesCache);
     RemoteConfigsManager       remoteConfigsManager       = new RemoteConfigsManager(remoteConfigs);
@@ -258,7 +260,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     AttachmentControllerV3 attachmentControllerV3    = new AttachmentControllerV3(rateLimiters, config.getGcpAttachmentsConfiguration().getDomain(), config.getGcpAttachmentsConfiguration().getEmail(), config.getGcpAttachmentsConfiguration().getMaxSizeInBytes(), config.getGcpAttachmentsConfiguration().getPathPrefix(), config.getGcpAttachmentsConfiguration().getRsaSigningKey());
     KeysController         keysController            = new KeysController(rateLimiters, keys, syntheticAccountsManager);
     MessageController      messageController         = new MessageController(rateLimiters, pushSender, receiptSender, syntheticAccountsManager, messagesManager, apnFallbackManager);
-    ProfileController      profileController         = new ProfileController(rateLimiters, syntheticAccountsManager, profilesManager, usernamesManager, cdnS3Client, profileCdnPolicyGenerator, profileCdnPolicySigner, config.getCdnConfiguration().getBucket(), zkProfileOperations, isZkEnabled);
+    ProfileController      profileController         = new ProfileController(rateLimiters, syntheticAccountsManager, syntheticProfilesManager, usernamesManager, cdnS3Client, profileCdnPolicyGenerator, profileCdnPolicySigner, config.getCdnConfiguration().getBucket(), zkProfileOperations, isZkEnabled);
     StickerController      stickerController         = new StickerController(rateLimiters, config.getCdnConfiguration().getAccessKey(), config.getCdnConfiguration().getAccessSecret(), config.getCdnConfiguration().getRegion(), config.getCdnConfiguration().getBucket());
     RemoteConfigController remoteConfigController    = new RemoteConfigController(remoteConfigsManager, config.getRemoteConfigConfiguration().getAuthorizedTokens());
 

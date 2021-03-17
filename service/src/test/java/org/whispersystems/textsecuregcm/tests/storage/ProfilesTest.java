@@ -36,7 +36,7 @@ public class ProfilesTest {
   @Test
   public void testSetGet() {
     UUID             uuid    = UUID.randomUUID();
-    VersionedProfile profile = new VersionedProfile("123", "foo", "avatarLocation", "acommitment".getBytes());
+    VersionedProfile profile = new VersionedProfile("123", "foo", "avatarLocation", "email", "acommitment".getBytes());
     profiles.set(uuid, profile);
 
     Optional<VersionedProfile> retrieved = profiles.get(uuid, "123");
@@ -50,7 +50,7 @@ public class ProfilesTest {
   @Test
   public void testSetReplace() {
     UUID             uuid    = UUID.randomUUID();
-    VersionedProfile profile = new VersionedProfile("123", "foo", "avatarLocation", "acommitment".getBytes());
+    VersionedProfile profile = new VersionedProfile("123", "foo", "avatarLocation", "email", "acommitment".getBytes());
     profiles.set(uuid, profile);
 
     Optional<VersionedProfile> retrieved = profiles.get(uuid, "123");
@@ -60,7 +60,7 @@ public class ProfilesTest {
     assertThat(retrieved.get().getAvatar()).isEqualTo(profile.getAvatar());
     assertThat(retrieved.get().getCommitment()).isEqualTo(profile.getCommitment());
 
-    VersionedProfile updated = new VersionedProfile("123", "bar", "baz", "boof".getBytes());
+    VersionedProfile updated = new VersionedProfile("123", "bar", "baz", "email", "boof".getBytes());
     profiles.set(uuid, updated);
 
     retrieved = profiles.get(uuid, "123");
@@ -74,8 +74,8 @@ public class ProfilesTest {
   @Test
   public void testMultipleVersions() {
     UUID             uuid    = UUID.randomUUID();
-    VersionedProfile profileOne = new VersionedProfile("123", "foo", "avatarLocation", "acommitmnet".getBytes());
-    VersionedProfile profileTwo = new VersionedProfile("345", "bar", "baz", "boof".getBytes());
+    VersionedProfile profileOne = new VersionedProfile("123", "foo", "avatarLocation", "email", "acommitmnet".getBytes());
+    VersionedProfile profileTwo = new VersionedProfile("345", "bar", "baz", "email", "boof".getBytes());
 
     profiles.set(uuid, profileOne);
     profiles.set(uuid, profileTwo);
@@ -98,7 +98,7 @@ public class ProfilesTest {
   @Test
   public void testMissing() {
     UUID             uuid    = UUID.randomUUID();
-    VersionedProfile profile = new VersionedProfile("123", "foo", "avatarLocation", "aDigest".getBytes());
+    VersionedProfile profile = new VersionedProfile("123", "foo", "avatarLocation", "email", "aDigest".getBytes());
     profiles.set(uuid, profile);
 
     Optional<VersionedProfile> retrieved = profiles.get(uuid, "888");
@@ -109,8 +109,8 @@ public class ProfilesTest {
   @Test
   public void testDelete() {
     UUID             uuid    = UUID.randomUUID();
-    VersionedProfile profileOne = new VersionedProfile("123", "foo", "avatarLocation", "aDigest".getBytes());
-    VersionedProfile profileTwo = new VersionedProfile("345", "bar", "baz", "boof".getBytes());
+    VersionedProfile profileOne = new VersionedProfile("123", "foo", "avatarLocation", "email", "aDigest".getBytes());
+    VersionedProfile profileTwo = new VersionedProfile("345", "bar", "baz", "email", "boof".getBytes());
 
     profiles.set(uuid, profileOne);
     profiles.set(uuid, profileTwo);

@@ -23,6 +23,10 @@ public class CreateProfileRequest {
   private boolean avatar;
 
   @JsonProperty
+  @ExactlySize({464})
+  private String emailAddress;
+
+  @JsonProperty
   @NotNull
   @JsonDeserialize(using = ProfileKeyCommitmentAdapter.Deserializing.class)
   @JsonSerialize(using = ProfileKeyCommitmentAdapter.Serializing.class)
@@ -30,11 +34,12 @@ public class CreateProfileRequest {
 
   public CreateProfileRequest() {}
 
-  public CreateProfileRequest(ProfileKeyCommitment commitment, String version, String name, boolean wantsAvatar) {
+  public CreateProfileRequest(ProfileKeyCommitment commitment, String version, String name, boolean wantsAvatar, String emailAddress) {
     this.commitment = commitment;
     this.version    = version;
     this.name       = name;
     this.avatar     = wantsAvatar;
+    this.emailAddress = emailAddress;
   }
 
   public ProfileKeyCommitment getCommitment() {
@@ -51,5 +56,9 @@ public class CreateProfileRequest {
 
   public boolean isAvatar() {
     return avatar;
+  }
+
+  public String getEmailAddress() {
+    return emailAddress;
   }
 }
