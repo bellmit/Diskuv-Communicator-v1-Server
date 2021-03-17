@@ -47,6 +47,7 @@ public class RateLimiters {
   private final RateLimiter stickerPackLimiter;
   private final RateLimiter usernameLookupLimiter;
   private final RateLimiter usernameSetLimiter;
+  private final RateLimiter connectWebSocketLimiter;
 
   public RateLimiters(RateLimitsConfiguration config, ReplicatedJedisPool cacheClient) {
     this.smsDestinationLimiter = new RateLimiter(cacheClient, "smsDestination",
@@ -128,6 +129,10 @@ public class RateLimiters {
     this.usernameSetLimiter = new RateLimiter(cacheClient, "usernameSet",
                                               config.getUsernameSet().getBucketSize(),
                                               config.getUsernameSet().getLeakRatePerMinute());
+
+    this.connectWebSocketLimiter = new RateLimiter(cacheClient, "connectWebSocket",
+                                                   config.getConnectWebSocket().getBucketSize(),
+                                                   config.getConnectWebSocket().getLeakRatePerMinute());
   }
 
   @VisibleForTesting
@@ -152,6 +157,7 @@ public class RateLimiters {
     this.stickerPackLimiter = rateLimiter;
     this.usernameLookupLimiter = rateLimiter;
     this.usernameSetLimiter = rateLimiter;
+    this.connectWebSocketLimiter = rateLimiter;
   }
 
   public RateLimiter getAllocateDeviceLimiter() {
@@ -234,4 +240,7 @@ public class RateLimiters {
     return usernameSetLimiter;
   }
 
+  public RateLimiter getConnectWebSocketLimiter() {
+    return connectWebSocketLimiter;
+  }
 }

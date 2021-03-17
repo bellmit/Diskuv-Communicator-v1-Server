@@ -2,6 +2,8 @@ package org.whispersystems.dispatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.dispatch.exceptions.DuplicateSubscriptionException;
+import org.whispersystems.dispatch.exceptions.SubscriptionException;
 import org.whispersystems.dispatch.io.RedisPubSubConnectionFactory;
 import org.whispersystems.dispatch.redis.PubSubConnection;
 import org.whispersystems.dispatch.redis.PubSubReply;
@@ -45,18 +47,24 @@ public class DispatchManager extends Thread {
     this.pubSubConnection.close();
   }
 
-  public synchronized void subscribe(String name, DispatchChannel dispatchChannel) {
+  public synchronized void subscribe(String name, DispatchChannel dispatchChannel) throws SubscriptionException {
+    // [Diskuv Change] Denial of service mitigation.
+    // See diskuv-changes/2021-03-15-denial-of-service-mitigation.md in Android client.
+    // Also throw SubscriptionException if we have a subscription error.
     Optional<DispatchChannel> previous = Optional.ofNullable(subscriptions.get(name));
     subscriptions.put(name, dispatchChannel);
+
+    if (previous.isPresent()) {
+      dispatchUnsubscription(name, previous.get());
+      throw new DuplicateSubscriptionException(
+          "Found a previous subscription in channel " + name + ", which we just unsubscribed");
+    }
 
     try {
       pubSubConnection.subscribe(name);
     } catch (IOException e) {
       logger.warn("Subscription error", e);
-    }
-
-    if (previous.isPresent()) {
-      dispatchUnsubscription(name, previous.get());
+      throw new SubscriptionException(e);
     }
   }
 
@@ -79,7 +87,7 @@ public class DispatchManager extends Thread {
   public boolean hasSubscription(String name) {
     return subscriptions.containsKey(name);
   }
-  
+
   @Override
   public void run() {
     while (running) {

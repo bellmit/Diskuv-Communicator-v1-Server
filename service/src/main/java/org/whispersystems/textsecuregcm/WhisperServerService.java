@@ -202,11 +202,11 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     RemoteConfigsManager       remoteConfigsManager       = new RemoteConfigsManager(remoteConfigs);
     DeadLetterHandler          deadLetterHandler          = new DeadLetterHandler(messagesManager);
     DispatchManager            dispatchManager            = new DispatchManager(pubSubClientFactory, Optional.of(deadLetterHandler));
-    PubSubManager              pubSubManager              = new PubSubManager(pubsubClient, dispatchManager);
+    RateLimiters               rateLimiters               = new RateLimiters(config.getLimitsConfiguration(), cacheClient);
+    PubSubManager              pubSubManager              = new PubSubManager(pubsubClient, dispatchManager, rateLimiters.getConnectWebSocketLimiter());
     APNSender                  apnSender                  = new APNSender(accountsManager, config.getApnConfiguration());
     GCMSender                  gcmSender                  = new GCMSender(accountsManager, config.getGcmConfiguration().getApiKey());
     WebsocketSender            websocketSender            = new WebsocketSender(messagesManager, pubSubManager);
-    RateLimiters               rateLimiters               = new RateLimiters(config.getLimitsConfiguration(), cacheClient);
 
     JwtAuthentication jwtAuthentication                                               = new JwtAuthentication(config.getJwtKeys());
     DiskuvAccountAuthenticator accountAuthenticator                                   = new DiskuvAccountAuthenticator(accountsManager, jwtAuthentication);
