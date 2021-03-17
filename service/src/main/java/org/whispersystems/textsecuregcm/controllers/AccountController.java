@@ -25,6 +25,8 @@ import com.codahale.metrics.annotation.Timed;
 import com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader;
 import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import io.dropwizard.auth.Auth;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,8 +49,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.*;
@@ -60,6 +60,7 @@ import org.whispersystems.textsecuregcm.entities.DeviceName;
 import org.whispersystems.textsecuregcm.entities.GcmRegistrationId;
 import org.whispersystems.textsecuregcm.entities.RegistrationLock;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
+import org.whispersystems.textsecuregcm.metrics.UserAgentTagUtil;
 import org.whispersystems.textsecuregcm.push.APNSender;
 import org.whispersystems.textsecuregcm.push.ApnMessage;
 import org.whispersystems.textsecuregcm.push.GCMSender;
@@ -107,11 +108,13 @@ public class AccountController {
   private final Meter          captchaFailureMeter    = metricRegistry.meter(name(AccountController.class, "captcha_failure"    ));
 
   private static final String PUSH_CHALLENGE_COUNTER_NAME = name(AccountController.class, "pushChallenge");
+  private static final String ACCOUNT_CREATE_COUNTER_NAME = name(AccountController.class, "create");
+  private static final String ACCOUNT_VERIFY_COUNTER_NAME = name(AccountController.class, "verify");
 
   private static final String CHALLENGE_PRESENT_TAG_NAME = "present";
   private static final String CHALLENGE_MATCH_TAG_NAME = "matches";
   private static final String COUNTRY_CODE_TAG_NAME = "countryCode";
-
+  private static final String VERFICATION_TRANSPORT_TAG_NAME = "transport";
 
   private final AccountsManager                    accounts;
   private final JwtAuthentication                  jwtAuthentication;
@@ -204,7 +207,7 @@ public class AccountController {
   public Response createAccount(@PathParam("transport")         String transport,
                                 @PathParam("number")            String number,
                                 @HeaderParam("X-Forwarded-For") String forwardedFor,
-                                @HeaderParam("User-Agent")      List<String> userAgent,
+                                @HeaderParam("User-Agent")      String userAgent,
                                 @HeaderParam("Accept-Language") Optional<String> acceptLanguage,
                                 @QueryParam("client")           Optional<String> client,
                                 @QueryParam("captcha")          Optional<String> captcha,
@@ -298,6 +301,13 @@ public class AccountController {
 
     metricRegistry.meter(name(AccountController.class, "create")).mark();
 
+    {
+      final List<Tag> tags = new ArrayList<>();
+      tags.add(UserAgentTagUtil.getPlatformTag(userAgent));
+
+      Metrics.counter(ACCOUNT_CREATE_COUNTER_NAME, tags).increment();
+    }
+
     return new AccountCreationResult(account.getUuid(), existingAccount.map(Account::isStorageSupported).orElse(false));
   }
 
@@ -309,7 +319,8 @@ public class AccountController {
   @Path("/code/{verification_code}")
   public AccountCreationResult verifyAccount(@PathParam("verification_code") String verificationCode,
                                              @HeaderParam("Authorization")   String authorizationHeader,
-                                             @HeaderParam("X-Signal-Agent")  String userAgent,
+                                             @HeaderParam("X-Signal-Agent")  String signalAgent,
+                                             @HeaderParam("User-Agent")      String userAgent,
                                              @QueryParam("transfer")         Optional<Boolean> availableForTransfer,
                                              @Valid                          AccountAttributes accountAttributes)
       throws RateLimitExceededException
@@ -357,9 +368,17 @@ public class AccountController {
         throw new WebApplicationException(Response.status(409).build());
       }
 
-      Account account = createAccount(number, password, userAgent, accountAttributes);
+      Account account = createAccount(number, password, signalAgent, accountAttributes);
 
-      metricRegistry.meter(name(AccountController.class, "verify", Util.getCountryCode(number))).mark();
+      {
+        metricRegistry.meter(name(AccountController.class, "verify", Util.getCountryCode(number))).mark();
+
+        final List<Tag> tags = new ArrayList<>();
+        tags.add(Tag.of(COUNTRY_CODE_TAG_NAME, Util.getCountryCode(number)));
+        tags.add(UserAgentTagUtil.getPlatformTag(userAgent));
+
+        Metrics.counter(ACCOUNT_VERIFY_COUNTER_NAME, tags).increment();
+      }
 
       return new AccountCreationResult(account.getUuid(), existingAccount.map(Account::isStorageSupported).orElse(false));
     } catch (InvalidAuthorizationHeaderException e) {
