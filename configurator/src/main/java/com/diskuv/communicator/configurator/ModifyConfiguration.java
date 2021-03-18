@@ -1,7 +1,6 @@
 package com.diskuv.communicator.configurator;
 
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import org.whispersystems.textsecuregcm.WhisperServerConfiguration;
 import org.whispersystems.textsecuregcm.configuration.*;
@@ -97,6 +96,13 @@ public class ModifyConfiguration implements Callable<Integer> {
   protected String[] redisReplicaHosts;
 
   @CommandLine.Option(
+      names = {"--redis-distinct-databases"},
+      description =
+          "If enabled, each of the 5 types of cache data will go into its own distinct redis database. "
+              + "See https://kb.objectrocket.com/redis/guide-on-the-redis-databases-1451 for more details")
+  protected boolean redisDistinctDatabases;
+
+  @CommandLine.Option(
       names = {"--redis-replica-url"},
       split = ",",
       description =
@@ -189,39 +195,45 @@ public class ModifyConfiguration implements Callable<Integer> {
 
   public void cache(WhisperServerConfiguration config) throws IllegalAccessException {
     RedisConfiguration value = config.getCacheConfiguration();
-    setRedisUrls(value);
+    setRedisUrls(value, 1);
   }
 
   public void pubsub(WhisperServerConfiguration config) throws IllegalAccessException {
     RedisConfiguration value = config.getPubsubCacheConfiguration();
-    setRedisUrls(value);
+    setRedisUrls(value, 2);
   }
 
   public void pushScheduler(WhisperServerConfiguration config) throws IllegalAccessException {
     RedisConfiguration value = config.getPushScheduler();
-    setRedisUrls(value);
+    setRedisUrls(value, 3);
   }
 
   public void messageCache(WhisperServerConfiguration config) throws IllegalAccessException {
     MessageCacheConfiguration value = config.getMessageCacheConfiguration();
     RedisConfiguration redis = value.getRedisConfiguration();
-    setRedisUrls(redis);
+    setRedisUrls(redis, 4);
   }
 
-  private void setRedisUrls(RedisConfiguration value) throws IllegalAccessException {
+  private void setRedisUrls(RedisConfiguration value, int database) throws IllegalAccessException {
+    String urlSuffix = redisDistinctDatabases ? "#" + database : "";
     if (redisPrimaryUrl != null) {
-      setField(value, "url", redisPrimaryUrl);
+      setField(value, "url", redisPrimaryUrl + urlSuffix);
     } else if (redisPrimaryHost != null) {
-      setField(value, "url", "redis://" + redisPrimaryHost + ":6379");
+      setField(value, "url", "redis://" + redisPrimaryHost + ":6379" + urlSuffix);
     }
     if (redisReplicaUrls != null && redisReplicaUrls.length > 0) {
-      setField(value, "replicaUrls", ImmutableList.copyOf(redisReplicaUrls));
+      setField(
+          value,
+          "replicaUrls",
+          Arrays.stream(redisReplicaUrls)
+              .map(url -> url + urlSuffix)
+              .collect(ImmutableList.toImmutableList()));
     } else if (redisReplicaHosts != null && redisReplicaHosts.length > 0) {
       setField(
           value,
           "replicaUrls",
           Arrays.stream(redisReplicaHosts)
-              .map(hostname -> "redis://" + hostname + ":6379")
+              .map(hostname -> "redis://" + hostname + ":6379" + urlSuffix)
               .collect(ImmutableList.toImmutableList()));
     }
   }
