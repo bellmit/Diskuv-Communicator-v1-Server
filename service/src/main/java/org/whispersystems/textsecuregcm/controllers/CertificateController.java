@@ -42,12 +42,13 @@ public class CertificateController {
     this.isZkEnabled            = isZkEnabled;
   }
 
+  // As of Signal 5.4.9, the HTTP parameter is includeE164 and not includeUuid. We ignore both HTTP parameters
+  // because we _always_ include UUID and _never_ include the non-existent E164.
   @Timed
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("/delivery")
-  public DeliveryCertificate getDeliveryCertificate(@Auth Account account,
-                                                    @QueryParam("includeUuid") Optional<Boolean> includeUuid)
+  public DeliveryCertificate getDeliveryCertificate(@Auth Account account)
       throws IOException, InvalidKeyException
   {
     if (!account.getAuthenticatedDevice().isPresent()) throw new AssertionError();
@@ -56,7 +57,7 @@ public class CertificateController {
       throw new WebApplicationException(Response.Status.BAD_REQUEST);
     }
 
-    return new DeliveryCertificate(certificateGenerator.createFor(account, account.getAuthenticatedDevice().get(), includeUuid.orElse(false)));
+    return new DeliveryCertificate(certificateGenerator.createFor(account, account.getAuthenticatedDevice().get(), true));
   }
 
   @Timed

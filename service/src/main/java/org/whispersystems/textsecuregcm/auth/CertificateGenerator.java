@@ -1,5 +1,6 @@
 package org.whispersystems.textsecuregcm.auth;
 
+import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.whispersystems.textsecuregcm.crypto.Curve;
@@ -29,8 +30,10 @@ public class CertificateGenerator {
   }
 
   public byte[] createFor(Account account, Device device, boolean includeUuid) throws IOException, InvalidKeyException {
+    // [Diskuv Change] Use email-based UUID rather than number.
+    Preconditions.checkArgument(includeUuid);
     SenderCertificate.Certificate.Builder builder = SenderCertificate.Certificate.newBuilder()
-                                                                                 .setSender(account.getNumber())
+                                                                                 // WAS: .setSender(account.getNumber())
                                                                                  .setSenderDevice(Math.toIntExact(device.getId()))
                                                                                  .setExpires(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(expiresDays))
                                                                                  .setIdentityKey(ByteString.copyFrom(Base64.decode(account.getIdentityKey())))

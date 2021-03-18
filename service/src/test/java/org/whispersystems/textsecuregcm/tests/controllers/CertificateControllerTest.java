@@ -3,6 +3,7 @@ package org.whispersystems.textsecuregcm.tests.controllers;
 import com.google.common.collect.ImmutableSet;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.ServerSecretParams;
@@ -35,8 +36,7 @@ import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 public class CertificateControllerTest {
 
@@ -88,20 +88,22 @@ public class CertificateControllerTest {
     assertTrue(Curve.verifySignature(Curve.decodePoint(serverCertificate.getKey().toByteArray(), 0), certificateHolder.getCertificate().toByteArray(), certificateHolder.getSignature().toByteArray()));
     assertTrue(Curve.verifySignature(Curve.decodePoint(Base64.decode(caPublicKey), 0), serverCertificateHolder.getCertificate().toByteArray(), serverCertificateHolder.getSignature().toByteArray()));
 
-    assertEquals(certificate.getSender(), AuthHelper.VALID_NUMBER);
+    assertFalse(certificate.hasSender()); // WAS: assertEquals(certificate.getSender(), AuthHelper.VALID_NUMBER);
     assertEquals(certificate.getSenderDevice(), 1L);
-    assertFalse(certificate.hasSenderUuid());
+    assertEquals(certificate.getSenderUuid(), AuthHelper.VALID_UUID.toString()); // WAS: assertFalse(certificate.hasSenderUuid());
     assertTrue(Arrays.equals(certificate.getIdentityKey().toByteArray(), Base64.decode(AuthHelper.VALID_IDENTITY)));
   }
 
+  // As of Signal 5.4.9, the HTTP parameter is includeE164 and not includeUuid. We ignore both HTTP parameters
+  // because we _always_ include UUID and _never_ include the non-existent E164.
   @Test
   public void testValidCertificateWithUuid() throws Exception {
     DeliveryCertificate certificateObject = resources.getJerseyTest()
                                                      .target("/v1/certificate/delivery")
                                                      .queryParam("includeUuid", "true")
                                                      .request()
-                                                    .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-                                                    .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                                     .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                                     .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                                      .get(DeliveryCertificate.class);
 
 
@@ -114,7 +116,35 @@ public class CertificateControllerTest {
     assertTrue(Curve.verifySignature(Curve.decodePoint(serverCertificate.getKey().toByteArray(), 0), certificateHolder.getCertificate().toByteArray(), certificateHolder.getSignature().toByteArray()));
     assertTrue(Curve.verifySignature(Curve.decodePoint(Base64.decode(caPublicKey), 0), serverCertificateHolder.getCertificate().toByteArray(), serverCertificateHolder.getSignature().toByteArray()));
 
-    assertEquals(certificate.getSender(), AuthHelper.VALID_NUMBER);
+    assertFalse(certificate.hasSender());
+    assertEquals(certificate.getSenderDevice(), 1L);
+    assertEquals(certificate.getSenderUuid(), AuthHelper.VALID_UUID.toString());
+    assertTrue(Arrays.equals(certificate.getIdentityKey().toByteArray(), Base64.decode(AuthHelper.VALID_IDENTITY)));
+  }
+
+  // As of Signal 5.4.9, the HTTP parameter is includeE164 and not includeUuid. We ignore both HTTP parameters
+  // because we _always_ include UUID and _never_ include the non-existent E164.
+  @Test
+  public void testValidCertificateWithoutE164() throws Exception {
+    DeliveryCertificate certificateObject = resources.getJerseyTest()
+                                                     .target("/v1/certificate/delivery")
+                                                     .queryParam("includeE164", "false")
+                                                     .request()
+                                                     .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+                                                     .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                                                     .get(DeliveryCertificate.class);
+
+
+    SenderCertificate             certificateHolder = SenderCertificate.parseFrom(certificateObject.getCertificate());
+    SenderCertificate.Certificate certificate       = SenderCertificate.Certificate.parseFrom(certificateHolder.getCertificate());
+
+    ServerCertificate             serverCertificateHolder = certificate.getSigner();
+    ServerCertificate.Certificate serverCertificate       = ServerCertificate.Certificate.parseFrom(serverCertificateHolder.getCertificate());
+
+    assertTrue(Curve.verifySignature(Curve.decodePoint(serverCertificate.getKey().toByteArray(), 0), certificateHolder.getCertificate().toByteArray(), certificateHolder.getSignature().toByteArray()));
+    assertTrue(Curve.verifySignature(Curve.decodePoint(Base64.decode(caPublicKey), 0), serverCertificateHolder.getCertificate().toByteArray(), serverCertificateHolder.getSignature().toByteArray()));
+
+    assertFalse(certificate.hasSender());
     assertEquals(certificate.getSenderDevice(), 1L);
     assertEquals(certificate.getSenderUuid(), AuthHelper.VALID_UUID.toString());
     assertTrue(Arrays.equals(certificate.getIdentityKey().toByteArray(), Base64.decode(AuthHelper.VALID_IDENTITY)));
