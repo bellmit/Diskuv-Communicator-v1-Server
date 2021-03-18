@@ -38,8 +38,7 @@ public class GenerateConfigurationTest {
     // given: no options
     Random random = new Random(77);
     GenerateConfiguration generateConfiguration = new GenerateConfiguration(random);
-    generateConfiguration.serverCertificateSigningKeyPairFile =
-        tempFolder.newFile("unit-test-output.pem");
+    generateConfiguration.serverCertificateSigningKeyPairFile = new File(tempFolder.getRoot(), "unit-test-output.pem");
 
     // when: createWhisperServerConfiguration
     WhisperServerConfiguration whisperServerConfiguration =
@@ -61,8 +60,7 @@ public class GenerateConfigurationTest {
     // given: https connection
     Random random = new Random(77);
     GenerateConfiguration generateConfiguration = new GenerateConfiguration(random);
-    generateConfiguration.serverCertificateSigningKeyPairFile =
-        tempFolder.newFile("unit-test-output.pem");
+    generateConfiguration.serverCertificateSigningKeyPairFile = new File(tempFolder.getRoot(), "unit-test-output.pem");
     generateConfiguration.applicationConnection = new GenerateConfiguration.ApplicationConnection();
     generateConfiguration.applicationConnection.httpsConnection =
         new GenerateConfiguration.ApplicationHttpsConnection();

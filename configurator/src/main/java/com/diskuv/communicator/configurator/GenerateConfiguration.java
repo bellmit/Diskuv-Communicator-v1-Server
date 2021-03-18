@@ -1,10 +1,5 @@
 package com.diskuv.communicator.configurator;
 
-import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
-import com.codahale.metrics.collectd.CollectdReporter;
-import com.codahale.metrics.collectd.Sender;
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -15,6 +10,7 @@ import io.dropwizard.jetty.HttpsConnectorFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import org.apache.commons.codec.binary.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.passay.CharacterData;
 import org.passay.CharacterRule;
@@ -27,13 +23,14 @@ import org.whispersystems.textsecuregcm.configuration.*;
 import org.whispersystems.textsecuregcm.crypto.Curve;
 import org.whispersystems.textsecuregcm.crypto.ECKeyPair;
 import org.whispersystems.textsecuregcm.crypto.ECPrivateKey;
+import org.whispersystems.textsecuregcm.crypto.ECPublicKey;
 import org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate;
 import org.whispersystems.textsecuregcm.metrics.CollectdMetricsReporterFactory;
-import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.Util;
 import picocli.CommandLine;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -43,7 +40,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
 import static com.diskuv.communicator.configurator.ConfigurationUtils.convertToYaml;
 import static com.diskuv.communicator.configurator.ConfigurationUtils.setField;
@@ -61,16 +57,31 @@ import static com.diskuv.communicator.configurator.ConfigurationUtils.setField;
                 "of configuration that may change every reboot")
 public class GenerateConfiguration implements Callable<Integer> {
     private static final int DATABASE_PASSWORD_LENGTH = 30;
-    private static final int UNIDENTIFIED_DELIVERY_KEY_ID_0 = 0;
 
     @CommandLine.Parameters(
         paramLabel = "SERVER_CERTIFICATE_SIGNING_KEYPAIR_FILE",
         description =
-              "You MUST keep this forever-living server certificate signing key pair in a secure location. "
+              "Will be re-used if it already exists, unless you explicitly use the option to overwrite the file. "
+              + "You MUST keep this forever-living server certificate signing key pair in a secure location. "
               + "The server certificate is used to encrypt unidentified sender messages, and the signing key pair are used "
               + "to generate new server certificates in case of server compromise. "
               + "The file will be PEM encoded with both the signing private and public key")
     protected File serverCertificateSigningKeyPairFile;
+
+    @CommandLine.Option(
+      names = {"--overwrite-server-certificate-signing-keypair"},
+      description =
+          "If specified, "
+              + "the SERVER_CERTIFICATE_SIGNING_KEYPAIR_FILE will be overwritten if it exists. Use with caution!")
+    protected boolean overwriteServerCertificateSigningKeyPairFile;
+
+    @CommandLine.Option(
+      names = {"--unidentified-delivery-key-id"},
+      description =
+          "Each unidentified delivery key pair has an identifier. You should consider it a version number that you "
+              + "increment each time you need a new key pair. The default is 1",
+      defaultValue = "1")
+    protected int unidentifiedDeliveryKeyId;
 
     @CommandLine.ArgGroup(multiplicity = "0..1")
     protected ApplicationConnection applicationConnection;
@@ -393,18 +404,28 @@ public class GenerateConfiguration implements Callable<Integer> {
     public void unidentifiedDelivery(WhisperServerConfiguration config) throws IllegalAccessException, InvalidKeyException, IOException {
         UnidentifiedDeliveryConfiguration value = new UnidentifiedDeliveryConfiguration();
 
-        // Generate certificate authority (aka signing key pair).
-        // The private key below (`caKey`) is analogous to an Android signing key.
-        ECKeyPair caKeyPair = Curve.generateKeyPair();
-        ECPrivateKey caKey = caKeyPair.getPrivateKey();
+        boolean shouldGenerate = overwriteServerCertificateSigningKeyPairFile || !serverCertificateSigningKeyPairFile.exists();
+        final ECPrivateKey caKey;
+        if (shouldGenerate) {
+            // Generate certificate authority (aka signing key pair).
+            // The private key below (`caKey`) is analogous to an Android signing key.
+            ECKeyPair caKeyPair = Curve.generateKeyPair();
+            caKey = caKeyPair.getPrivateKey();
 
-        // Write the signing key pair in PEM format
-        StringWriter sw = new StringWriter();
-        PemWriter pemWriter = new PemWriter(sw);
-        pemWriter.writeObject(new PemObject("PUBLIC KEY", caKeyPair.getPublicKey().serialize()));
-        pemWriter.writeObject(new PemObject("PRIVATE KEY", caKey.serialize()));
-        pemWriter.flush();
-        Files.writeString(serverCertificateSigningKeyPairFile.toPath(), sw.toString());
+            // Write the signing key pair in PEM format
+            StringWriter sw = new StringWriter();
+            PemWriter pemWriter = new PemWriter(sw);
+            pemWriter.writeObject(new PemObject("PUBLIC KEY", caKeyPair.getPublicKey().serialize()));
+            pemWriter.writeObject(new PemObject("PRIVATE KEY", caKey.serialize()));
+            pemWriter.flush();
+            Files.writeString(serverCertificateSigningKeyPairFile.toPath(), sw.toString());
+        } else {
+            try (FileReader fileReader = new FileReader(serverCertificateSigningKeyPairFile);
+                 PemReader reader = new PemReader(fileReader)) {
+                PemUtils.PublicPrivateKeyPair signingKeyPair = PemUtils.getKeyPair(reader);
+                caKey = signingKeyPair.getPrivateKey();
+            }
+        }
 
         // Generate certificate and key with id=0.
         // The private key below (`privateKey`) is analogous to an Android upload key.
@@ -414,7 +435,7 @@ public class GenerateConfiguration implements Callable<Integer> {
         ECKeyPair keyPair = Curve.generateKeyPair();
         ECPrivateKey privateKey = keyPair.getPrivateKey();
         byte[] certificate = ServerCertificate.Certificate.newBuilder()
-                .setId(UNIDENTIFIED_DELIVERY_KEY_ID_0)
+                .setId(unidentifiedDeliveryKeyId)
                 .setKey(ByteString.copyFrom(keyPair.getPublicKey().serialize()))
                 .build()
                 .toByteArray();
