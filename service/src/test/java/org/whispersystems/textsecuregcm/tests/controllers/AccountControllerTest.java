@@ -1337,7 +1337,7 @@ class AccountControllerTest {
                     .target("/v1/accounts/attributes/")
                     .request()
                     .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.UNDISCOVERABLE_BEARER_TOKEN))
-                    .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.UNDISCOVERABLE_DEVICE_ID_STRING, AuthHelper.UNDISCOVERABLE_PASSWORD))
+                    .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.UNDISCOVERABLE_UUID, AuthHelper.UNDISCOVERABLE_DEVICE_ID_STRING, AuthHelper.UNDISCOVERABLE_PASSWORD))
                     .put(Entity.json(new AccountAttributes(false, 2222, null, null, null, true, null)));
 
     assertThat(response.getStatus()).isEqualTo(204);

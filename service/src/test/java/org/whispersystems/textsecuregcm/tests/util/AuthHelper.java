@@ -70,7 +70,7 @@ public class AuthHelper {
   public static final String UNDISCOVERABLE_DEVICE_ID_STRING = Long.toString(UNDISCOVERABLE_DEVICE_ID);
   public static final String UNDISCOVERABLE_EMAIL            = new Random().nextLong() + "@test.com";
   public static final String UNDISCOVERABLE_NUMBER   = "+18005551234";
-  public static final UUID   UNDISCOVERABLE_UUID     = DiskuvUuidUtil.uuidForEmailAddress(UNDISCOVERABLE_EMAIL);
+  public static final UUID   UNDISCOVERABLE_UUID     = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress(UNDISCOVERABLE_EMAIL);
   public static final String UNDISCOVERABLE_PASSWORD = "IT'S A SECRET TO EVERYBODY.";
 
   public static final String VALID_IDENTITY = "BcxxDU9FGMda70E7+Uvm7pnQcEdXQ64aJCpPUeRSfcFo";

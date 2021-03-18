@@ -221,65 +221,66 @@ public class WebSocketConnection implements MessageAvailabilityListener, Displac
   }
 
   private void sendNextMessagePage(final boolean cachedMessagesOnly, final CompletableFuture<Void> queueClearedFuture) {
-    final OutgoingMessageEntityList messages    = messagesManager.getMessagesForDevice(account.getUuid(), device.getId(), client.getUserAgent(), cachedMessagesOnly);
-    final CompletableFuture<?>[]    sendFutures = new CompletableFuture[messages.getMessages().size()];
+    try {
+      final OutgoingMessageEntityList messages    = messagesManager.getMessagesForDevice(account.getUuid(), device.getId(), client.getUserAgent(), cachedMessagesOnly);
+      final CompletableFuture<?>[]    sendFutures = new CompletableFuture[messages.getMessages().size()];
 
-    for (int i = 0; i < messages.getMessages().size(); i++) {
-      final OutgoingMessageEntity message = messages.getMessages().get(i);
-      final Envelope.Builder      builder = Envelope.newBuilder()
-                                                    .setType(Envelope.Type.valueOf(message.getType()))
-                                                    .setTimestamp(message.getTimestamp())
-                                                    .setServerTimestamp(message.getServerTimestamp());
+      for (int i = 0; i < messages.getMessages().size(); i++) {
+        final OutgoingMessageEntity message = messages.getMessages().get(i);
+        final Envelope.Builder      builder = Envelope.newBuilder()
+                                                      .setType(Envelope.Type.valueOf(message.getType()))
+                                                      .setTimestamp(message.getTimestamp())
+                                                      .setServerTimestamp(message.getServerTimestamp());
 
-      // Account takeover protection
-      if (message.getServerOutdoorsSourceUuid() != null) {
-        builder.setServerOutdoorsSourceUuid(message.getServerOutdoorsSourceUuid().toString());
-      }
+        // Account takeover protection
+        if (message.getServerOutdoorsSourceUuid() != null) {
+          builder.setServerOutdoorsSourceUuid(message.getServerOutdoorsSourceUuid().toString());
+        }
 
-      // Contact by email address. Instead of message.getSource() which should be empty, use message.getSourceUuid()
-      if (message.getSourceUuid() != null) {
-        builder.setSourceUuid(message.getSourceUuid().toString())
-               .setSourceDevice(message.getSourceDevice());
+        // Contact by email address. Instead of message.getSource() which should be empty, use message.getSourceUuid()
         if (message.getSourceUuid() != null) {
+          builder.setSourceDevice(message.getSourceDevice());
           builder.setSourceUuid(message.getSourceUuid().toString());
         }
-      }
 
-      if (message.getMessage() != null) {
-        builder.setLegacyMessage(ByteString.copyFrom(message.getMessage()));
-      }
-
-      if (message.getContent() != null) {
-        builder.setContent(ByteString.copyFrom(message.getContent()));
-      }
-
-      if (message.getRelay() != null && !message.getRelay().isEmpty()) {
-        builder.setRelay(message.getRelay());
-      }
-
-      final Envelope envelope = builder.build();
-
-      if (envelope.getSerializedSize() > MAX_DESKTOP_MESSAGE_SIZE && isDesktopClient) {
-        messagesManager.delete(account.getUuid(), device.getId(), message.getGuid());
-        discardedMessagesMeter.mark();
-
-        sendFutures[i] = CompletableFuture.completedFuture(null);
-      } else {
-        sendFutures[i] = sendMessage(builder.build(), Optional.of(new StoredMessageInfo(message.getGuid())));
-      }
-    }
-
-    CompletableFuture.allOf(sendFutures).whenComplete((v, cause) -> {
-      if (cause == null) {
-        if (messages.hasMore()) {
-          sendNextMessagePage(cachedMessagesOnly, queueClearedFuture);
-        } else {
-          queueClearedFuture.complete(null);
+        if (message.getMessage() != null) {
+          builder.setLegacyMessage(ByteString.copyFrom(message.getMessage()));
         }
-      } else {
-        queueClearedFuture.completeExceptionally(cause);
+
+        if (message.getContent() != null) {
+          builder.setContent(ByteString.copyFrom(message.getContent()));
+        }
+
+        if (message.getRelay() != null && !message.getRelay().isEmpty()) {
+          builder.setRelay(message.getRelay());
+        }
+
+        final Envelope envelope = builder.build();
+
+        if (envelope.getSerializedSize() > MAX_DESKTOP_MESSAGE_SIZE && isDesktopClient) {
+          messagesManager.delete(account.getUuid(), device.getId(), message.getGuid());
+          discardedMessagesMeter.mark();
+
+          sendFutures[i] = CompletableFuture.completedFuture(null);
+        } else {
+          sendFutures[i] = sendMessage(builder.build(), Optional.of(new StoredMessageInfo(message.getGuid())));
+        }
       }
-    });
+
+      CompletableFuture.allOf(sendFutures).whenComplete((v, cause) -> {
+        if (cause == null) {
+          if (messages.hasMore()) {
+            sendNextMessagePage(cachedMessagesOnly, queueClearedFuture);
+          } else {
+            queueClearedFuture.complete(null);
+          }
+        } else {
+          queueClearedFuture.completeExceptionally(cause);
+        }
+      });
+    } catch (final Exception e) {
+      queueClearedFuture.completeExceptionally(e);
+    }
   }
 
   @Override

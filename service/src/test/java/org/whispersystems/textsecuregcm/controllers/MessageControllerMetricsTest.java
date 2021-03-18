@@ -30,7 +30,7 @@ public class MessageControllerMetricsTest extends AbstractRedisClusterTest {
   public void setUp() throws Exception {
     super.setUp();
 
-    messageController = new MessageController(mock(RateLimiters.class),
+    messageController = new MessageController(mock(com.diskuv.communicatorservice.auth.JwtAuthentication.class), mock(RateLimiters.class),
         mock(MessageSender.class),
         mock(ReceiptSender.class),
         mock(org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager.class),

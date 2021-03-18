@@ -279,7 +279,7 @@ public class AccountController {
     // Throttle by the account ID _and_ the outdoors ID. The outdoors ID
     // is a mitigation for a first-reservation attack on a sanctuary UUID.
     rateLimiters.getVerifyLimiter().validate(accountId);
-    if (diskuvUuidType == DiskuvUuidType.SANCTUARY_SPECIFIC) {
+    if (diskuvUuidType == org.whispersystems.textsecuregcm.util.DiskuvUuidType.SANCTUARY_SPECIFIC) {
       rateLimiters.getVerifyLimiter().validate(outdoorsUUID.toString());
     }
 
