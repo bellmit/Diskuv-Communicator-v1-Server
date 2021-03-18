@@ -24,6 +24,10 @@ public class CertificateGenerator {
   public CertificateGenerator(byte[] serverCertificate, ECPrivateKey privateKey, int expiresDays)
       throws InvalidProtocolBufferException
   {
+    // [Diskuv Change] Add precondition validation
+    Preconditions.checkArgument(
+        expiresDays >= 1,
+        "The expiry days must be at least 1 day (which is the Android/iOS regeneration period)");
     this.privateKey        = privateKey;
     this.expiresDays       = expiresDays;
     this.serverCertificate = ServerCertificate.parseFrom(serverCertificate);
