@@ -18,6 +18,8 @@ import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.websocket.session.WebSocketSessionContext;
 import org.whispersystems.websocket.setup.WebSocketConnectListener;
 
+import java.util.concurrent.ScheduledExecutorService;
+
 import static com.codahale.metrics.MetricRegistry.name;
 
 public class AuthenticatedConnectListener implements WebSocketConnectListener {
@@ -34,17 +36,20 @@ public class AuthenticatedConnectListener implements WebSocketConnectListener {
   private final MessageSender         messageSender;
   private final ApnFallbackManager    apnFallbackManager;
   private final ClientPresenceManager clientPresenceManager;
+  private final ScheduledExecutorService retrySchedulingExecutor;
 
   public AuthenticatedConnectListener(ReceiptSender receiptSender,
-                                      MessagesManager messagesManager,
-                                      final MessageSender messageSender, ApnFallbackManager apnFallbackManager,
-                                      ClientPresenceManager clientPresenceManager)
+      MessagesManager messagesManager,
+      final MessageSender messageSender, ApnFallbackManager apnFallbackManager,
+      ClientPresenceManager clientPresenceManager,
+      ScheduledExecutorService retrySchedulingExecutor)
   {
     this.receiptSender         = receiptSender;
     this.messagesManager       = messagesManager;
     this.messageSender         = messageSender;
     this.apnFallbackManager    = apnFallbackManager;
     this.clientPresenceManager = clientPresenceManager;
+    this.retrySchedulingExecutor = retrySchedulingExecutor;
   }
 
   @Override
@@ -55,7 +60,8 @@ public class AuthenticatedConnectListener implements WebSocketConnectListener {
       final Timer.Context           timer          = durationTimer.time();
       final WebSocketConnection     connection     = new WebSocketConnection(receiptSender,
                                                                              messagesManager, account, device,
-                                                                             context.getClient());
+                                                                             context.getClient(),
+                                                                             retrySchedulingExecutor);
 
       openWebsocketCounter.inc();
       RedisOperation.unchecked(() -> apnFallbackManager.cancel(account, device));
@@ -65,6 +71,8 @@ public class AuthenticatedConnectListener implements WebSocketConnectListener {
         public void onWebSocketClose(WebSocketSessionContext context, int statusCode, String reason) {
           openWebsocketCounter.dec();
           timer.stop();
+
+          connection.stop();
 
           RedisOperation.unchecked(() -> clientPresenceManager.clearPresence(account.getUuid(), device.getId()));
           RedisOperation.unchecked(() -> {
