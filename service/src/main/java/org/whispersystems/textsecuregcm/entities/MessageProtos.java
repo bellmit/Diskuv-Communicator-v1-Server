@@ -6,12 +6,18 @@ package org.whispersystems.textsecuregcm.entities;
 public final class MessageProtos {
   private MessageProtos() {}
   public static void registerAllExtensions(
-      com.google.protobuf.ExtensionRegistry registry) {
+      com.google.protobuf.ExtensionRegistryLite registry) {
   }
-  public interface EnvelopeOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
 
-    // optional .textsecure.Envelope.Type type = 1;
+  public static void registerAllExtensions(
+      com.google.protobuf.ExtensionRegistry registry) {
+    registerAllExtensions(
+        (com.google.protobuf.ExtensionRegistryLite) registry);
+  }
+  public interface EnvelopeOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:textsecure.Envelope)
+      com.google.protobuf.MessageOrBuilder {
+
     /**
      * <code>optional .textsecure.Envelope.Type type = 1;</code>
      */
@@ -21,7 +27,6 @@ public final class MessageProtos {
      */
     org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type getType();
 
-    // optional string source = 2;
     /**
      * <code>optional string source = 2;</code>
      */
@@ -36,7 +41,6 @@ public final class MessageProtos {
     com.google.protobuf.ByteString
         getSourceBytes();
 
-    // optional string sourceUuid = 11;
     /**
      * <code>optional string sourceUuid = 11;</code>
      */
@@ -51,7 +55,6 @@ public final class MessageProtos {
     com.google.protobuf.ByteString
         getSourceUuidBytes();
 
-    // optional uint32 sourceDevice = 7;
     /**
      * <code>optional uint32 sourceDevice = 7;</code>
      */
@@ -61,7 +64,6 @@ public final class MessageProtos {
      */
     int getSourceDevice();
 
-    // optional string relay = 3;
     /**
      * <code>optional string relay = 3;</code>
      */
@@ -76,7 +78,6 @@ public final class MessageProtos {
     com.google.protobuf.ByteString
         getRelayBytes();
 
-    // optional uint64 timestamp = 5;
     /**
      * <code>optional uint64 timestamp = 5;</code>
      */
@@ -86,43 +87,40 @@ public final class MessageProtos {
      */
     long getTimestamp();
 
-    // optional bytes legacyMessage = 6;
     /**
-     * <code>optional bytes legacyMessage = 6;</code>
-     *
      * <pre>
      * Contains an encrypted DataMessage XXX -- Remove after 10/01/15
      * </pre>
+     *
+     * <code>optional bytes legacyMessage = 6;</code>
      */
     boolean hasLegacyMessage();
     /**
-     * <code>optional bytes legacyMessage = 6;</code>
-     *
      * <pre>
      * Contains an encrypted DataMessage XXX -- Remove after 10/01/15
      * </pre>
+     *
+     * <code>optional bytes legacyMessage = 6;</code>
      */
     com.google.protobuf.ByteString getLegacyMessage();
 
-    // optional bytes content = 8;
     /**
-     * <code>optional bytes content = 8;</code>
-     *
      * <pre>
      * Contains an encrypted Content
      * </pre>
+     *
+     * <code>optional bytes content = 8;</code>
      */
     boolean hasContent();
     /**
-     * <code>optional bytes content = 8;</code>
-     *
      * <pre>
      * Contains an encrypted Content
      * </pre>
+     *
+     * <code>optional bytes content = 8;</code>
      */
     com.google.protobuf.ByteString getContent();
 
-    // optional string serverGuid = 9;
     /**
      * <code>optional string serverGuid = 9;</code>
      */
@@ -137,7 +135,6 @@ public final class MessageProtos {
     com.google.protobuf.ByteString
         getServerGuidBytes();
 
-    // optional uint64 server_timestamp = 10;
     /**
      * <code>optional uint64 server_timestamp = 10;</code>
      */
@@ -150,36 +147,37 @@ public final class MessageProtos {
   /**
    * Protobuf type {@code textsecure.Envelope}
    */
-  public static final class Envelope extends
-      com.google.protobuf.GeneratedMessage
-      implements EnvelopeOrBuilder {
+  public  static final class Envelope extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:textsecure.Envelope)
+      EnvelopeOrBuilder {
     // Use Envelope.newBuilder() to construct.
-    private Envelope(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+    private Envelope(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
-      this.unknownFields = builder.getUnknownFields();
     }
-    private Envelope(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
-
-    private static final Envelope defaultInstance;
-    public static Envelope getDefaultInstance() {
-      return defaultInstance;
+    private Envelope() {
+      type_ = 0;
+      source_ = "";
+      sourceUuid_ = "";
+      sourceDevice_ = 0;
+      relay_ = "";
+      timestamp_ = 0L;
+      legacyMessage_ = com.google.protobuf.ByteString.EMPTY;
+      content_ = com.google.protobuf.ByteString.EMPTY;
+      serverGuid_ = "";
+      serverTimestamp_ = 0L;
     }
 
-    public Envelope getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-
-    private final com.google.protobuf.UnknownFieldSet unknownFields;
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
-        getUnknownFields() {
+    getUnknownFields() {
       return this.unknownFields;
     }
     private Envelope(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      initFields();
+      this();
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -205,18 +203,20 @@ public final class MessageProtos {
                 unknownFields.mergeVarintField(1, rawValue);
               } else {
                 bitField0_ |= 0x00000001;
-                type_ = value;
+                type_ = rawValue;
               }
               break;
             }
             case 18: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
-              source_ = input.readBytes();
+              source_ = bs;
               break;
             }
             case 26: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000010;
-              relay_ = input.readBytes();
+              relay_ = bs;
               break;
             }
             case 40: {
@@ -240,8 +240,9 @@ public final class MessageProtos {
               break;
             }
             case 74: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000100;
-              serverGuid_ = input.readBytes();
+              serverGuid_ = bs;
               break;
             }
             case 80: {
@@ -250,8 +251,9 @@ public final class MessageProtos {
               break;
             }
             case 90: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
-              sourceUuid_ = input.readBytes();
+              sourceUuid_ = bs;
               break;
             }
           }
@@ -260,7 +262,7 @@ public final class MessageProtos {
         throw e.setUnfinishedMessage(this);
       } catch (java.io.IOException e) {
         throw new com.google.protobuf.InvalidProtocolBufferException(
-            e.getMessage()).setUnfinishedMessage(this);
+            e).setUnfinishedMessage(this);
       } finally {
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -271,26 +273,11 @@ public final class MessageProtos {
       return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_Envelope_descriptor;
     }
 
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
       return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_Envelope_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
               org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.class, org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Builder.class);
-    }
-
-    public static com.google.protobuf.Parser<Envelope> PARSER =
-        new com.google.protobuf.AbstractParser<Envelope>() {
-      public Envelope parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Envelope(input, extensionRegistry);
-      }
-    };
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<Envelope> getParserForType() {
-      return PARSER;
     }
 
     /**
@@ -301,27 +288,27 @@ public final class MessageProtos {
       /**
        * <code>UNKNOWN = 0;</code>
        */
-      UNKNOWN(0, 0),
+      UNKNOWN(0),
       /**
        * <code>CIPHERTEXT = 1;</code>
        */
-      CIPHERTEXT(1, 1),
+      CIPHERTEXT(1),
       /**
        * <code>KEY_EXCHANGE = 2;</code>
        */
-      KEY_EXCHANGE(2, 2),
+      KEY_EXCHANGE(2),
       /**
        * <code>PREKEY_BUNDLE = 3;</code>
        */
-      PREKEY_BUNDLE(3, 3),
+      PREKEY_BUNDLE(3),
       /**
        * <code>RECEIPT = 5;</code>
        */
-      RECEIPT(4, 5),
+      RECEIPT(5),
       /**
        * <code>UNIDENTIFIED_SENDER = 6;</code>
        */
-      UNIDENTIFIED_SENDER(5, 6),
+      UNIDENTIFIED_SENDER(6),
       ;
 
       /**
@@ -350,9 +337,19 @@ public final class MessageProtos {
       public static final int UNIDENTIFIED_SENDER_VALUE = 6;
 
 
-      public final int getNumber() { return value; }
+      public final int getNumber() {
+        return value;
+      }
 
+      /**
+       * @deprecated Use {@link #forNumber(int)} instead.
+       */
+      @java.lang.Deprecated
       public static Type valueOf(int value) {
+        return forNumber(value);
+      }
+
+      public static Type forNumber(int value) {
         switch (value) {
           case 0: return UNKNOWN;
           case 1: return CIPHERTEXT;
@@ -368,17 +365,17 @@ public final class MessageProtos {
           internalGetValueMap() {
         return internalValueMap;
       }
-      private static com.google.protobuf.Internal.EnumLiteMap<Type>
-          internalValueMap =
+      private static final com.google.protobuf.Internal.EnumLiteMap<
+          Type> internalValueMap =
             new com.google.protobuf.Internal.EnumLiteMap<Type>() {
               public Type findValueByNumber(int number) {
-                return Type.valueOf(number);
+                return Type.forNumber(number);
               }
             };
 
       public final com.google.protobuf.Descriptors.EnumValueDescriptor
           getValueDescriptor() {
-        return getDescriptor().getValues().get(index);
+        return getDescriptor().getValues().get(ordinal());
       }
       public final com.google.protobuf.Descriptors.EnumDescriptor
           getDescriptorForType() {
@@ -400,11 +397,9 @@ public final class MessageProtos {
         return VALUES[desc.getIndex()];
       }
 
-      private final int index;
       private final int value;
 
-      private Type(int index, int value) {
-        this.index = index;
+      private Type(int value) {
         this.value = value;
       }
 
@@ -412,9 +407,8 @@ public final class MessageProtos {
     }
 
     private int bitField0_;
-    // optional .textsecure.Envelope.Type type = 1;
     public static final int TYPE_FIELD_NUMBER = 1;
-    private org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type type_;
+    private int type_;
     /**
      * <code>optional .textsecure.Envelope.Type type = 1;</code>
      */
@@ -425,12 +419,12 @@ public final class MessageProtos {
      * <code>optional .textsecure.Envelope.Type type = 1;</code>
      */
     public org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type getType() {
-      return type_;
+      org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type result = org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type.valueOf(type_);
+      return result == null ? org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type.UNKNOWN : result;
     }
 
-    // optional string source = 2;
     public static final int SOURCE_FIELD_NUMBER = 2;
-    private java.lang.Object source_;
+    private volatile java.lang.Object source_;
     /**
      * <code>optional string source = 2;</code>
      */
@@ -445,7 +439,7 @@ public final class MessageProtos {
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
-        com.google.protobuf.ByteString bs = 
+        com.google.protobuf.ByteString bs =
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
@@ -461,7 +455,7 @@ public final class MessageProtos {
         getSourceBytes() {
       java.lang.Object ref = source_;
       if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         source_ = b;
@@ -471,9 +465,8 @@ public final class MessageProtos {
       }
     }
 
-    // optional string sourceUuid = 11;
     public static final int SOURCEUUID_FIELD_NUMBER = 11;
-    private java.lang.Object sourceUuid_;
+    private volatile java.lang.Object sourceUuid_;
     /**
      * <code>optional string sourceUuid = 11;</code>
      */
@@ -488,7 +481,7 @@ public final class MessageProtos {
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
-        com.google.protobuf.ByteString bs = 
+        com.google.protobuf.ByteString bs =
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
@@ -504,7 +497,7 @@ public final class MessageProtos {
         getSourceUuidBytes() {
       java.lang.Object ref = sourceUuid_;
       if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         sourceUuid_ = b;
@@ -514,7 +507,6 @@ public final class MessageProtos {
       }
     }
 
-    // optional uint32 sourceDevice = 7;
     public static final int SOURCEDEVICE_FIELD_NUMBER = 7;
     private int sourceDevice_;
     /**
@@ -530,9 +522,8 @@ public final class MessageProtos {
       return sourceDevice_;
     }
 
-    // optional string relay = 3;
     public static final int RELAY_FIELD_NUMBER = 3;
-    private java.lang.Object relay_;
+    private volatile java.lang.Object relay_;
     /**
      * <code>optional string relay = 3;</code>
      */
@@ -547,7 +538,7 @@ public final class MessageProtos {
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
-        com.google.protobuf.ByteString bs = 
+        com.google.protobuf.ByteString bs =
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
@@ -563,7 +554,7 @@ public final class MessageProtos {
         getRelayBytes() {
       java.lang.Object ref = relay_;
       if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         relay_ = b;
@@ -573,7 +564,6 @@ public final class MessageProtos {
       }
     }
 
-    // optional uint64 timestamp = 5;
     public static final int TIMESTAMP_FIELD_NUMBER = 5;
     private long timestamp_;
     /**
@@ -589,57 +579,54 @@ public final class MessageProtos {
       return timestamp_;
     }
 
-    // optional bytes legacyMessage = 6;
     public static final int LEGACYMESSAGE_FIELD_NUMBER = 6;
     private com.google.protobuf.ByteString legacyMessage_;
     /**
-     * <code>optional bytes legacyMessage = 6;</code>
-     *
      * <pre>
      * Contains an encrypted DataMessage XXX -- Remove after 10/01/15
      * </pre>
+     *
+     * <code>optional bytes legacyMessage = 6;</code>
      */
     public boolean hasLegacyMessage() {
       return ((bitField0_ & 0x00000040) == 0x00000040);
     }
     /**
-     * <code>optional bytes legacyMessage = 6;</code>
-     *
      * <pre>
      * Contains an encrypted DataMessage XXX -- Remove after 10/01/15
      * </pre>
+     *
+     * <code>optional bytes legacyMessage = 6;</code>
      */
     public com.google.protobuf.ByteString getLegacyMessage() {
       return legacyMessage_;
     }
 
-    // optional bytes content = 8;
     public static final int CONTENT_FIELD_NUMBER = 8;
     private com.google.protobuf.ByteString content_;
     /**
-     * <code>optional bytes content = 8;</code>
-     *
      * <pre>
      * Contains an encrypted Content
      * </pre>
+     *
+     * <code>optional bytes content = 8;</code>
      */
     public boolean hasContent() {
       return ((bitField0_ & 0x00000080) == 0x00000080);
     }
     /**
-     * <code>optional bytes content = 8;</code>
-     *
      * <pre>
      * Contains an encrypted Content
      * </pre>
+     *
+     * <code>optional bytes content = 8;</code>
      */
     public com.google.protobuf.ByteString getContent() {
       return content_;
     }
 
-    // optional string serverGuid = 9;
     public static final int SERVERGUID_FIELD_NUMBER = 9;
-    private java.lang.Object serverGuid_;
+    private volatile java.lang.Object serverGuid_;
     /**
      * <code>optional string serverGuid = 9;</code>
      */
@@ -654,7 +641,7 @@ public final class MessageProtos {
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
-        com.google.protobuf.ByteString bs = 
+        com.google.protobuf.ByteString bs =
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
@@ -670,7 +657,7 @@ public final class MessageProtos {
         getServerGuidBytes() {
       java.lang.Object ref = serverGuid_;
       if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         serverGuid_ = b;
@@ -680,7 +667,6 @@ public final class MessageProtos {
       }
     }
 
-    // optional uint64 server_timestamp = 10;
     public static final int SERVER_TIMESTAMP_FIELD_NUMBER = 10;
     private long serverTimestamp_;
     /**
@@ -696,22 +682,11 @@ public final class MessageProtos {
       return serverTimestamp_;
     }
 
-    private void initFields() {
-      type_ = org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type.UNKNOWN;
-      source_ = "";
-      sourceUuid_ = "";
-      sourceDevice_ = 0;
-      relay_ = "";
-      timestamp_ = 0L;
-      legacyMessage_ = com.google.protobuf.ByteString.EMPTY;
-      content_ = com.google.protobuf.ByteString.EMPTY;
-      serverGuid_ = "";
-      serverTimestamp_ = 0L;
-    }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
 
       memoizedIsInitialized = 1;
       return true;
@@ -719,15 +694,14 @@ public final class MessageProtos {
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      getSerializedSize();
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeEnum(1, type_.getNumber());
+        output.writeEnum(1, type_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeBytes(2, getSourceBytes());
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, source_);
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeBytes(3, getRelayBytes());
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, relay_);
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
         output.writeUInt64(5, timestamp_);
@@ -742,34 +716,31 @@ public final class MessageProtos {
         output.writeBytes(8, content_);
       }
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
-        output.writeBytes(9, getServerGuidBytes());
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 9, serverGuid_);
       }
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         output.writeUInt64(10, serverTimestamp_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeBytes(11, getSourceUuidBytes());
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 11, sourceUuid_);
       }
-      getUnknownFields().writeTo(output);
+      unknownFields.writeTo(output);
     }
 
-    private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
-      int size = memoizedSerializedSize;
+      int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(1, type_.getNumber());
+          .computeEnumSize(1, type_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, getSourceBytes());
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, source_);
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(3, getRelayBytes());
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, relay_);
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
         size += com.google.protobuf.CodedOutputStream
@@ -788,27 +759,137 @@ public final class MessageProtos {
           .computeBytesSize(8, content_);
       }
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(9, getServerGuidBytes());
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(9, serverGuid_);
       }
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt64Size(10, serverTimestamp_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(11, getSourceUuidBytes());
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(11, sourceUuid_);
       }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
+      size += unknownFields.getSerializedSize();
+      memoizedSize = size;
       return size;
     }
 
     private static final long serialVersionUID = 0L;
     @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope)) {
+        return super.equals(obj);
+      }
+      org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope other = (org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope) obj;
+
+      boolean result = true;
+      result = result && (hasType() == other.hasType());
+      if (hasType()) {
+        result = result && type_ == other.type_;
+      }
+      result = result && (hasSource() == other.hasSource());
+      if (hasSource()) {
+        result = result && getSource()
+            .equals(other.getSource());
+      }
+      result = result && (hasSourceUuid() == other.hasSourceUuid());
+      if (hasSourceUuid()) {
+        result = result && getSourceUuid()
+            .equals(other.getSourceUuid());
+      }
+      result = result && (hasSourceDevice() == other.hasSourceDevice());
+      if (hasSourceDevice()) {
+        result = result && (getSourceDevice()
+            == other.getSourceDevice());
+      }
+      result = result && (hasRelay() == other.hasRelay());
+      if (hasRelay()) {
+        result = result && getRelay()
+            .equals(other.getRelay());
+      }
+      result = result && (hasTimestamp() == other.hasTimestamp());
+      if (hasTimestamp()) {
+        result = result && (getTimestamp()
+            == other.getTimestamp());
+      }
+      result = result && (hasLegacyMessage() == other.hasLegacyMessage());
+      if (hasLegacyMessage()) {
+        result = result && getLegacyMessage()
+            .equals(other.getLegacyMessage());
+      }
+      result = result && (hasContent() == other.hasContent());
+      if (hasContent()) {
+        result = result && getContent()
+            .equals(other.getContent());
+      }
+      result = result && (hasServerGuid() == other.hasServerGuid());
+      if (hasServerGuid()) {
+        result = result && getServerGuid()
+            .equals(other.getServerGuid());
+      }
+      result = result && (hasServerTimestamp() == other.hasServerTimestamp());
+      if (hasServerTimestamp()) {
+        result = result && (getServerTimestamp()
+            == other.getServerTimestamp());
+      }
+      result = result && unknownFields.equals(other.unknownFields);
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      if (hasType()) {
+        hash = (37 * hash) + TYPE_FIELD_NUMBER;
+        hash = (53 * hash) + type_;
+      }
+      if (hasSource()) {
+        hash = (37 * hash) + SOURCE_FIELD_NUMBER;
+        hash = (53 * hash) + getSource().hashCode();
+      }
+      if (hasSourceUuid()) {
+        hash = (37 * hash) + SOURCEUUID_FIELD_NUMBER;
+        hash = (53 * hash) + getSourceUuid().hashCode();
+      }
+      if (hasSourceDevice()) {
+        hash = (37 * hash) + SOURCEDEVICE_FIELD_NUMBER;
+        hash = (53 * hash) + getSourceDevice();
+      }
+      if (hasRelay()) {
+        hash = (37 * hash) + RELAY_FIELD_NUMBER;
+        hash = (53 * hash) + getRelay().hashCode();
+      }
+      if (hasTimestamp()) {
+        hash = (37 * hash) + TIMESTAMP_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getTimestamp());
+      }
+      if (hasLegacyMessage()) {
+        hash = (37 * hash) + LEGACYMESSAGE_FIELD_NUMBER;
+        hash = (53 * hash) + getLegacyMessage().hashCode();
+      }
+      if (hasContent()) {
+        hash = (37 * hash) + CONTENT_FIELD_NUMBER;
+        hash = (53 * hash) + getContent().hashCode();
+      }
+      if (hasServerGuid()) {
+        hash = (37 * hash) + SERVERGUID_FIELD_NUMBER;
+        hash = (53 * hash) + getServerGuid().hashCode();
+      }
+      if (hasServerTimestamp()) {
+        hash = (37 * hash) + SERVER_TIMESTAMP_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getServerTimestamp());
+      }
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
     }
 
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope parseFrom(
@@ -834,46 +915,57 @@ public final class MessageProtos {
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return PARSER.parseFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return PARSER.parseFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope prototype) {
-      return newBuilder().mergeFrom(prototype);
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
     }
-    public Builder toBuilder() { return newBuilder(this); }
+    public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
 
     @java.lang.Override
     protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
       Builder builder = new Builder(parent);
       return builder;
     }
@@ -881,14 +973,15 @@ public final class MessageProtos {
      * Protobuf type {@code textsecure.Envelope}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.whispersystems.textsecuregcm.entities.MessageProtos.EnvelopeOrBuilder {
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:textsecure.Envelope)
+        org.whispersystems.textsecuregcm.entities.MessageProtos.EnvelopeOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_Envelope_descriptor;
       }
 
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_Envelope_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
@@ -901,21 +994,18 @@ public final class MessageProtos {
       }
 
       private Builder(
-          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
         super(parent);
         maybeForceBuilderInitialization();
       }
       private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
         }
       }
-      private static Builder create() {
-        return new Builder();
-      }
-
       public Builder clear() {
         super.clear();
-        type_ = org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type.UNKNOWN;
+        type_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
         source_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -936,10 +1026,6 @@ public final class MessageProtos {
         serverTimestamp_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000200);
         return this;
-      }
-
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
       }
 
       public com.google.protobuf.Descriptors.Descriptor
@@ -1008,6 +1094,32 @@ public final class MessageProtos {
         return result;
       }
 
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope) {
           return mergeFrom((org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope)other);
@@ -1057,7 +1169,8 @@ public final class MessageProtos {
         if (other.hasServerTimestamp()) {
           setServerTimestamp(other.getServerTimestamp());
         }
-        this.mergeUnknownFields(other.getUnknownFields());
+        this.mergeUnknownFields(other.unknownFields);
+        onChanged();
         return this;
       }
 
@@ -1074,7 +1187,7 @@ public final class MessageProtos {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
           parsedMessage = (org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope) e.getUnfinishedMessage();
-          throw e;
+          throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
             mergeFrom(parsedMessage);
@@ -1084,8 +1197,7 @@ public final class MessageProtos {
       }
       private int bitField0_;
 
-      // optional .textsecure.Envelope.Type type = 1;
-      private org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type type_ = org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type.UNKNOWN;
+      private int type_ = 0;
       /**
        * <code>optional .textsecure.Envelope.Type type = 1;</code>
        */
@@ -1096,7 +1208,8 @@ public final class MessageProtos {
        * <code>optional .textsecure.Envelope.Type type = 1;</code>
        */
       public org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type getType() {
-        return type_;
+        org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type result = org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type.valueOf(type_);
+        return result == null ? org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type.UNKNOWN : result;
       }
       /**
        * <code>optional .textsecure.Envelope.Type type = 1;</code>
@@ -1106,7 +1219,7 @@ public final class MessageProtos {
           throw new NullPointerException();
         }
         bitField0_ |= 0x00000001;
-        type_ = value;
+        type_ = value.getNumber();
         onChanged();
         return this;
       }
@@ -1115,12 +1228,11 @@ public final class MessageProtos {
        */
       public Builder clearType() {
         bitField0_ = (bitField0_ & ~0x00000001);
-        type_ = org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope.Type.UNKNOWN;
+        type_ = 0;
         onChanged();
         return this;
       }
 
-      // optional string source = 2;
       private java.lang.Object source_ = "";
       /**
        * <code>optional string source = 2;</code>
@@ -1134,9 +1246,12 @@ public final class MessageProtos {
       public java.lang.String getSource() {
         java.lang.Object ref = source_;
         if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          source_ = s;
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            source_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -1149,7 +1264,7 @@ public final class MessageProtos {
           getSourceBytes() {
         java.lang.Object ref = source_;
         if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString b =
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
           source_ = b;
@@ -1194,7 +1309,6 @@ public final class MessageProtos {
         return this;
       }
 
-      // optional string sourceUuid = 11;
       private java.lang.Object sourceUuid_ = "";
       /**
        * <code>optional string sourceUuid = 11;</code>
@@ -1208,9 +1322,12 @@ public final class MessageProtos {
       public java.lang.String getSourceUuid() {
         java.lang.Object ref = sourceUuid_;
         if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          sourceUuid_ = s;
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            sourceUuid_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -1223,7 +1340,7 @@ public final class MessageProtos {
           getSourceUuidBytes() {
         java.lang.Object ref = sourceUuid_;
         if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString b =
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
           sourceUuid_ = b;
@@ -1268,7 +1385,6 @@ public final class MessageProtos {
         return this;
       }
 
-      // optional uint32 sourceDevice = 7;
       private int sourceDevice_ ;
       /**
        * <code>optional uint32 sourceDevice = 7;</code>
@@ -1301,7 +1417,6 @@ public final class MessageProtos {
         return this;
       }
 
-      // optional string relay = 3;
       private java.lang.Object relay_ = "";
       /**
        * <code>optional string relay = 3;</code>
@@ -1315,9 +1430,12 @@ public final class MessageProtos {
       public java.lang.String getRelay() {
         java.lang.Object ref = relay_;
         if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          relay_ = s;
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            relay_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -1330,7 +1448,7 @@ public final class MessageProtos {
           getRelayBytes() {
         java.lang.Object ref = relay_;
         if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString b =
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
           relay_ = b;
@@ -1375,7 +1493,6 @@ public final class MessageProtos {
         return this;
       }
 
-      // optional uint64 timestamp = 5;
       private long timestamp_ ;
       /**
        * <code>optional uint64 timestamp = 5;</code>
@@ -1408,34 +1525,33 @@ public final class MessageProtos {
         return this;
       }
 
-      // optional bytes legacyMessage = 6;
       private com.google.protobuf.ByteString legacyMessage_ = com.google.protobuf.ByteString.EMPTY;
       /**
-       * <code>optional bytes legacyMessage = 6;</code>
-       *
        * <pre>
        * Contains an encrypted DataMessage XXX -- Remove after 10/01/15
        * </pre>
+       *
+       * <code>optional bytes legacyMessage = 6;</code>
        */
       public boolean hasLegacyMessage() {
         return ((bitField0_ & 0x00000040) == 0x00000040);
       }
       /**
-       * <code>optional bytes legacyMessage = 6;</code>
-       *
        * <pre>
        * Contains an encrypted DataMessage XXX -- Remove after 10/01/15
        * </pre>
+       *
+       * <code>optional bytes legacyMessage = 6;</code>
        */
       public com.google.protobuf.ByteString getLegacyMessage() {
         return legacyMessage_;
       }
       /**
-       * <code>optional bytes legacyMessage = 6;</code>
-       *
        * <pre>
        * Contains an encrypted DataMessage XXX -- Remove after 10/01/15
        * </pre>
+       *
+       * <code>optional bytes legacyMessage = 6;</code>
        */
       public Builder setLegacyMessage(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -1447,11 +1563,11 @@ public final class MessageProtos {
         return this;
       }
       /**
-       * <code>optional bytes legacyMessage = 6;</code>
-       *
        * <pre>
        * Contains an encrypted DataMessage XXX -- Remove after 10/01/15
        * </pre>
+       *
+       * <code>optional bytes legacyMessage = 6;</code>
        */
       public Builder clearLegacyMessage() {
         bitField0_ = (bitField0_ & ~0x00000040);
@@ -1460,34 +1576,33 @@ public final class MessageProtos {
         return this;
       }
 
-      // optional bytes content = 8;
       private com.google.protobuf.ByteString content_ = com.google.protobuf.ByteString.EMPTY;
       /**
-       * <code>optional bytes content = 8;</code>
-       *
        * <pre>
        * Contains an encrypted Content
        * </pre>
+       *
+       * <code>optional bytes content = 8;</code>
        */
       public boolean hasContent() {
         return ((bitField0_ & 0x00000080) == 0x00000080);
       }
       /**
-       * <code>optional bytes content = 8;</code>
-       *
        * <pre>
        * Contains an encrypted Content
        * </pre>
+       *
+       * <code>optional bytes content = 8;</code>
        */
       public com.google.protobuf.ByteString getContent() {
         return content_;
       }
       /**
-       * <code>optional bytes content = 8;</code>
-       *
        * <pre>
        * Contains an encrypted Content
        * </pre>
+       *
+       * <code>optional bytes content = 8;</code>
        */
       public Builder setContent(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -1499,11 +1614,11 @@ public final class MessageProtos {
         return this;
       }
       /**
-       * <code>optional bytes content = 8;</code>
-       *
        * <pre>
        * Contains an encrypted Content
        * </pre>
+       *
+       * <code>optional bytes content = 8;</code>
        */
       public Builder clearContent() {
         bitField0_ = (bitField0_ & ~0x00000080);
@@ -1512,7 +1627,6 @@ public final class MessageProtos {
         return this;
       }
 
-      // optional string serverGuid = 9;
       private java.lang.Object serverGuid_ = "";
       /**
        * <code>optional string serverGuid = 9;</code>
@@ -1526,9 +1640,12 @@ public final class MessageProtos {
       public java.lang.String getServerGuid() {
         java.lang.Object ref = serverGuid_;
         if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          serverGuid_ = s;
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            serverGuid_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -1541,7 +1658,7 @@ public final class MessageProtos {
           getServerGuidBytes() {
         java.lang.Object ref = serverGuid_;
         if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString b =
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
           serverGuid_ = b;
@@ -1586,7 +1703,6 @@ public final class MessageProtos {
         return this;
       }
 
-      // optional uint64 server_timestamp = 10;
       private long serverTimestamp_ ;
       /**
        * <code>optional uint64 server_timestamp = 10;</code>
@@ -1618,22 +1734,59 @@ public final class MessageProtos {
         onChanged();
         return this;
       }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.setUnknownFields(unknownFields);
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.mergeUnknownFields(unknownFields);
+      }
+
 
       // @@protoc_insertion_point(builder_scope:textsecure.Envelope)
     }
 
+    // @@protoc_insertion_point(class_scope:textsecure.Envelope)
+    private static final org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope DEFAULT_INSTANCE;
     static {
-      defaultInstance = new Envelope(true);
-      defaultInstance.initFields();
+      DEFAULT_INSTANCE = new org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope();
     }
 
-    // @@protoc_insertion_point(class_scope:textsecure.Envelope)
+    public static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<Envelope>
+        PARSER = new com.google.protobuf.AbstractParser<Envelope>() {
+      public Envelope parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new Envelope(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<Envelope> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<Envelope> getParserForType() {
+      return PARSER;
+    }
+
+    public org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
   }
 
-  public interface ProvisioningUuidOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
+  public interface ProvisioningUuidOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:textsecure.ProvisioningUuid)
+      com.google.protobuf.MessageOrBuilder {
 
-    // optional string uuid = 1;
     /**
      * <code>optional string uuid = 1;</code>
      */
@@ -1651,36 +1804,28 @@ public final class MessageProtos {
   /**
    * Protobuf type {@code textsecure.ProvisioningUuid}
    */
-  public static final class ProvisioningUuid extends
-      com.google.protobuf.GeneratedMessage
-      implements ProvisioningUuidOrBuilder {
+  public  static final class ProvisioningUuid extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:textsecure.ProvisioningUuid)
+      ProvisioningUuidOrBuilder {
     // Use ProvisioningUuid.newBuilder() to construct.
-    private ProvisioningUuid(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+    private ProvisioningUuid(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
-      this.unknownFields = builder.getUnknownFields();
     }
-    private ProvisioningUuid(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
-
-    private static final ProvisioningUuid defaultInstance;
-    public static ProvisioningUuid getDefaultInstance() {
-      return defaultInstance;
+    private ProvisioningUuid() {
+      uuid_ = "";
     }
 
-    public ProvisioningUuid getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-
-    private final com.google.protobuf.UnknownFieldSet unknownFields;
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
-        getUnknownFields() {
+    getUnknownFields() {
       return this.unknownFields;
     }
     private ProvisioningUuid(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      initFields();
+      this();
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -1700,8 +1845,9 @@ public final class MessageProtos {
               break;
             }
             case 10: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              uuid_ = input.readBytes();
+              uuid_ = bs;
               break;
             }
           }
@@ -1710,7 +1856,7 @@ public final class MessageProtos {
         throw e.setUnfinishedMessage(this);
       } catch (java.io.IOException e) {
         throw new com.google.protobuf.InvalidProtocolBufferException(
-            e.getMessage()).setUnfinishedMessage(this);
+            e).setUnfinishedMessage(this);
       } finally {
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -1721,32 +1867,16 @@ public final class MessageProtos {
       return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ProvisioningUuid_descriptor;
     }
 
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
       return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ProvisioningUuid_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
               org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid.class, org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid.Builder.class);
     }
 
-    public static com.google.protobuf.Parser<ProvisioningUuid> PARSER =
-        new com.google.protobuf.AbstractParser<ProvisioningUuid>() {
-      public ProvisioningUuid parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new ProvisioningUuid(input, extensionRegistry);
-      }
-    };
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<ProvisioningUuid> getParserForType() {
-      return PARSER;
-    }
-
     private int bitField0_;
-    // optional string uuid = 1;
     public static final int UUID_FIELD_NUMBER = 1;
-    private java.lang.Object uuid_;
+    private volatile java.lang.Object uuid_;
     /**
      * <code>optional string uuid = 1;</code>
      */
@@ -1761,7 +1891,7 @@ public final class MessageProtos {
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
-        com.google.protobuf.ByteString bs = 
+        com.google.protobuf.ByteString bs =
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
@@ -1777,7 +1907,7 @@ public final class MessageProtos {
         getUuidBytes() {
       java.lang.Object ref = uuid_;
       if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         uuid_ = b;
@@ -1787,13 +1917,11 @@ public final class MessageProtos {
       }
     }
 
-    private void initFields() {
-      uuid_ = "";
-    }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
 
       memoizedIsInitialized = 1;
       return true;
@@ -1801,33 +1929,60 @@ public final class MessageProtos {
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      getSerializedSize();
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, getUuidBytes());
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, uuid_);
       }
-      getUnknownFields().writeTo(output);
+      unknownFields.writeTo(output);
     }
 
-    private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
-      int size = memoizedSerializedSize;
+      int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, getUuidBytes());
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, uuid_);
       }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
+      size += unknownFields.getSerializedSize();
+      memoizedSize = size;
       return size;
     }
 
     private static final long serialVersionUID = 0L;
     @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid)) {
+        return super.equals(obj);
+      }
+      org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid other = (org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid) obj;
+
+      boolean result = true;
+      result = result && (hasUuid() == other.hasUuid());
+      if (hasUuid()) {
+        result = result && getUuid()
+            .equals(other.getUuid());
+      }
+      result = result && unknownFields.equals(other.unknownFields);
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      if (hasUuid()) {
+        hash = (37 * hash) + UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getUuid().hashCode();
+      }
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
     }
 
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid parseFrom(
@@ -1853,46 +2008,57 @@ public final class MessageProtos {
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return PARSER.parseFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return PARSER.parseFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid prototype) {
-      return newBuilder().mergeFrom(prototype);
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
     }
-    public Builder toBuilder() { return newBuilder(this); }
+    public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
 
     @java.lang.Override
     protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
       Builder builder = new Builder(parent);
       return builder;
     }
@@ -1900,14 +2066,15 @@ public final class MessageProtos {
      * Protobuf type {@code textsecure.ProvisioningUuid}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuidOrBuilder {
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:textsecure.ProvisioningUuid)
+        org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuidOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ProvisioningUuid_descriptor;
       }
 
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ProvisioningUuid_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
@@ -1920,27 +2087,20 @@ public final class MessageProtos {
       }
 
       private Builder(
-          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
         super(parent);
         maybeForceBuilderInitialization();
       }
       private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
         }
       }
-      private static Builder create() {
-        return new Builder();
-      }
-
       public Builder clear() {
         super.clear();
         uuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
         return this;
-      }
-
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
       }
 
       public com.google.protobuf.Descriptors.Descriptor
@@ -1973,6 +2133,32 @@ public final class MessageProtos {
         return result;
       }
 
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid) {
           return mergeFrom((org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid)other);
@@ -1989,7 +2175,8 @@ public final class MessageProtos {
           uuid_ = other.uuid_;
           onChanged();
         }
-        this.mergeUnknownFields(other.getUnknownFields());
+        this.mergeUnknownFields(other.unknownFields);
+        onChanged();
         return this;
       }
 
@@ -2006,7 +2193,7 @@ public final class MessageProtos {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
           parsedMessage = (org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid) e.getUnfinishedMessage();
-          throw e;
+          throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
             mergeFrom(parsedMessage);
@@ -2016,7 +2203,6 @@ public final class MessageProtos {
       }
       private int bitField0_;
 
-      // optional string uuid = 1;
       private java.lang.Object uuid_ = "";
       /**
        * <code>optional string uuid = 1;</code>
@@ -2030,9 +2216,12 @@ public final class MessageProtos {
       public java.lang.String getUuid() {
         java.lang.Object ref = uuid_;
         if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          uuid_ = s;
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            uuid_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -2045,7 +2234,7 @@ public final class MessageProtos {
           getUuidBytes() {
         java.lang.Object ref = uuid_;
         if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString b =
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
           uuid_ = b;
@@ -2089,22 +2278,59 @@ public final class MessageProtos {
         onChanged();
         return this;
       }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.setUnknownFields(unknownFields);
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.mergeUnknownFields(unknownFields);
+      }
+
 
       // @@protoc_insertion_point(builder_scope:textsecure.ProvisioningUuid)
     }
 
+    // @@protoc_insertion_point(class_scope:textsecure.ProvisioningUuid)
+    private static final org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid DEFAULT_INSTANCE;
     static {
-      defaultInstance = new ProvisioningUuid(true);
-      defaultInstance.initFields();
+      DEFAULT_INSTANCE = new org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid();
     }
 
-    // @@protoc_insertion_point(class_scope:textsecure.ProvisioningUuid)
+    public static org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<ProvisioningUuid>
+        PARSER = new com.google.protobuf.AbstractParser<ProvisioningUuid>() {
+      public ProvisioningUuid parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new ProvisioningUuid(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<ProvisioningUuid> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<ProvisioningUuid> getParserForType() {
+      return PARSER;
+    }
+
+    public org.whispersystems.textsecuregcm.entities.MessageProtos.ProvisioningUuid getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
   }
 
-  public interface ServerCertificateOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
+  public interface ServerCertificateOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:textsecure.ServerCertificate)
+      com.google.protobuf.MessageOrBuilder {
 
-    // optional bytes certificate = 1;
     /**
      * <code>optional bytes certificate = 1;</code>
      */
@@ -2114,7 +2340,6 @@ public final class MessageProtos {
      */
     com.google.protobuf.ByteString getCertificate();
 
-    // optional bytes signature = 2;
     /**
      * <code>optional bytes signature = 2;</code>
      */
@@ -2127,36 +2352,29 @@ public final class MessageProtos {
   /**
    * Protobuf type {@code textsecure.ServerCertificate}
    */
-  public static final class ServerCertificate extends
-      com.google.protobuf.GeneratedMessage
-      implements ServerCertificateOrBuilder {
+  public  static final class ServerCertificate extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:textsecure.ServerCertificate)
+      ServerCertificateOrBuilder {
     // Use ServerCertificate.newBuilder() to construct.
-    private ServerCertificate(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+    private ServerCertificate(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
-      this.unknownFields = builder.getUnknownFields();
     }
-    private ServerCertificate(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
-
-    private static final ServerCertificate defaultInstance;
-    public static ServerCertificate getDefaultInstance() {
-      return defaultInstance;
+    private ServerCertificate() {
+      certificate_ = com.google.protobuf.ByteString.EMPTY;
+      signature_ = com.google.protobuf.ByteString.EMPTY;
     }
 
-    public ServerCertificate getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-
-    private final com.google.protobuf.UnknownFieldSet unknownFields;
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
-        getUnknownFields() {
+    getUnknownFields() {
       return this.unknownFields;
     }
     private ServerCertificate(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      initFields();
+      this();
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -2191,7 +2409,7 @@ public final class MessageProtos {
         throw e.setUnfinishedMessage(this);
       } catch (java.io.IOException e) {
         throw new com.google.protobuf.InvalidProtocolBufferException(
-            e.getMessage()).setUnfinishedMessage(this);
+            e).setUnfinishedMessage(this);
       } finally {
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -2202,32 +2420,17 @@ public final class MessageProtos {
       return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ServerCertificate_descriptor;
     }
 
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
       return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ServerCertificate_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
               org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.class, org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Builder.class);
     }
 
-    public static com.google.protobuf.Parser<ServerCertificate> PARSER =
-        new com.google.protobuf.AbstractParser<ServerCertificate>() {
-      public ServerCertificate parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new ServerCertificate(input, extensionRegistry);
-      }
-    };
+    public interface CertificateOrBuilder extends
+        // @@protoc_insertion_point(interface_extends:textsecure.ServerCertificate.Certificate)
+        com.google.protobuf.MessageOrBuilder {
 
-    @java.lang.Override
-    public com.google.protobuf.Parser<ServerCertificate> getParserForType() {
-      return PARSER;
-    }
-
-    public interface CertificateOrBuilder
-        extends com.google.protobuf.MessageOrBuilder {
-
-      // optional uint32 id = 1;
       /**
        * <code>optional uint32 id = 1;</code>
        */
@@ -2237,7 +2440,6 @@ public final class MessageProtos {
        */
       int getId();
 
-      // optional bytes key = 2;
       /**
        * <code>optional bytes key = 2;</code>
        */
@@ -2250,36 +2452,29 @@ public final class MessageProtos {
     /**
      * Protobuf type {@code textsecure.ServerCertificate.Certificate}
      */
-    public static final class Certificate extends
-        com.google.protobuf.GeneratedMessage
-        implements CertificateOrBuilder {
+    public  static final class Certificate extends
+        com.google.protobuf.GeneratedMessageV3 implements
+        // @@protoc_insertion_point(message_implements:textsecure.ServerCertificate.Certificate)
+        CertificateOrBuilder {
       // Use Certificate.newBuilder() to construct.
-      private Certificate(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      private Certificate(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
         super(builder);
-        this.unknownFields = builder.getUnknownFields();
       }
-      private Certificate(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
-
-      private static final Certificate defaultInstance;
-      public static Certificate getDefaultInstance() {
-        return defaultInstance;
+      private Certificate() {
+        id_ = 0;
+        key_ = com.google.protobuf.ByteString.EMPTY;
       }
 
-      public Certificate getDefaultInstanceForType() {
-        return defaultInstance;
-      }
-
-      private final com.google.protobuf.UnknownFieldSet unknownFields;
       @java.lang.Override
       public final com.google.protobuf.UnknownFieldSet
-          getUnknownFields() {
+      getUnknownFields() {
         return this.unknownFields;
       }
       private Certificate(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        initFields();
+        this();
         int mutable_bitField0_ = 0;
         com.google.protobuf.UnknownFieldSet.Builder unknownFields =
             com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -2314,7 +2509,7 @@ public final class MessageProtos {
           throw e.setUnfinishedMessage(this);
         } catch (java.io.IOException e) {
           throw new com.google.protobuf.InvalidProtocolBufferException(
-              e.getMessage()).setUnfinishedMessage(this);
+              e).setUnfinishedMessage(this);
         } finally {
           this.unknownFields = unknownFields.build();
           makeExtensionsImmutable();
@@ -2325,30 +2520,14 @@ public final class MessageProtos {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ServerCertificate_Certificate_descriptor;
       }
 
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ServerCertificate_Certificate_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
                 org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate.class, org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate.Builder.class);
       }
 
-      public static com.google.protobuf.Parser<Certificate> PARSER =
-          new com.google.protobuf.AbstractParser<Certificate>() {
-        public Certificate parsePartialFrom(
-            com.google.protobuf.CodedInputStream input,
-            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-            throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Certificate(input, extensionRegistry);
-        }
-      };
-
-      @java.lang.Override
-      public com.google.protobuf.Parser<Certificate> getParserForType() {
-        return PARSER;
-      }
-
       private int bitField0_;
-      // optional uint32 id = 1;
       public static final int ID_FIELD_NUMBER = 1;
       private int id_;
       /**
@@ -2364,7 +2543,6 @@ public final class MessageProtos {
         return id_;
       }
 
-      // optional bytes key = 2;
       public static final int KEY_FIELD_NUMBER = 2;
       private com.google.protobuf.ByteString key_;
       /**
@@ -2380,14 +2558,11 @@ public final class MessageProtos {
         return key_;
       }
 
-      private void initFields() {
-        id_ = 0;
-        key_ = com.google.protobuf.ByteString.EMPTY;
-      }
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
         byte isInitialized = memoizedIsInitialized;
-        if (isInitialized != -1) return isInitialized == 1;
+        if (isInitialized == 1) return true;
+        if (isInitialized == 0) return false;
 
         memoizedIsInitialized = 1;
         return true;
@@ -2395,19 +2570,17 @@ public final class MessageProtos {
 
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
-        getSerializedSize();
         if (((bitField0_ & 0x00000001) == 0x00000001)) {
           output.writeUInt32(1, id_);
         }
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
           output.writeBytes(2, key_);
         }
-        getUnknownFields().writeTo(output);
+        unknownFields.writeTo(output);
       }
 
-      private int memoizedSerializedSize = -1;
       public int getSerializedSize() {
-        int size = memoizedSerializedSize;
+        int size = memoizedSize;
         if (size != -1) return size;
 
         size = 0;
@@ -2419,16 +2592,55 @@ public final class MessageProtos {
           size += com.google.protobuf.CodedOutputStream
             .computeBytesSize(2, key_);
         }
-        size += getUnknownFields().getSerializedSize();
-        memoizedSerializedSize = size;
+        size += unknownFields.getSerializedSize();
+        memoizedSize = size;
         return size;
       }
 
       private static final long serialVersionUID = 0L;
       @java.lang.Override
-      protected java.lang.Object writeReplace()
-          throws java.io.ObjectStreamException {
-        return super.writeReplace();
+      public boolean equals(final java.lang.Object obj) {
+        if (obj == this) {
+         return true;
+        }
+        if (!(obj instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate)) {
+          return super.equals(obj);
+        }
+        org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate other = (org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate) obj;
+
+        boolean result = true;
+        result = result && (hasId() == other.hasId());
+        if (hasId()) {
+          result = result && (getId()
+              == other.getId());
+        }
+        result = result && (hasKey() == other.hasKey());
+        if (hasKey()) {
+          result = result && getKey()
+              .equals(other.getKey());
+        }
+        result = result && unknownFields.equals(other.unknownFields);
+        return result;
+      }
+
+      @java.lang.Override
+      public int hashCode() {
+        if (memoizedHashCode != 0) {
+          return memoizedHashCode;
+        }
+        int hash = 41;
+        hash = (19 * hash) + getDescriptorForType().hashCode();
+        if (hasId()) {
+          hash = (37 * hash) + ID_FIELD_NUMBER;
+          hash = (53 * hash) + getId();
+        }
+        if (hasKey()) {
+          hash = (37 * hash) + KEY_FIELD_NUMBER;
+          hash = (53 * hash) + getKey().hashCode();
+        }
+        hash = (29 * hash) + unknownFields.hashCode();
+        memoizedHashCode = hash;
+        return hash;
       }
 
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate parseFrom(
@@ -2454,46 +2666,57 @@ public final class MessageProtos {
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate parseFrom(java.io.InputStream input)
           throws java.io.IOException {
-        return PARSER.parseFrom(input);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input);
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate parseFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return PARSER.parseFrom(input, extensionRegistry);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input, extensionRegistry);
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate parseDelimitedFrom(java.io.InputStream input)
           throws java.io.IOException {
-        return PARSER.parseDelimitedFrom(input);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseDelimitedWithIOException(PARSER, input);
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate parseDelimitedFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return PARSER.parseDelimitedFrom(input, extensionRegistry);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate parseFrom(
           com.google.protobuf.CodedInputStream input)
           throws java.io.IOException {
-        return PARSER.parseFrom(input);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input);
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate parseFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return PARSER.parseFrom(input, extensionRegistry);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input, extensionRegistry);
       }
 
-      public static Builder newBuilder() { return Builder.create(); }
       public Builder newBuilderForType() { return newBuilder(); }
-      public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate prototype) {
-        return newBuilder().mergeFrom(prototype);
+      public static Builder newBuilder() {
+        return DEFAULT_INSTANCE.toBuilder();
       }
-      public Builder toBuilder() { return newBuilder(this); }
+      public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate prototype) {
+        return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+      }
+      public Builder toBuilder() {
+        return this == DEFAULT_INSTANCE
+            ? new Builder() : new Builder().mergeFrom(this);
+      }
 
       @java.lang.Override
       protected Builder newBuilderForType(
-          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
         Builder builder = new Builder(parent);
         return builder;
       }
@@ -2501,14 +2724,15 @@ public final class MessageProtos {
        * Protobuf type {@code textsecure.ServerCertificate.Certificate}
        */
       public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder>
-         implements org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.CertificateOrBuilder {
+          com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+          // @@protoc_insertion_point(builder_implements:textsecure.ServerCertificate.Certificate)
+          org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.CertificateOrBuilder {
         public static final com.google.protobuf.Descriptors.Descriptor
             getDescriptor() {
           return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ServerCertificate_Certificate_descriptor;
         }
 
-        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
             internalGetFieldAccessorTable() {
           return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ServerCertificate_Certificate_fieldAccessorTable
               .ensureFieldAccessorsInitialized(
@@ -2521,18 +2745,15 @@ public final class MessageProtos {
         }
 
         private Builder(
-            com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+            com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
           super(parent);
           maybeForceBuilderInitialization();
         }
         private void maybeForceBuilderInitialization() {
-          if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          if (com.google.protobuf.GeneratedMessageV3
+                  .alwaysUseFieldBuilders) {
           }
         }
-        private static Builder create() {
-          return new Builder();
-        }
-
         public Builder clear() {
           super.clear();
           id_ = 0;
@@ -2540,10 +2761,6 @@ public final class MessageProtos {
           key_ = com.google.protobuf.ByteString.EMPTY;
           bitField0_ = (bitField0_ & ~0x00000002);
           return this;
-        }
-
-        public Builder clone() {
-          return create().mergeFrom(buildPartial());
         }
 
         public com.google.protobuf.Descriptors.Descriptor
@@ -2580,6 +2797,32 @@ public final class MessageProtos {
           return result;
         }
 
+        public Builder clone() {
+          return (Builder) super.clone();
+        }
+        public Builder setField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            Object value) {
+          return (Builder) super.setField(field, value);
+        }
+        public Builder clearField(
+            com.google.protobuf.Descriptors.FieldDescriptor field) {
+          return (Builder) super.clearField(field);
+        }
+        public Builder clearOneof(
+            com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+          return (Builder) super.clearOneof(oneof);
+        }
+        public Builder setRepeatedField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            int index, Object value) {
+          return (Builder) super.setRepeatedField(field, index, value);
+        }
+        public Builder addRepeatedField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            Object value) {
+          return (Builder) super.addRepeatedField(field, value);
+        }
         public Builder mergeFrom(com.google.protobuf.Message other) {
           if (other instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate) {
             return mergeFrom((org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate)other);
@@ -2597,7 +2840,8 @@ public final class MessageProtos {
           if (other.hasKey()) {
             setKey(other.getKey());
           }
-          this.mergeUnknownFields(other.getUnknownFields());
+          this.mergeUnknownFields(other.unknownFields);
+          onChanged();
           return this;
         }
 
@@ -2614,7 +2858,7 @@ public final class MessageProtos {
             parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
           } catch (com.google.protobuf.InvalidProtocolBufferException e) {
             parsedMessage = (org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate) e.getUnfinishedMessage();
-            throw e;
+            throw e.unwrapIOException();
           } finally {
             if (parsedMessage != null) {
               mergeFrom(parsedMessage);
@@ -2624,7 +2868,6 @@ public final class MessageProtos {
         }
         private int bitField0_;
 
-        // optional uint32 id = 1;
         private int id_ ;
         /**
          * <code>optional uint32 id = 1;</code>
@@ -2657,7 +2900,6 @@ public final class MessageProtos {
           return this;
         }
 
-        // optional bytes key = 2;
         private com.google.protobuf.ByteString key_ = com.google.protobuf.ByteString.EMPTY;
         /**
          * <code>optional bytes key = 2;</code>
@@ -2692,20 +2934,56 @@ public final class MessageProtos {
           onChanged();
           return this;
         }
+        public final Builder setUnknownFields(
+            final com.google.protobuf.UnknownFieldSet unknownFields) {
+          return super.setUnknownFields(unknownFields);
+        }
+
+        public final Builder mergeUnknownFields(
+            final com.google.protobuf.UnknownFieldSet unknownFields) {
+          return super.mergeUnknownFields(unknownFields);
+        }
+
 
         // @@protoc_insertion_point(builder_scope:textsecure.ServerCertificate.Certificate)
       }
 
+      // @@protoc_insertion_point(class_scope:textsecure.ServerCertificate.Certificate)
+      private static final org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate DEFAULT_INSTANCE;
       static {
-        defaultInstance = new Certificate(true);
-        defaultInstance.initFields();
+        DEFAULT_INSTANCE = new org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate();
       }
 
-      // @@protoc_insertion_point(class_scope:textsecure.ServerCertificate.Certificate)
+      public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate getDefaultInstance() {
+        return DEFAULT_INSTANCE;
+      }
+
+      @java.lang.Deprecated public static final com.google.protobuf.Parser<Certificate>
+          PARSER = new com.google.protobuf.AbstractParser<Certificate>() {
+        public Certificate parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+            return new Certificate(input, extensionRegistry);
+        }
+      };
+
+      public static com.google.protobuf.Parser<Certificate> parser() {
+        return PARSER;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Parser<Certificate> getParserForType() {
+        return PARSER;
+      }
+
+      public org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Certificate getDefaultInstanceForType() {
+        return DEFAULT_INSTANCE;
+      }
+
     }
 
     private int bitField0_;
-    // optional bytes certificate = 1;
     public static final int CERTIFICATE_FIELD_NUMBER = 1;
     private com.google.protobuf.ByteString certificate_;
     /**
@@ -2721,7 +2999,6 @@ public final class MessageProtos {
       return certificate_;
     }
 
-    // optional bytes signature = 2;
     public static final int SIGNATURE_FIELD_NUMBER = 2;
     private com.google.protobuf.ByteString signature_;
     /**
@@ -2737,14 +3014,11 @@ public final class MessageProtos {
       return signature_;
     }
 
-    private void initFields() {
-      certificate_ = com.google.protobuf.ByteString.EMPTY;
-      signature_ = com.google.protobuf.ByteString.EMPTY;
-    }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
 
       memoizedIsInitialized = 1;
       return true;
@@ -2752,19 +3026,17 @@ public final class MessageProtos {
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      getSerializedSize();
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         output.writeBytes(1, certificate_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         output.writeBytes(2, signature_);
       }
-      getUnknownFields().writeTo(output);
+      unknownFields.writeTo(output);
     }
 
-    private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
-      int size = memoizedSerializedSize;
+      int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
@@ -2776,16 +3048,55 @@ public final class MessageProtos {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(2, signature_);
       }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
+      size += unknownFields.getSerializedSize();
+      memoizedSize = size;
       return size;
     }
 
     private static final long serialVersionUID = 0L;
     @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate)) {
+        return super.equals(obj);
+      }
+      org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate other = (org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate) obj;
+
+      boolean result = true;
+      result = result && (hasCertificate() == other.hasCertificate());
+      if (hasCertificate()) {
+        result = result && getCertificate()
+            .equals(other.getCertificate());
+      }
+      result = result && (hasSignature() == other.hasSignature());
+      if (hasSignature()) {
+        result = result && getSignature()
+            .equals(other.getSignature());
+      }
+      result = result && unknownFields.equals(other.unknownFields);
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      if (hasCertificate()) {
+        hash = (37 * hash) + CERTIFICATE_FIELD_NUMBER;
+        hash = (53 * hash) + getCertificate().hashCode();
+      }
+      if (hasSignature()) {
+        hash = (37 * hash) + SIGNATURE_FIELD_NUMBER;
+        hash = (53 * hash) + getSignature().hashCode();
+      }
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
     }
 
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate parseFrom(
@@ -2811,46 +3122,57 @@ public final class MessageProtos {
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return PARSER.parseFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return PARSER.parseFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate prototype) {
-      return newBuilder().mergeFrom(prototype);
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
     }
-    public Builder toBuilder() { return newBuilder(this); }
+    public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
 
     @java.lang.Override
     protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
       Builder builder = new Builder(parent);
       return builder;
     }
@@ -2858,14 +3180,15 @@ public final class MessageProtos {
      * Protobuf type {@code textsecure.ServerCertificate}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificateOrBuilder {
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:textsecure.ServerCertificate)
+        org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificateOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ServerCertificate_descriptor;
       }
 
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_ServerCertificate_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
@@ -2878,18 +3201,15 @@ public final class MessageProtos {
       }
 
       private Builder(
-          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
         super(parent);
         maybeForceBuilderInitialization();
       }
       private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
         }
       }
-      private static Builder create() {
-        return new Builder();
-      }
-
       public Builder clear() {
         super.clear();
         certificate_ = com.google.protobuf.ByteString.EMPTY;
@@ -2897,10 +3217,6 @@ public final class MessageProtos {
         signature_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000002);
         return this;
-      }
-
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
       }
 
       public com.google.protobuf.Descriptors.Descriptor
@@ -2937,6 +3253,32 @@ public final class MessageProtos {
         return result;
       }
 
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate) {
           return mergeFrom((org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate)other);
@@ -2954,7 +3296,8 @@ public final class MessageProtos {
         if (other.hasSignature()) {
           setSignature(other.getSignature());
         }
-        this.mergeUnknownFields(other.getUnknownFields());
+        this.mergeUnknownFields(other.unknownFields);
+        onChanged();
         return this;
       }
 
@@ -2971,7 +3314,7 @@ public final class MessageProtos {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
           parsedMessage = (org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate) e.getUnfinishedMessage();
-          throw e;
+          throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
             mergeFrom(parsedMessage);
@@ -2981,7 +3324,6 @@ public final class MessageProtos {
       }
       private int bitField0_;
 
-      // optional bytes certificate = 1;
       private com.google.protobuf.ByteString certificate_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>optional bytes certificate = 1;</code>
@@ -3017,7 +3359,6 @@ public final class MessageProtos {
         return this;
       }
 
-      // optional bytes signature = 2;
       private com.google.protobuf.ByteString signature_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>optional bytes signature = 2;</code>
@@ -3052,22 +3393,59 @@ public final class MessageProtos {
         onChanged();
         return this;
       }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.setUnknownFields(unknownFields);
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.mergeUnknownFields(unknownFields);
+      }
+
 
       // @@protoc_insertion_point(builder_scope:textsecure.ServerCertificate)
     }
 
+    // @@protoc_insertion_point(class_scope:textsecure.ServerCertificate)
+    private static final org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate DEFAULT_INSTANCE;
     static {
-      defaultInstance = new ServerCertificate(true);
-      defaultInstance.initFields();
+      DEFAULT_INSTANCE = new org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate();
     }
 
-    // @@protoc_insertion_point(class_scope:textsecure.ServerCertificate)
+    public static org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<ServerCertificate>
+        PARSER = new com.google.protobuf.AbstractParser<ServerCertificate>() {
+      public ServerCertificate parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new ServerCertificate(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<ServerCertificate> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<ServerCertificate> getParserForType() {
+      return PARSER;
+    }
+
+    public org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
   }
 
-  public interface SenderCertificateOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
+  public interface SenderCertificateOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:textsecure.SenderCertificate)
+      com.google.protobuf.MessageOrBuilder {
 
-    // optional bytes certificate = 1;
     /**
      * <code>optional bytes certificate = 1;</code>
      */
@@ -3077,7 +3455,6 @@ public final class MessageProtos {
      */
     com.google.protobuf.ByteString getCertificate();
 
-    // optional bytes signature = 2;
     /**
      * <code>optional bytes signature = 2;</code>
      */
@@ -3090,36 +3467,29 @@ public final class MessageProtos {
   /**
    * Protobuf type {@code textsecure.SenderCertificate}
    */
-  public static final class SenderCertificate extends
-      com.google.protobuf.GeneratedMessage
-      implements SenderCertificateOrBuilder {
+  public  static final class SenderCertificate extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:textsecure.SenderCertificate)
+      SenderCertificateOrBuilder {
     // Use SenderCertificate.newBuilder() to construct.
-    private SenderCertificate(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+    private SenderCertificate(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
-      this.unknownFields = builder.getUnknownFields();
     }
-    private SenderCertificate(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
-
-    private static final SenderCertificate defaultInstance;
-    public static SenderCertificate getDefaultInstance() {
-      return defaultInstance;
+    private SenderCertificate() {
+      certificate_ = com.google.protobuf.ByteString.EMPTY;
+      signature_ = com.google.protobuf.ByteString.EMPTY;
     }
 
-    public SenderCertificate getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-
-    private final com.google.protobuf.UnknownFieldSet unknownFields;
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
-        getUnknownFields() {
+    getUnknownFields() {
       return this.unknownFields;
     }
     private SenderCertificate(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      initFields();
+      this();
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -3154,7 +3524,7 @@ public final class MessageProtos {
         throw e.setUnfinishedMessage(this);
       } catch (java.io.IOException e) {
         throw new com.google.protobuf.InvalidProtocolBufferException(
-            e.getMessage()).setUnfinishedMessage(this);
+            e).setUnfinishedMessage(this);
       } finally {
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -3165,32 +3535,17 @@ public final class MessageProtos {
       return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_SenderCertificate_descriptor;
     }
 
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
       return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_SenderCertificate_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
               org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.class, org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Builder.class);
     }
 
-    public static com.google.protobuf.Parser<SenderCertificate> PARSER =
-        new com.google.protobuf.AbstractParser<SenderCertificate>() {
-      public SenderCertificate parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new SenderCertificate(input, extensionRegistry);
-      }
-    };
+    public interface CertificateOrBuilder extends
+        // @@protoc_insertion_point(interface_extends:textsecure.SenderCertificate.Certificate)
+        com.google.protobuf.MessageOrBuilder {
 
-    @java.lang.Override
-    public com.google.protobuf.Parser<SenderCertificate> getParserForType() {
-      return PARSER;
-    }
-
-    public interface CertificateOrBuilder
-        extends com.google.protobuf.MessageOrBuilder {
-
-      // optional string sender = 1;
       /**
        * <code>optional string sender = 1;</code>
        */
@@ -3205,7 +3560,6 @@ public final class MessageProtos {
       com.google.protobuf.ByteString
           getSenderBytes();
 
-      // optional string senderUuid = 6;
       /**
        * <code>optional string senderUuid = 6;</code>
        */
@@ -3220,7 +3574,6 @@ public final class MessageProtos {
       com.google.protobuf.ByteString
           getSenderUuidBytes();
 
-      // optional uint32 senderDevice = 2;
       /**
        * <code>optional uint32 senderDevice = 2;</code>
        */
@@ -3230,7 +3583,6 @@ public final class MessageProtos {
        */
       int getSenderDevice();
 
-      // optional fixed64 expires = 3;
       /**
        * <code>optional fixed64 expires = 3;</code>
        */
@@ -3240,7 +3592,6 @@ public final class MessageProtos {
        */
       long getExpires();
 
-      // optional bytes identityKey = 4;
       /**
        * <code>optional bytes identityKey = 4;</code>
        */
@@ -3250,7 +3601,6 @@ public final class MessageProtos {
        */
       com.google.protobuf.ByteString getIdentityKey();
 
-      // optional .textsecure.ServerCertificate signer = 5;
       /**
        * <code>optional .textsecure.ServerCertificate signer = 5;</code>
        */
@@ -3267,36 +3617,32 @@ public final class MessageProtos {
     /**
      * Protobuf type {@code textsecure.SenderCertificate.Certificate}
      */
-    public static final class Certificate extends
-        com.google.protobuf.GeneratedMessage
-        implements CertificateOrBuilder {
+    public  static final class Certificate extends
+        com.google.protobuf.GeneratedMessageV3 implements
+        // @@protoc_insertion_point(message_implements:textsecure.SenderCertificate.Certificate)
+        CertificateOrBuilder {
       // Use Certificate.newBuilder() to construct.
-      private Certificate(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      private Certificate(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
         super(builder);
-        this.unknownFields = builder.getUnknownFields();
       }
-      private Certificate(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
-
-      private static final Certificate defaultInstance;
-      public static Certificate getDefaultInstance() {
-        return defaultInstance;
-      }
-
-      public Certificate getDefaultInstanceForType() {
-        return defaultInstance;
+      private Certificate() {
+        sender_ = "";
+        senderUuid_ = "";
+        senderDevice_ = 0;
+        expires_ = 0L;
+        identityKey_ = com.google.protobuf.ByteString.EMPTY;
       }
 
-      private final com.google.protobuf.UnknownFieldSet unknownFields;
       @java.lang.Override
       public final com.google.protobuf.UnknownFieldSet
-          getUnknownFields() {
+      getUnknownFields() {
         return this.unknownFields;
       }
       private Certificate(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        initFields();
+        this();
         int mutable_bitField0_ = 0;
         com.google.protobuf.UnknownFieldSet.Builder unknownFields =
             com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -3316,8 +3662,9 @@ public final class MessageProtos {
                 break;
               }
               case 10: {
+                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000001;
-                sender_ = input.readBytes();
+                sender_ = bs;
                 break;
               }
               case 16: {
@@ -3349,8 +3696,9 @@ public final class MessageProtos {
                 break;
               }
               case 50: {
+                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000002;
-                senderUuid_ = input.readBytes();
+                senderUuid_ = bs;
                 break;
               }
             }
@@ -3359,7 +3707,7 @@ public final class MessageProtos {
           throw e.setUnfinishedMessage(this);
         } catch (java.io.IOException e) {
           throw new com.google.protobuf.InvalidProtocolBufferException(
-              e.getMessage()).setUnfinishedMessage(this);
+              e).setUnfinishedMessage(this);
         } finally {
           this.unknownFields = unknownFields.build();
           makeExtensionsImmutable();
@@ -3370,32 +3718,16 @@ public final class MessageProtos {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_SenderCertificate_Certificate_descriptor;
       }
 
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_SenderCertificate_Certificate_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
                 org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate.class, org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate.Builder.class);
       }
 
-      public static com.google.protobuf.Parser<Certificate> PARSER =
-          new com.google.protobuf.AbstractParser<Certificate>() {
-        public Certificate parsePartialFrom(
-            com.google.protobuf.CodedInputStream input,
-            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-            throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Certificate(input, extensionRegistry);
-        }
-      };
-
-      @java.lang.Override
-      public com.google.protobuf.Parser<Certificate> getParserForType() {
-        return PARSER;
-      }
-
       private int bitField0_;
-      // optional string sender = 1;
       public static final int SENDER_FIELD_NUMBER = 1;
-      private java.lang.Object sender_;
+      private volatile java.lang.Object sender_;
       /**
        * <code>optional string sender = 1;</code>
        */
@@ -3410,7 +3742,7 @@ public final class MessageProtos {
         if (ref instanceof java.lang.String) {
           return (java.lang.String) ref;
         } else {
-          com.google.protobuf.ByteString bs = 
+          com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
           if (bs.isValidUtf8()) {
@@ -3426,7 +3758,7 @@ public final class MessageProtos {
           getSenderBytes() {
         java.lang.Object ref = sender_;
         if (ref instanceof java.lang.String) {
-          com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString b =
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
           sender_ = b;
@@ -3436,9 +3768,8 @@ public final class MessageProtos {
         }
       }
 
-      // optional string senderUuid = 6;
       public static final int SENDERUUID_FIELD_NUMBER = 6;
-      private java.lang.Object senderUuid_;
+      private volatile java.lang.Object senderUuid_;
       /**
        * <code>optional string senderUuid = 6;</code>
        */
@@ -3453,7 +3784,7 @@ public final class MessageProtos {
         if (ref instanceof java.lang.String) {
           return (java.lang.String) ref;
         } else {
-          com.google.protobuf.ByteString bs = 
+          com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
           if (bs.isValidUtf8()) {
@@ -3469,7 +3800,7 @@ public final class MessageProtos {
           getSenderUuidBytes() {
         java.lang.Object ref = senderUuid_;
         if (ref instanceof java.lang.String) {
-          com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString b =
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
           senderUuid_ = b;
@@ -3479,7 +3810,6 @@ public final class MessageProtos {
         }
       }
 
-      // optional uint32 senderDevice = 2;
       public static final int SENDERDEVICE_FIELD_NUMBER = 2;
       private int senderDevice_;
       /**
@@ -3495,7 +3825,6 @@ public final class MessageProtos {
         return senderDevice_;
       }
 
-      // optional fixed64 expires = 3;
       public static final int EXPIRES_FIELD_NUMBER = 3;
       private long expires_;
       /**
@@ -3511,7 +3840,6 @@ public final class MessageProtos {
         return expires_;
       }
 
-      // optional bytes identityKey = 4;
       public static final int IDENTITYKEY_FIELD_NUMBER = 4;
       private com.google.protobuf.ByteString identityKey_;
       /**
@@ -3527,7 +3855,6 @@ public final class MessageProtos {
         return identityKey_;
       }
 
-      // optional .textsecure.ServerCertificate signer = 5;
       public static final int SIGNER_FIELD_NUMBER = 5;
       private org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate signer_;
       /**
@@ -3540,27 +3867,20 @@ public final class MessageProtos {
        * <code>optional .textsecure.ServerCertificate signer = 5;</code>
        */
       public org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate getSigner() {
-        return signer_;
+        return signer_ == null ? org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.getDefaultInstance() : signer_;
       }
       /**
        * <code>optional .textsecure.ServerCertificate signer = 5;</code>
        */
       public org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificateOrBuilder getSignerOrBuilder() {
-        return signer_;
+        return signer_ == null ? org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.getDefaultInstance() : signer_;
       }
 
-      private void initFields() {
-        sender_ = "";
-        senderUuid_ = "";
-        senderDevice_ = 0;
-        expires_ = 0L;
-        identityKey_ = com.google.protobuf.ByteString.EMPTY;
-        signer_ = org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.getDefaultInstance();
-      }
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
         byte isInitialized = memoizedIsInitialized;
-        if (isInitialized != -1) return isInitialized == 1;
+        if (isInitialized == 1) return true;
+        if (isInitialized == 0) return false;
 
         memoizedIsInitialized = 1;
         return true;
@@ -3568,9 +3888,8 @@ public final class MessageProtos {
 
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
-        getSerializedSize();
         if (((bitField0_ & 0x00000001) == 0x00000001)) {
-          output.writeBytes(1, getSenderBytes());
+          com.google.protobuf.GeneratedMessageV3.writeString(output, 1, sender_);
         }
         if (((bitField0_ & 0x00000004) == 0x00000004)) {
           output.writeUInt32(2, senderDevice_);
@@ -3582,23 +3901,21 @@ public final class MessageProtos {
           output.writeBytes(4, identityKey_);
         }
         if (((bitField0_ & 0x00000020) == 0x00000020)) {
-          output.writeMessage(5, signer_);
+          output.writeMessage(5, getSigner());
         }
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
-          output.writeBytes(6, getSenderUuidBytes());
+          com.google.protobuf.GeneratedMessageV3.writeString(output, 6, senderUuid_);
         }
-        getUnknownFields().writeTo(output);
+        unknownFields.writeTo(output);
       }
 
-      private int memoizedSerializedSize = -1;
       public int getSerializedSize() {
-        int size = memoizedSerializedSize;
+        int size = memoizedSize;
         if (size != -1) return size;
 
         size = 0;
         if (((bitField0_ & 0x00000001) == 0x00000001)) {
-          size += com.google.protobuf.CodedOutputStream
-            .computeBytesSize(1, getSenderBytes());
+          size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, sender_);
         }
         if (((bitField0_ & 0x00000004) == 0x00000004)) {
           size += com.google.protobuf.CodedOutputStream
@@ -3614,22 +3931,97 @@ public final class MessageProtos {
         }
         if (((bitField0_ & 0x00000020) == 0x00000020)) {
           size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(5, signer_);
+            .computeMessageSize(5, getSigner());
         }
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
-          size += com.google.protobuf.CodedOutputStream
-            .computeBytesSize(6, getSenderUuidBytes());
+          size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, senderUuid_);
         }
-        size += getUnknownFields().getSerializedSize();
-        memoizedSerializedSize = size;
+        size += unknownFields.getSerializedSize();
+        memoizedSize = size;
         return size;
       }
 
       private static final long serialVersionUID = 0L;
       @java.lang.Override
-      protected java.lang.Object writeReplace()
-          throws java.io.ObjectStreamException {
-        return super.writeReplace();
+      public boolean equals(final java.lang.Object obj) {
+        if (obj == this) {
+         return true;
+        }
+        if (!(obj instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate)) {
+          return super.equals(obj);
+        }
+        org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate other = (org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate) obj;
+
+        boolean result = true;
+        result = result && (hasSender() == other.hasSender());
+        if (hasSender()) {
+          result = result && getSender()
+              .equals(other.getSender());
+        }
+        result = result && (hasSenderUuid() == other.hasSenderUuid());
+        if (hasSenderUuid()) {
+          result = result && getSenderUuid()
+              .equals(other.getSenderUuid());
+        }
+        result = result && (hasSenderDevice() == other.hasSenderDevice());
+        if (hasSenderDevice()) {
+          result = result && (getSenderDevice()
+              == other.getSenderDevice());
+        }
+        result = result && (hasExpires() == other.hasExpires());
+        if (hasExpires()) {
+          result = result && (getExpires()
+              == other.getExpires());
+        }
+        result = result && (hasIdentityKey() == other.hasIdentityKey());
+        if (hasIdentityKey()) {
+          result = result && getIdentityKey()
+              .equals(other.getIdentityKey());
+        }
+        result = result && (hasSigner() == other.hasSigner());
+        if (hasSigner()) {
+          result = result && getSigner()
+              .equals(other.getSigner());
+        }
+        result = result && unknownFields.equals(other.unknownFields);
+        return result;
+      }
+
+      @java.lang.Override
+      public int hashCode() {
+        if (memoizedHashCode != 0) {
+          return memoizedHashCode;
+        }
+        int hash = 41;
+        hash = (19 * hash) + getDescriptorForType().hashCode();
+        if (hasSender()) {
+          hash = (37 * hash) + SENDER_FIELD_NUMBER;
+          hash = (53 * hash) + getSender().hashCode();
+        }
+        if (hasSenderUuid()) {
+          hash = (37 * hash) + SENDERUUID_FIELD_NUMBER;
+          hash = (53 * hash) + getSenderUuid().hashCode();
+        }
+        if (hasSenderDevice()) {
+          hash = (37 * hash) + SENDERDEVICE_FIELD_NUMBER;
+          hash = (53 * hash) + getSenderDevice();
+        }
+        if (hasExpires()) {
+          hash = (37 * hash) + EXPIRES_FIELD_NUMBER;
+          hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+              getExpires());
+        }
+        if (hasIdentityKey()) {
+          hash = (37 * hash) + IDENTITYKEY_FIELD_NUMBER;
+          hash = (53 * hash) + getIdentityKey().hashCode();
+        }
+        if (hasSigner()) {
+          hash = (37 * hash) + SIGNER_FIELD_NUMBER;
+          hash = (53 * hash) + getSigner().hashCode();
+        }
+        hash = (29 * hash) + unknownFields.hashCode();
+        memoizedHashCode = hash;
+        return hash;
       }
 
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate parseFrom(
@@ -3655,46 +4047,57 @@ public final class MessageProtos {
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate parseFrom(java.io.InputStream input)
           throws java.io.IOException {
-        return PARSER.parseFrom(input);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input);
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate parseFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return PARSER.parseFrom(input, extensionRegistry);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input, extensionRegistry);
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate parseDelimitedFrom(java.io.InputStream input)
           throws java.io.IOException {
-        return PARSER.parseDelimitedFrom(input);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseDelimitedWithIOException(PARSER, input);
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate parseDelimitedFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return PARSER.parseDelimitedFrom(input, extensionRegistry);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate parseFrom(
           com.google.protobuf.CodedInputStream input)
           throws java.io.IOException {
-        return PARSER.parseFrom(input);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input);
       }
       public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate parseFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return PARSER.parseFrom(input, extensionRegistry);
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input, extensionRegistry);
       }
 
-      public static Builder newBuilder() { return Builder.create(); }
       public Builder newBuilderForType() { return newBuilder(); }
-      public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate prototype) {
-        return newBuilder().mergeFrom(prototype);
+      public static Builder newBuilder() {
+        return DEFAULT_INSTANCE.toBuilder();
       }
-      public Builder toBuilder() { return newBuilder(this); }
+      public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate prototype) {
+        return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+      }
+      public Builder toBuilder() {
+        return this == DEFAULT_INSTANCE
+            ? new Builder() : new Builder().mergeFrom(this);
+      }
 
       @java.lang.Override
       protected Builder newBuilderForType(
-          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
         Builder builder = new Builder(parent);
         return builder;
       }
@@ -3702,14 +4105,15 @@ public final class MessageProtos {
        * Protobuf type {@code textsecure.SenderCertificate.Certificate}
        */
       public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder>
-         implements org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.CertificateOrBuilder {
+          com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+          // @@protoc_insertion_point(builder_implements:textsecure.SenderCertificate.Certificate)
+          org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.CertificateOrBuilder {
         public static final com.google.protobuf.Descriptors.Descriptor
             getDescriptor() {
           return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_SenderCertificate_Certificate_descriptor;
         }
 
-        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
             internalGetFieldAccessorTable() {
           return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_SenderCertificate_Certificate_fieldAccessorTable
               .ensureFieldAccessorsInitialized(
@@ -3722,19 +4126,16 @@ public final class MessageProtos {
         }
 
         private Builder(
-            com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+            com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
           super(parent);
           maybeForceBuilderInitialization();
         }
         private void maybeForceBuilderInitialization() {
-          if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          if (com.google.protobuf.GeneratedMessageV3
+                  .alwaysUseFieldBuilders) {
             getSignerFieldBuilder();
           }
         }
-        private static Builder create() {
-          return new Builder();
-        }
-
         public Builder clear() {
           super.clear();
           sender_ = "";
@@ -3748,16 +4149,12 @@ public final class MessageProtos {
           identityKey_ = com.google.protobuf.ByteString.EMPTY;
           bitField0_ = (bitField0_ & ~0x00000010);
           if (signerBuilder_ == null) {
-            signer_ = org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.getDefaultInstance();
+            signer_ = null;
           } else {
             signerBuilder_.clear();
           }
           bitField0_ = (bitField0_ & ~0x00000020);
           return this;
-        }
-
-        public Builder clone() {
-          return create().mergeFrom(buildPartial());
         }
 
         public com.google.protobuf.Descriptors.Descriptor
@@ -3814,6 +4211,32 @@ public final class MessageProtos {
           return result;
         }
 
+        public Builder clone() {
+          return (Builder) super.clone();
+        }
+        public Builder setField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            Object value) {
+          return (Builder) super.setField(field, value);
+        }
+        public Builder clearField(
+            com.google.protobuf.Descriptors.FieldDescriptor field) {
+          return (Builder) super.clearField(field);
+        }
+        public Builder clearOneof(
+            com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+          return (Builder) super.clearOneof(oneof);
+        }
+        public Builder setRepeatedField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            int index, Object value) {
+          return (Builder) super.setRepeatedField(field, index, value);
+        }
+        public Builder addRepeatedField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            Object value) {
+          return (Builder) super.addRepeatedField(field, value);
+        }
         public Builder mergeFrom(com.google.protobuf.Message other) {
           if (other instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate) {
             return mergeFrom((org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate)other);
@@ -3847,7 +4270,8 @@ public final class MessageProtos {
           if (other.hasSigner()) {
             mergeSigner(other.getSigner());
           }
-          this.mergeUnknownFields(other.getUnknownFields());
+          this.mergeUnknownFields(other.unknownFields);
+          onChanged();
           return this;
         }
 
@@ -3864,7 +4288,7 @@ public final class MessageProtos {
             parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
           } catch (com.google.protobuf.InvalidProtocolBufferException e) {
             parsedMessage = (org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate) e.getUnfinishedMessage();
-            throw e;
+            throw e.unwrapIOException();
           } finally {
             if (parsedMessage != null) {
               mergeFrom(parsedMessage);
@@ -3874,7 +4298,6 @@ public final class MessageProtos {
         }
         private int bitField0_;
 
-        // optional string sender = 1;
         private java.lang.Object sender_ = "";
         /**
          * <code>optional string sender = 1;</code>
@@ -3888,9 +4311,12 @@ public final class MessageProtos {
         public java.lang.String getSender() {
           java.lang.Object ref = sender_;
           if (!(ref instanceof java.lang.String)) {
-            java.lang.String s = ((com.google.protobuf.ByteString) ref)
-                .toStringUtf8();
-            sender_ = s;
+            com.google.protobuf.ByteString bs =
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              sender_ = s;
+            }
             return s;
           } else {
             return (java.lang.String) ref;
@@ -3903,7 +4329,7 @@ public final class MessageProtos {
             getSenderBytes() {
           java.lang.Object ref = sender_;
           if (ref instanceof String) {
-            com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString b =
                 com.google.protobuf.ByteString.copyFromUtf8(
                     (java.lang.String) ref);
             sender_ = b;
@@ -3948,7 +4374,6 @@ public final class MessageProtos {
           return this;
         }
 
-        // optional string senderUuid = 6;
         private java.lang.Object senderUuid_ = "";
         /**
          * <code>optional string senderUuid = 6;</code>
@@ -3962,9 +4387,12 @@ public final class MessageProtos {
         public java.lang.String getSenderUuid() {
           java.lang.Object ref = senderUuid_;
           if (!(ref instanceof java.lang.String)) {
-            java.lang.String s = ((com.google.protobuf.ByteString) ref)
-                .toStringUtf8();
-            senderUuid_ = s;
+            com.google.protobuf.ByteString bs =
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              senderUuid_ = s;
+            }
             return s;
           } else {
             return (java.lang.String) ref;
@@ -3977,7 +4405,7 @@ public final class MessageProtos {
             getSenderUuidBytes() {
           java.lang.Object ref = senderUuid_;
           if (ref instanceof String) {
-            com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString b =
                 com.google.protobuf.ByteString.copyFromUtf8(
                     (java.lang.String) ref);
             senderUuid_ = b;
@@ -4022,7 +4450,6 @@ public final class MessageProtos {
           return this;
         }
 
-        // optional uint32 senderDevice = 2;
         private int senderDevice_ ;
         /**
          * <code>optional uint32 senderDevice = 2;</code>
@@ -4055,7 +4482,6 @@ public final class MessageProtos {
           return this;
         }
 
-        // optional fixed64 expires = 3;
         private long expires_ ;
         /**
          * <code>optional fixed64 expires = 3;</code>
@@ -4088,7 +4514,6 @@ public final class MessageProtos {
           return this;
         }
 
-        // optional bytes identityKey = 4;
         private com.google.protobuf.ByteString identityKey_ = com.google.protobuf.ByteString.EMPTY;
         /**
          * <code>optional bytes identityKey = 4;</code>
@@ -4124,9 +4549,8 @@ public final class MessageProtos {
           return this;
         }
 
-        // optional .textsecure.ServerCertificate signer = 5;
-        private org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate signer_ = org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.getDefaultInstance();
-        private com.google.protobuf.SingleFieldBuilder<
+        private org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate signer_ = null;
+        private com.google.protobuf.SingleFieldBuilderV3<
             org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate, org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Builder, org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificateOrBuilder> signerBuilder_;
         /**
          * <code>optional .textsecure.ServerCertificate signer = 5;</code>
@@ -4139,7 +4563,7 @@ public final class MessageProtos {
          */
         public org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate getSigner() {
           if (signerBuilder_ == null) {
-            return signer_;
+            return signer_ == null ? org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.getDefaultInstance() : signer_;
           } else {
             return signerBuilder_.getMessage();
           }
@@ -4180,6 +4604,7 @@ public final class MessageProtos {
         public Builder mergeSigner(org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate value) {
           if (signerBuilder_ == null) {
             if (((bitField0_ & 0x00000020) == 0x00000020) &&
+                signer_ != null &&
                 signer_ != org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.getDefaultInstance()) {
               signer_ =
                 org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.newBuilder(signer_).mergeFrom(value).buildPartial();
@@ -4198,7 +4623,7 @@ public final class MessageProtos {
          */
         public Builder clearSigner() {
           if (signerBuilder_ == null) {
-            signer_ = org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.getDefaultInstance();
+            signer_ = null;
             onChanged();
           } else {
             signerBuilder_.clear();
@@ -4221,39 +4646,76 @@ public final class MessageProtos {
           if (signerBuilder_ != null) {
             return signerBuilder_.getMessageOrBuilder();
           } else {
-            return signer_;
+            return signer_ == null ?
+                org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.getDefaultInstance() : signer_;
           }
         }
         /**
          * <code>optional .textsecure.ServerCertificate signer = 5;</code>
          */
-        private com.google.protobuf.SingleFieldBuilder<
-            org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate, org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Builder, org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificateOrBuilder> 
+        private com.google.protobuf.SingleFieldBuilderV3<
+            org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate, org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Builder, org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificateOrBuilder>
             getSignerFieldBuilder() {
           if (signerBuilder_ == null) {
-            signerBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+            signerBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
                 org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate, org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate.Builder, org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificateOrBuilder>(
-                    signer_,
+                    getSigner(),
                     getParentForChildren(),
                     isClean());
             signer_ = null;
           }
           return signerBuilder_;
         }
+        public final Builder setUnknownFields(
+            final com.google.protobuf.UnknownFieldSet unknownFields) {
+          return super.setUnknownFields(unknownFields);
+        }
+
+        public final Builder mergeUnknownFields(
+            final com.google.protobuf.UnknownFieldSet unknownFields) {
+          return super.mergeUnknownFields(unknownFields);
+        }
+
 
         // @@protoc_insertion_point(builder_scope:textsecure.SenderCertificate.Certificate)
       }
 
+      // @@protoc_insertion_point(class_scope:textsecure.SenderCertificate.Certificate)
+      private static final org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate DEFAULT_INSTANCE;
       static {
-        defaultInstance = new Certificate(true);
-        defaultInstance.initFields();
+        DEFAULT_INSTANCE = new org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate();
       }
 
-      // @@protoc_insertion_point(class_scope:textsecure.SenderCertificate.Certificate)
+      public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate getDefaultInstance() {
+        return DEFAULT_INSTANCE;
+      }
+
+      @java.lang.Deprecated public static final com.google.protobuf.Parser<Certificate>
+          PARSER = new com.google.protobuf.AbstractParser<Certificate>() {
+        public Certificate parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+            return new Certificate(input, extensionRegistry);
+        }
+      };
+
+      public static com.google.protobuf.Parser<Certificate> parser() {
+        return PARSER;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Parser<Certificate> getParserForType() {
+        return PARSER;
+      }
+
+      public org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate.Certificate getDefaultInstanceForType() {
+        return DEFAULT_INSTANCE;
+      }
+
     }
 
     private int bitField0_;
-    // optional bytes certificate = 1;
     public static final int CERTIFICATE_FIELD_NUMBER = 1;
     private com.google.protobuf.ByteString certificate_;
     /**
@@ -4269,7 +4731,6 @@ public final class MessageProtos {
       return certificate_;
     }
 
-    // optional bytes signature = 2;
     public static final int SIGNATURE_FIELD_NUMBER = 2;
     private com.google.protobuf.ByteString signature_;
     /**
@@ -4285,14 +4746,11 @@ public final class MessageProtos {
       return signature_;
     }
 
-    private void initFields() {
-      certificate_ = com.google.protobuf.ByteString.EMPTY;
-      signature_ = com.google.protobuf.ByteString.EMPTY;
-    }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
 
       memoizedIsInitialized = 1;
       return true;
@@ -4300,19 +4758,17 @@ public final class MessageProtos {
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      getSerializedSize();
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         output.writeBytes(1, certificate_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         output.writeBytes(2, signature_);
       }
-      getUnknownFields().writeTo(output);
+      unknownFields.writeTo(output);
     }
 
-    private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
-      int size = memoizedSerializedSize;
+      int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
@@ -4324,16 +4780,55 @@ public final class MessageProtos {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(2, signature_);
       }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
+      size += unknownFields.getSerializedSize();
+      memoizedSize = size;
       return size;
     }
 
     private static final long serialVersionUID = 0L;
     @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate)) {
+        return super.equals(obj);
+      }
+      org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate other = (org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate) obj;
+
+      boolean result = true;
+      result = result && (hasCertificate() == other.hasCertificate());
+      if (hasCertificate()) {
+        result = result && getCertificate()
+            .equals(other.getCertificate());
+      }
+      result = result && (hasSignature() == other.hasSignature());
+      if (hasSignature()) {
+        result = result && getSignature()
+            .equals(other.getSignature());
+      }
+      result = result && unknownFields.equals(other.unknownFields);
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      if (hasCertificate()) {
+        hash = (37 * hash) + CERTIFICATE_FIELD_NUMBER;
+        hash = (53 * hash) + getCertificate().hashCode();
+      }
+      if (hasSignature()) {
+        hash = (37 * hash) + SIGNATURE_FIELD_NUMBER;
+        hash = (53 * hash) + getSignature().hashCode();
+      }
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
     }
 
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate parseFrom(
@@ -4359,46 +4854,57 @@ public final class MessageProtos {
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return PARSER.parseFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return PARSER.parseFrom(input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
     }
     public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate prototype) {
-      return newBuilder().mergeFrom(prototype);
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
     }
-    public Builder toBuilder() { return newBuilder(this); }
+    public static Builder newBuilder(org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
 
     @java.lang.Override
     protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
       Builder builder = new Builder(parent);
       return builder;
     }
@@ -4406,14 +4912,15 @@ public final class MessageProtos {
      * Protobuf type {@code textsecure.SenderCertificate}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificateOrBuilder {
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:textsecure.SenderCertificate)
+        org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificateOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_SenderCertificate_descriptor;
       }
 
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
         return org.whispersystems.textsecuregcm.entities.MessageProtos.internal_static_textsecure_SenderCertificate_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
@@ -4426,18 +4933,15 @@ public final class MessageProtos {
       }
 
       private Builder(
-          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
         super(parent);
         maybeForceBuilderInitialization();
       }
       private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
         }
       }
-      private static Builder create() {
-        return new Builder();
-      }
-
       public Builder clear() {
         super.clear();
         certificate_ = com.google.protobuf.ByteString.EMPTY;
@@ -4445,10 +4949,6 @@ public final class MessageProtos {
         signature_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000002);
         return this;
-      }
-
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
       }
 
       public com.google.protobuf.Descriptors.Descriptor
@@ -4485,6 +4985,32 @@ public final class MessageProtos {
         return result;
       }
 
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate) {
           return mergeFrom((org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate)other);
@@ -4502,7 +5028,8 @@ public final class MessageProtos {
         if (other.hasSignature()) {
           setSignature(other.getSignature());
         }
-        this.mergeUnknownFields(other.getUnknownFields());
+        this.mergeUnknownFields(other.unknownFields);
+        onChanged();
         return this;
       }
 
@@ -4519,7 +5046,7 @@ public final class MessageProtos {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
           parsedMessage = (org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate) e.getUnfinishedMessage();
-          throw e;
+          throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
             mergeFrom(parsedMessage);
@@ -4529,7 +5056,6 @@ public final class MessageProtos {
       }
       private int bitField0_;
 
-      // optional bytes certificate = 1;
       private com.google.protobuf.ByteString certificate_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>optional bytes certificate = 1;</code>
@@ -4565,7 +5091,6 @@ public final class MessageProtos {
         return this;
       }
 
-      // optional bytes signature = 2;
       private com.google.protobuf.ByteString signature_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>optional bytes signature = 2;</code>
@@ -4600,54 +5125,91 @@ public final class MessageProtos {
         onChanged();
         return this;
       }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.setUnknownFields(unknownFields);
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.mergeUnknownFields(unknownFields);
+      }
+
 
       // @@protoc_insertion_point(builder_scope:textsecure.SenderCertificate)
     }
 
+    // @@protoc_insertion_point(class_scope:textsecure.SenderCertificate)
+    private static final org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate DEFAULT_INSTANCE;
     static {
-      defaultInstance = new SenderCertificate(true);
-      defaultInstance.initFields();
+      DEFAULT_INSTANCE = new org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate();
     }
 
-    // @@protoc_insertion_point(class_scope:textsecure.SenderCertificate)
+    public static org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<SenderCertificate>
+        PARSER = new com.google.protobuf.AbstractParser<SenderCertificate>() {
+      public SenderCertificate parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new SenderCertificate(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<SenderCertificate> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SenderCertificate> getParserForType() {
+      return PARSER;
+    }
+
+    public org.whispersystems.textsecuregcm.entities.MessageProtos.SenderCertificate getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
   }
 
-  private static com.google.protobuf.Descriptors.Descriptor
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_textsecure_Envelope_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+  private static final
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_textsecure_Envelope_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_textsecure_ProvisioningUuid_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+  private static final
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_textsecure_ProvisioningUuid_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_textsecure_ServerCertificate_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+  private static final
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_textsecure_ServerCertificate_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_textsecure_ServerCertificate_Certificate_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+  private static final
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_textsecure_ServerCertificate_Certificate_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_textsecure_SenderCertificate_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+  private static final
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_textsecure_SenderCertificate_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_textsecure_SenderCertificate_Certificate_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+  private static final
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_textsecure_SenderCertificate_Certificate_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
     return descriptor;
   }
-  private static com.google.protobuf.Descriptors.FileDescriptor
+  private static  com.google.protobuf.Descriptors.FileDescriptor
       descriptor;
   static {
     java.lang.String[] descriptorData = {
@@ -4673,53 +5235,53 @@ public final class MessageProtos {
       "uregcm.entitiesB\rMessageProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
-      new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
-        public com.google.protobuf.ExtensionRegistry assignDescriptors(
-            com.google.protobuf.Descriptors.FileDescriptor root) {
-          descriptor = root;
-          internal_static_textsecure_Envelope_descriptor =
-            getDescriptor().getMessageTypes().get(0);
-          internal_static_textsecure_Envelope_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_textsecure_Envelope_descriptor,
-              new java.lang.String[] { "Type", "Source", "SourceUuid", "SourceDevice", "Relay", "Timestamp", "LegacyMessage", "Content", "ServerGuid", "ServerTimestamp", });
-          internal_static_textsecure_ProvisioningUuid_descriptor =
-            getDescriptor().getMessageTypes().get(1);
-          internal_static_textsecure_ProvisioningUuid_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_textsecure_ProvisioningUuid_descriptor,
-              new java.lang.String[] { "Uuid", });
-          internal_static_textsecure_ServerCertificate_descriptor =
-            getDescriptor().getMessageTypes().get(2);
-          internal_static_textsecure_ServerCertificate_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_textsecure_ServerCertificate_descriptor,
-              new java.lang.String[] { "Certificate", "Signature", });
-          internal_static_textsecure_ServerCertificate_Certificate_descriptor =
-            internal_static_textsecure_ServerCertificate_descriptor.getNestedTypes().get(0);
-          internal_static_textsecure_ServerCertificate_Certificate_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_textsecure_ServerCertificate_Certificate_descriptor,
-              new java.lang.String[] { "Id", "Key", });
-          internal_static_textsecure_SenderCertificate_descriptor =
-            getDescriptor().getMessageTypes().get(3);
-          internal_static_textsecure_SenderCertificate_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_textsecure_SenderCertificate_descriptor,
-              new java.lang.String[] { "Certificate", "Signature", });
-          internal_static_textsecure_SenderCertificate_Certificate_descriptor =
-            internal_static_textsecure_SenderCertificate_descriptor.getNestedTypes().get(0);
-          internal_static_textsecure_SenderCertificate_Certificate_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_textsecure_SenderCertificate_Certificate_descriptor,
-              new java.lang.String[] { "Sender", "SenderUuid", "SenderDevice", "Expires", "IdentityKey", "Signer", });
-          return null;
-        }
-      };
+        new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
+          public com.google.protobuf.ExtensionRegistry assignDescriptors(
+              com.google.protobuf.Descriptors.FileDescriptor root) {
+            descriptor = root;
+            return null;
+          }
+        };
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
         }, assigner);
+    internal_static_textsecure_Envelope_descriptor =
+      getDescriptor().getMessageTypes().get(0);
+    internal_static_textsecure_Envelope_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_textsecure_Envelope_descriptor,
+        new java.lang.String[] { "Type", "Source", "SourceUuid", "SourceDevice", "Relay", "Timestamp", "LegacyMessage", "Content", "ServerGuid", "ServerTimestamp", });
+    internal_static_textsecure_ProvisioningUuid_descriptor =
+      getDescriptor().getMessageTypes().get(1);
+    internal_static_textsecure_ProvisioningUuid_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_textsecure_ProvisioningUuid_descriptor,
+        new java.lang.String[] { "Uuid", });
+    internal_static_textsecure_ServerCertificate_descriptor =
+      getDescriptor().getMessageTypes().get(2);
+    internal_static_textsecure_ServerCertificate_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_textsecure_ServerCertificate_descriptor,
+        new java.lang.String[] { "Certificate", "Signature", });
+    internal_static_textsecure_ServerCertificate_Certificate_descriptor =
+      internal_static_textsecure_ServerCertificate_descriptor.getNestedTypes().get(0);
+    internal_static_textsecure_ServerCertificate_Certificate_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_textsecure_ServerCertificate_Certificate_descriptor,
+        new java.lang.String[] { "Id", "Key", });
+    internal_static_textsecure_SenderCertificate_descriptor =
+      getDescriptor().getMessageTypes().get(3);
+    internal_static_textsecure_SenderCertificate_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_textsecure_SenderCertificate_descriptor,
+        new java.lang.String[] { "Certificate", "Signature", });
+    internal_static_textsecure_SenderCertificate_Certificate_descriptor =
+      internal_static_textsecure_SenderCertificate_descriptor.getNestedTypes().get(0);
+    internal_static_textsecure_SenderCertificate_Certificate_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_textsecure_SenderCertificate_Certificate_descriptor,
+        new java.lang.String[] { "Sender", "SenderUuid", "SenderDevice", "Expires", "IdentityKey", "Signer", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

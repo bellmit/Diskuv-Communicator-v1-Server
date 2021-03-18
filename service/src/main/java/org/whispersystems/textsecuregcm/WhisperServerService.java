@@ -27,6 +27,8 @@ import com.codahale.metrics.jdbi3.strategies.DefaultNameStrategy;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.google.cloud.bigtable.data.v2.BigtableDataClient;
+import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.dropwizard.Application;
@@ -41,6 +43,13 @@ import io.dropwizard.setup.Environment;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.jdbi.v3.core.Jdbi;
+import org.signal.storageservice.auth.ExternalGroupCredentialGenerator;
+import org.signal.storageservice.controllers.GroupsController;
+import org.signal.storageservice.providers.CompletionExceptionMapper;
+import org.signal.storageservice.providers.InvalidProtocolBufferExceptionMapper;
+import org.signal.storageservice.providers.ProtocolBufferMessageBodyProvider;
+import org.signal.storageservice.providers.ProtocolBufferValidationErrorMessageBodyWriter;
+import org.signal.storageservice.storage.GroupsManager;
 import org.signal.zkgroup.ServerSecretParams;
 import org.signal.zkgroup.auth.ServerZkAuthOperations;
 import org.signal.zkgroup.profiles.ServerZkProfileOperations;
@@ -327,6 +336,28 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     environment.metrics().register(name(NetworkSentGauge.class, "bytes_sent"), new NetworkSentGauge());
     environment.metrics().register(name(NetworkReceivedGauge.class, "bytes_received"), new NetworkReceivedGauge());
     environment.metrics().register(name(FileDescriptorGauge.class, "fd_count"), new FileDescriptorGauge());
+
+    // [Diskuv Change] BEGIN: Import of groups from storage-service
+    environment.jersey().register(ProtocolBufferMessageBodyProvider.class);
+    environment.jersey().register(ProtocolBufferValidationErrorMessageBodyWriter.class);
+    environment.jersey().register(InvalidProtocolBufferExceptionMapper.class);
+    environment.jersey().register(CompletionExceptionMapper.class);
+
+    BigtableDataSettings bigtableDataSettings = BigtableDataSettings.newBuilder()
+                                                                    .setProjectId(config.getBigTableConfiguration().getProjectId())
+                                                                    .setInstanceId(config.getBigTableConfiguration().getInstanceId())
+                                                                    .build();
+    BigtableDataClient bigtableDataClient = BigtableDataClient.create(bigtableDataSettings);
+    ServerSecretParams serverSecretParams = new ServerSecretParams(config.getZkConfig()/*WAS: getZkConfiguration()*/.getServerSecret());
+    GroupsManager groupsManager           = new GroupsManager(bigtableDataClient, config.getBigTableConfiguration().getGroupsTableId(), config.getBigTableConfiguration().getGroupLogsTableId());
+
+    ExternalGroupCredentialGenerator externalGroupCredentialGenerator    = new ExternalGroupCredentialGenerator(config.getGroupConfiguration().getExternalServiceSecret());
+
+    org.signal.storageservice.s3.PolicySigner policySigner               = new org.signal.storageservice.s3.PolicySigner(config.getCdnConfiguration().getAccessSecret(), config.getCdnConfiguration().getRegion());
+    org.signal.storageservice.s3.PostPolicyGenerator postPolicyGenerator = new org.signal.storageservice.s3.PostPolicyGenerator(config.getCdnConfiguration().getRegion(), config.getCdnConfiguration().getBucket(), config.getCdnConfiguration().getAccessKey());
+
+    environment.jersey().register(new GroupsController(groupsManager, serverSecretParams, policySigner, postPolicyGenerator, config.getGroupConfiguration(), externalGroupCredentialGenerator));
+    // [Diskuv Change] END: Import of groups from storage-service
   }
 
   private void registerExceptionMappers(Environment environment, WebSocketEnvironment<Account> webSocketEnvironment, WebSocketEnvironment<Account> provisioningEnvironment) {

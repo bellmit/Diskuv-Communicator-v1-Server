@@ -17,6 +17,8 @@
 package org.whispersystems.textsecuregcm;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.signal.storageservice.configuration.BigTableConfiguration;
+import org.signal.storageservice.configuration.GroupConfiguration;
 import org.whispersystems.textsecuregcm.configuration.*;
 import org.whispersystems.websocket.configuration.WebSocketConfiguration;
 
@@ -322,4 +324,24 @@ public class WhisperServerConfiguration extends Configuration {
   public DiskuvSyntheticAccountsConfiguration getDiskuvSyntheticAccounts() {
     return diskuvSyntheticAccounts;
   }
+
+  // [Diskuv Change] BEGIN: Import of groups from storage-service
+  @JsonProperty
+  @Valid
+  @NotNull
+  private BigTableConfiguration bigtable;
+
+  @JsonProperty
+  @Valid
+  @NotNull
+  private GroupConfiguration group;
+
+  public BigTableConfiguration getBigTableConfiguration() {
+    return bigtable;
+  }
+
+  public GroupConfiguration getGroupConfiguration() {
+    return group;
+  }
+  // [Diskuv Change] END: Import of groups from storage-service
 }

@@ -16,6 +16,8 @@ import org.passay.CharacterData;
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.PasswordGenerator;
+import org.signal.storageservice.configuration.BigTableConfiguration;
+import org.signal.storageservice.configuration.GroupConfiguration;
 import org.signal.zkgroup.ServerPublicParams;
 import org.signal.zkgroup.ServerSecretParams;
 import org.whispersystems.textsecuregcm.WhisperServerConfiguration;
@@ -204,6 +206,10 @@ public class GenerateConfiguration implements Callable<Integer> {
         // Diskuv specific configurations
         diskuvSyntheticAccounts(config);
         jwtKeys(config);
+
+        // Groups configurations from storage-server
+        group(config);
+        bigtable(config);
 
         return config;
     }
@@ -493,6 +499,26 @@ public class GenerateConfiguration implements Callable<Integer> {
             factory.setPort(this.metricsCollectd.port);
             config.getMetricsFactory().setReporters(ImmutableList.of(factory));
         }
+    }
+
+    public void group(WhisperServerConfiguration config) throws IllegalAccessException {
+        GroupConfiguration value = new GroupConfiguration();
+        value.setExternalServiceSecret(Hex.encodeHexString(Util.generateSecretBytes(32)));
+        // Default 1000 from https://support.signal.org/hc/en-us/articles/360007319331-Group-chats
+        // Seems like something that could be adjusted with load testing.
+        value.setMaxGroupSize(1000);
+        // Default 1024 comes from unit test. Have no clue what a good value really is.
+        value.setMaxGroupTitleLengthBytes(1024);
+        setField(config, "group", value);
+    }
+
+    public void bigtable(WhisperServerConfiguration config) throws IllegalAccessException {
+        BigTableConfiguration value = new BigTableConfiguration();
+        value.setProjectId("TODO");
+        value.setInstanceId("TODO");
+        value.setGroupsTableId("TODO");
+        value.setGroupLogsTableId("TODO");
+        setField(config, "bigtable", value);
     }
 
     private void setUserAuthenticationTokenSharedSecret(Object value) throws IllegalAccessException {
