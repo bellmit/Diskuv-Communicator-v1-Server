@@ -1,7 +1,7 @@
 Signal-Server
 =================
 
-Signal is a messaging app for simple private communication with friends.  
+Signal is a messaging app for simple private communication with friends.
 Diskuv Communicator is a fork of the Signal messaging app, customized for the needs of the Diskuv community.
 
 Pronunciation: "Diskuv" sounds just like "discover", without the "er".
@@ -40,6 +40,13 @@ The form and manner of this distribution makes it eligible for export under the 
 License
 ---------------------
 
-Copyright 2013-2016 Open Whisper Systems
+Most of the code in this repository is:
 
-Licensed under the AGPLv3: https://www.gnu.org/licenses/agpl-3.0.html
+> Copyright 2013-2016 Open Whisper Systems
+
+> Licensed under the AGPLv3: https://www.gnu.org/licenses/agpl-3.0.html
+
+The code in the `com/diskuv/communicator` folders are:
+
+> Copyright 2021 Diskuv, Inc.
+> Licensed under Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
