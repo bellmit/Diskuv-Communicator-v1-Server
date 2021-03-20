@@ -283,7 +283,9 @@ public class Device implements PossiblySyntheticDevice {
     @JsonProperty
     private boolean uuid;
 
-    @JsonProperty
+    // Confer: org.whispersystems.signalservice.api.account.AccountAttributes.Capabilities
+    // WAS: @JsonProperty
+    @JsonProperty("gv2-3")
     private boolean gv2;
 
     @JsonProperty
