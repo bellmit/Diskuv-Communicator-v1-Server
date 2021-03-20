@@ -7,7 +7,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.whispersystems.textsecuregcm.auth.DiskuvAccountAuthenticator;
-import org.whispersystems.textsecuregcm.auth.DiskuvCredentials;
+import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntity;
 import org.whispersystems.textsecuregcm.entities.OutgoingMessageEntityList;
 import org.whispersystems.textsecuregcm.push.ApnFallbackManager;
@@ -76,10 +76,10 @@ public class WebSocketConnectionTest {
     AuthenticatedConnectListener  connectListener        = new AuthenticatedConnectListener(pushSender, receiptSender, storedMessages, pubSubManager, apnFallbackManager);
     WebSocketSessionContext       sessionContext         = mock(WebSocketSessionContext.class);
 
-    when(accountAuthenticator.authenticate(eq(new DiskuvCredentials(VALID_JWT_TOKEN, VALID_DEVICE_ID_NUM, VALID_PASSWORD))))
+    when(accountAuthenticator.authenticate(eq(new DiskuvDeviceCredentials(VALID_JWT_TOKEN, VALID_DEVICE_ID_NUM, VALID_PASSWORD))))
         .thenReturn(Optional.of(account));
 
-    when(accountAuthenticator.authenticate(eq(new DiskuvCredentials(INVALID_JWT_TOKEN, INVALID_DEVICE_ID_NUM, INVALID_PASSWORD))))
+    when(accountAuthenticator.authenticate(eq(new DiskuvDeviceCredentials(INVALID_JWT_TOKEN, INVALID_DEVICE_ID_NUM, INVALID_PASSWORD))))
         .thenReturn(Optional.<Account>empty());
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));

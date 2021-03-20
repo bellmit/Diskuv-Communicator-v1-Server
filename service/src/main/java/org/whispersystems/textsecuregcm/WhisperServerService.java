@@ -24,6 +24,11 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.jdbi3.strategies.DefaultNameStrategy;
+import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentialAuthFilter;
+import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
+import com.diskuv.communicatorservice.auth.DiskuvRoleCredentialAuthFilter;
+import com.diskuv.communicatorservice.auth.DiskuvRoleCredentials;
+import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import com.diskuv.communicatorservice.storage.GroupChangeCache;
 import com.diskuv.communicatorservice.storage.GroupLogDao;
 import com.diskuv.communicatorservice.storage.GroupsDao;
@@ -39,6 +44,9 @@ import io.dropwizard.Application;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.PolymorphicAuthDynamicFeature;
 import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
+import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
+import io.dropwizard.auth.basic.BasicCredentials;
+import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.db.PooledDataSourceFactory;
 import io.dropwizard.jdbi3.JdbiFactory;
@@ -47,7 +55,14 @@ import io.dropwizard.setup.Environment;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.jdbi.v3.core.Jdbi;
+import org.signal.storageservice.auth.DiskuvGroupUserAuthenticator;
+import org.signal.storageservice.auth.DiskuvUserAuthenticator;
 import org.signal.storageservice.auth.ExternalGroupCredentialGenerator;
+import org.signal.storageservice.auth.ExternalServiceCredentialValidator;
+import org.signal.storageservice.auth.GroupUser;
+import org.signal.storageservice.auth.GroupUserAuthenticator;
+import org.signal.storageservice.auth.User;
+import org.signal.storageservice.auth.UserAuthenticator;
 import org.signal.storageservice.controllers.GroupsController;
 import org.signal.storageservice.providers.CompletionExceptionMapper;
 import org.signal.storageservice.providers.InvalidProtocolBufferExceptionMapper;
@@ -282,12 +297,29 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     StickerController      stickerController         = new StickerController(rateLimiters, config.getCdnConfiguration().getAccessKey(), config.getCdnConfiguration().getAccessSecret(), config.getCdnConfiguration().getRegion(), config.getCdnConfiguration().getBucket());
     RemoteConfigController remoteConfigController    = new RemoteConfigController(remoteConfigsManager, config.getRemoteConfigConfiguration().getAuthorizedTokens());
 
-    AuthFilter<DiskuvCredentials, Account>                  accountAuthFilter                  = new DiskuvCredentialAuthFilter.Builder<Account>().setAuthenticator(accountAuthenticator).buildAuthFilter                                  ();
-    AuthFilter<DiskuvCredentials, DisabledPermittedAccount> disabledPermittedAccountAuthFilter = new DiskuvCredentialAuthFilter.Builder<DisabledPermittedAccount>().setAuthenticator(disabledPermittedAccountAuthenticator).buildAuthFilter();
+    AuthFilter<DiskuvDeviceCredentials, Account>                  accountAuthFilter                  = new DiskuvDeviceCredentialAuthFilter.Builder<Account>().setAuthenticator(accountAuthenticator).buildAuthFilter();
+    AuthFilter<DiskuvDeviceCredentials, DisabledPermittedAccount> disabledPermittedAccountAuthFilter = new DiskuvDeviceCredentialAuthFilter.Builder<DisabledPermittedAccount>().setAuthenticator(disabledPermittedAccountAuthenticator).buildAuthFilter();
+
+    // [Diskuv Change] BEGIN: Import of groups from storage-service
+    // WAS:   UserAuthenticator      userAuthenticator      = new UserAuthenticator(new ExternalServiceCredentialValidator(config.getAuthenticationConfiguration().getKey()));
+    DiskuvUserAuthenticator      userAuthenticator      = new DiskuvUserAuthenticator(jwtAuthentication);
+    DiskuvGroupUserAuthenticator groupUserAuthenticator = new DiskuvGroupUserAuthenticator(jwtAuthentication, zkAuthOperations);
+
+    // WAS: AuthFilter<BasicCredentials, User>      userAuthFilter      = new BasicCredentialAuthFilter.Builder<User>().setAuthenticator(userAuthenticator).buildAuthFilter();
+    AuthFilter<String, User>                        userAuthFilter      = new OAuthCredentialAuthFilter.Builder<User>().setAuthenticator(userAuthenticator).buildAuthFilter();
+    // WAS: AuthFilter<BasicCredentials, GroupUser> groupUserAuthFilter = new BasicCredentialAuthFilter.Builder<GroupUser>().setAuthenticator(groupUserAuthenticator).buildAuthFilter();
+    AuthFilter<DiskuvRoleCredentials, GroupUser>    groupUserAuthFilter = new DiskuvRoleCredentialAuthFilter.Builder<GroupUser>().setAuthenticator(groupUserAuthenticator).buildAuthFilter();
+
+    // [Diskuv Change] END: Import of groups from storage-service
 
     environment.jersey().register(new PolymorphicAuthDynamicFeature<>(ImmutableMap.of(Account.class, accountAuthFilter,
-                                                                                      DisabledPermittedAccount.class, disabledPermittedAccountAuthFilter)));
-    environment.jersey().register(new PolymorphicAuthValueFactoryProvider.Binder<>(ImmutableSet.of(Account.class, DisabledPermittedAccount.class)));
+                                                                                      DisabledPermittedAccount.class, disabledPermittedAccountAuthFilter,
+                                                                                      User.class, userAuthFilter, // ADDED from storage-service
+                                                                                      GroupUser.class, groupUserAuthFilter // ADDED from storage-service
+                                                                                      )));
+    environment.jersey().register(new PolymorphicAuthValueFactoryProvider.Binder<>(ImmutableSet.of(Account.class, DisabledPermittedAccount.class,
+                                                                                                   User.class, GroupUser.class // ADDED from storage-server
+                                                                                                   )));
 
     environment.jersey().register(new AccountController(pendingAccountsManager, accountsManager, jwtAuthentication, usernamesManager, abusiveHostRules, rateLimiters, smsSender, messagesManager, turnTokenGenerator, config.getTestDevices(), recaptchaClient, gcmSender, apnSender, backupCredentialsGenerator));
     environment.jersey().register(new DeviceController(pendingDevicesManager, accountsManager, jwtAuthentication, messagesManager, rateLimiters, config.getMaxDevices()));

@@ -1,33 +1,31 @@
-/**
- * Copyright (C) 2013 Open WhisperSystems
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-package org.whispersystems.textsecuregcm.auth;
+// Copyright 2021 Diskuv, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+package com.diskuv.communicatorservice.auth;
 
 
+import org.whispersystems.textsecuregcm.auth.InvalidAuthorizationHeaderException;
 import org.whispersystems.textsecuregcm.util.Base64;
 import org.whispersystems.textsecuregcm.util.Util;
 
 import java.io.IOException;
 
 /**
- * Similar to original Signal 'AuthorizationHeader', but treats as if the device header is
- * separate and complementary to the JWT-based Authorization HTTP header. So the account
- * identifier is redundant, although the device id is definitely needed.
+ * Parse the device header which is separate and complementary to the JWT-based Authorization HTTP
+ * header. The account identifier is already part of the JWT token, and the device id is the remaining
+ * part of the full identifier that is present in the device header.
  *
- * The HTTP header is expected to be {@value #DEVICE_AUTHORIZATION_HEADER}. The format is:
+ * <p>The HTTP header is expected to be {@value #DEVICE_AUTHORIZATION_HEADER}. The format is:
  *
  * <pre>
  *     Basic Base64{DEVICE_ID:Base64{DEVICE_PASSWORD}}
@@ -43,14 +41,6 @@ public class DeviceAuthorizationHeader {
     this.password   = password;
   }
 
-  public static DeviceAuthorizationHeader fromUserAndPassword(String user, byte[] password) throws InvalidAuthorizationHeaderException {
-    try {
-      return new DeviceAuthorizationHeader(Long.parseLong(user), password);
-    } catch (NumberFormatException nfe) {
-      throw new InvalidAuthorizationHeaderException(nfe);
-    }
-  }
-
   public static DeviceAuthorizationHeader fromFullHeader(String header) throws InvalidAuthorizationHeaderException {
     try {
       if (header == null) {
@@ -59,7 +49,7 @@ public class DeviceAuthorizationHeader {
 
       String[] headerParts = header.split(" ");
 
-      if (headerParts == null || headerParts.length < 2) {
+      if (headerParts.length < 2) {
         throw new InvalidAuthorizationHeaderException("Invalid authorization header: " + header);
       }
 
@@ -75,11 +65,15 @@ public class DeviceAuthorizationHeader {
 
       String[] credentialParts = concatenatedValues.split(":");
 
-      if (credentialParts == null || credentialParts.length < 2) {
+      if (credentialParts.length < 2) {
         throw new InvalidAuthorizationHeaderException("Badly formatted credentials: " + concatenatedValues);
       }
 
-      return fromUserAndPassword(credentialParts[0], Base64.decode(credentialParts[1]));
+      try {
+        return new DeviceAuthorizationHeader(Long.parseLong(credentialParts[0]), Base64.decode(credentialParts[1]));
+      } catch (NumberFormatException nfe) {
+        throw new InvalidAuthorizationHeaderException(nfe);
+      }
     } catch (IOException ioe) {
       throw new InvalidAuthorizationHeaderException(ioe);
     }

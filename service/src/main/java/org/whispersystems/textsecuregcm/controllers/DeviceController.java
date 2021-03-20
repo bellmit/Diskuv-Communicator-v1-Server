@@ -21,9 +21,9 @@ import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
-import org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader;
+import com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.InvalidAuthorizationHeaderException;
-import org.whispersystems.textsecuregcm.auth.JwtAuthentication;
+import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import org.whispersystems.textsecuregcm.auth.StoredVerificationCode;
 import org.whispersystems.textsecuregcm.entities.AccountAttributes;
 import org.whispersystems.textsecuregcm.entities.DeviceInfo;
@@ -60,7 +60,7 @@ import java.util.UUID;
 
 import io.dropwizard.auth.Auth;
 
-import static org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER;
+import static com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER;
 
 @Path("/v1/devices")
 public class DeviceController {

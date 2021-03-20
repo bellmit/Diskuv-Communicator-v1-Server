@@ -7,9 +7,9 @@ import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
 import org.whispersystems.textsecuregcm.auth.DiskuvAccountAuthenticator;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedDiskuvAccountAuthenticator;
-import org.whispersystems.textsecuregcm.auth.DiskuvCredentialAuthFilter;
-import org.whispersystems.textsecuregcm.auth.DiskuvCredentials;
-import org.whispersystems.textsecuregcm.auth.JwtAuthentication;
+import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentialAuthFilter;
+import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
+import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
@@ -27,7 +27,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.EMAIL_ALICE;
 
 public class AuthHelper {
   public static final String VALID_BEARER_TOKEN = "blah";
@@ -142,8 +141,8 @@ public class AuthHelper {
     when(ACCOUNTS_MANAGER.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasNumber() && identifier.getNumber().equals(DISABLED_NUMBER)))).thenReturn(Optional.of(DISABLED_ACCOUNT));
     when(ACCOUNTS_MANAGER.get(argThat((ArgumentMatcher<AmbiguousIdentifier>) identifier -> identifier != null && identifier.hasUuid() && identifier.getUuid().equals(DISABLED_UUID)))).thenReturn(Optional.of(DISABLED_ACCOUNT));
 
-    AuthFilter<DiskuvCredentials, Account>                  accountAuthFilter                  = new DiskuvCredentialAuthFilter.Builder<Account>().setAuthenticator(new DiskuvAccountAuthenticator(ACCOUNTS_MANAGER, JWT_AUTHENTICATION)).buildAuthFilter                                  ();
-    AuthFilter<DiskuvCredentials, DisabledPermittedAccount> disabledPermittedAccountAuthFilter = new DiskuvCredentialAuthFilter.Builder<DisabledPermittedAccount>().setAuthenticator(new DisabledPermittedDiskuvAccountAuthenticator(ACCOUNTS_MANAGER, JWT_AUTHENTICATION)).buildAuthFilter();
+    AuthFilter<DiskuvDeviceCredentials, Account>                  accountAuthFilter                  = new DiskuvDeviceCredentialAuthFilter.Builder<Account>().setAuthenticator(new DiskuvAccountAuthenticator(ACCOUNTS_MANAGER, JWT_AUTHENTICATION)).buildAuthFilter();
+    AuthFilter<DiskuvDeviceCredentials, DisabledPermittedAccount> disabledPermittedAccountAuthFilter = new DiskuvDeviceCredentialAuthFilter.Builder<DisabledPermittedAccount>().setAuthenticator(new DisabledPermittedDiskuvAccountAuthenticator(ACCOUNTS_MANAGER, JWT_AUTHENTICATION)).buildAuthFilter();
 
     return new PolymorphicAuthDynamicFeature<>(ImmutableMap.of(Account.class, accountAuthFilter,
                                                                DisabledPermittedAccount.class, disabledPermittedAccountAuthFilter));

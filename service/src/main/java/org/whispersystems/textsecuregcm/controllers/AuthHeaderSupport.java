@@ -2,9 +2,9 @@ package org.whispersystems.textsecuregcm.controllers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.textsecuregcm.auth.BearerTokenAuthorizationHeader;
+import com.diskuv.communicatorservice.auth.BearerTokenAuthorizationHeader;
 import org.whispersystems.textsecuregcm.auth.InvalidAuthorizationHeaderException;
-import org.whispersystems.textsecuregcm.auth.JwtAuthentication;
+import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import javax.ws.rs.WebApplicationException;

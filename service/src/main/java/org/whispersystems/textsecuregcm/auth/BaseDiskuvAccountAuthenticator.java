@@ -3,6 +3,8 @@ package org.whispersystems.textsecuregcm.auth;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
+import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
+import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
@@ -35,7 +37,7 @@ public class BaseDiskuvAccountAuthenticator {
     this.jwtAuthentication = jwtAuthentication;
   }
 
-  public Optional<Account> authenticate(DiskuvCredentials credentials, boolean enabledRequired) {
+  public Optional<Account> authenticate(DiskuvDeviceCredentials credentials, boolean enabledRequired) {
     final UUID accountId;
     try {
       String emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(credentials.getBearerToken());

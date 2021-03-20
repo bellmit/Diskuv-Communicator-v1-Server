@@ -2,7 +2,7 @@ package org.whispersystems.textsecuregcm.websocket;
 
 import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.whispersystems.textsecuregcm.auth.DiskuvAccountAuthenticator;
-import org.whispersystems.textsecuregcm.auth.DiskuvCredentials;
+import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.websocket.auth.WebSocketAuthenticator;
 import org.whispersystems.websocket.util.Base64;
@@ -57,7 +57,7 @@ public class WebSocketAccountAuthenticator implements WebSocketAuthenticator<Acc
       return new AuthenticationResult<>(Optional.empty(), AUTH_IS_REQUIRED);
     }
 
-    DiskuvCredentials credentials = new DiskuvCredentials(jwtTokens.get(0), deviceId, devicePassword);
+    DiskuvDeviceCredentials credentials = new DiskuvDeviceCredentials(jwtTokens.get(0), deviceId, devicePassword);
     return new AuthenticationResult<>(accountAuthenticator.authenticate(credentials), AUTH_IS_REQUIRED);
   }
 

@@ -20,6 +20,8 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.annotation.Timed;
+import com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader;
+import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.*;
@@ -46,7 +48,6 @@ import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.storage.PendingAccountsManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.util.Constants;
-import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Hex;
 import org.whispersystems.textsecuregcm.util.Util;
 
@@ -62,7 +63,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER;
+import static com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER;
 
 import io.dropwizard.auth.Auth;
 
@@ -93,7 +94,7 @@ public class AccountController {
 
 
   private final AccountsManager                    accounts;
-  private final JwtAuthentication                  jwtAuthentication;
+  private final JwtAuthentication jwtAuthentication;
   private final UsernamesManager                   usernames;
   private final AbusiveHostRules                   abusiveHostRules;
   private final RateLimiters                       rateLimiters;
