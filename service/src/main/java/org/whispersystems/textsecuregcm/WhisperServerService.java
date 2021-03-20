@@ -24,11 +24,15 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.jdbi3.strategies.DefaultNameStrategy;
+import com.diskuv.communicatorservice.storage.GroupChangeCache;
+import com.diskuv.communicatorservice.storage.GroupLogDao;
+import com.diskuv.communicatorservice.storage.GroupsDao;
+import com.diskuv.communicatorservice.storage.clients.AwsClientFactory;
+import com.diskuv.communicatorservice.storage.command.CreateTableGroupLogCommand;
+import com.diskuv.communicatorservice.storage.command.CreateTableGroupsCommand;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.google.cloud.bigtable.data.v2.BigtableDataClient;
-import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.dropwizard.Application;
@@ -110,6 +114,7 @@ import org.whispersystems.textsecuregcm.workers.VacuumCommand;
 import org.whispersystems.textsecuregcm.workers.ZkParamsCommand;
 import org.whispersystems.websocket.WebSocketResourceProviderFactory;
 import org.whispersystems.websocket.setup.WebSocketEnvironment;
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
@@ -155,6 +160,10 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
         return configuration.getAbuseDatabaseConfiguration();
       }
     });
+
+    // [Diskuv Change] Add command to create DynamoDB tables
+    bootstrap.addCommand(new CreateTableGroupsCommand());
+    bootstrap.addCommand(new CreateTableGroupLogCommand());
   }
 
   @Override
@@ -337,19 +346,30 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     environment.metrics().register(name(NetworkReceivedGauge.class, "bytes_received"), new NetworkReceivedGauge());
     environment.metrics().register(name(FileDescriptorGauge.class, "fd_count"), new FileDescriptorGauge());
 
+    // [Diskuv Change] Groups setup custom to Diskuv
+    DynamoDbAsyncClient dbAsyncClient    = new AwsClientFactory(config.getDiskuvGroupsConfiguration()).getDynamoDbAsyncClient();
+    GroupChangeCache    groupChangeCache = new RedisBackedGroupChangeCache(cacheClient, config.getDiskuvGroupsConfiguration().getNumberOfGroupCacheCheckingThreads());
+    GroupsDao           groupsDao        = new GroupsDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupsTableName(), config.getDiskuvGroupsConfiguration().getChecksumSharedKey());
+    GroupLogDao         groupLogDao      = new GroupLogDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupLogTableName(), Optional.of(groupChangeCache));
+
     // [Diskuv Change] BEGIN: Import of groups from storage-service
     environment.jersey().register(ProtocolBufferMessageBodyProvider.class);
     environment.jersey().register(ProtocolBufferValidationErrorMessageBodyWriter.class);
     environment.jersey().register(InvalidProtocolBufferExceptionMapper.class);
     environment.jersey().register(CompletionExceptionMapper.class);
 
+
+    /*
+    Signal's code used Bigtable. We've swapped that out completely. WAS:
     BigtableDataSettings bigtableDataSettings = BigtableDataSettings.newBuilder()
                                                                     .setProjectId(config.getBigTableConfiguration().getProjectId())
                                                                     .setInstanceId(config.getBigTableConfiguration().getInstanceId())
                                                                     .build();
-    BigtableDataClient bigtableDataClient = BigtableDataClient.create(bigtableDataSettings);
+    BigtableDataClient bigtableDataClient     = BigtableDataClient.create(bigtableDataSettings);
+    */
     ServerSecretParams serverSecretParams = new ServerSecretParams(config.getZkConfig()/*WAS: getZkConfiguration()*/.getServerSecret());
-    GroupsManager groupsManager           = new GroupsManager(bigtableDataClient, config.getBigTableConfiguration().getGroupsTableId(), config.getBigTableConfiguration().getGroupLogsTableId());
+    // WAS: GroupsManager groupsManager   = new GroupsManager(bigtableDataClient, config.getBigTableConfiguration().getGroupsTableId(), config.getBigTableConfiguration().getGroupLogsTableId());
+    GroupsManager groupsManager           = new GroupsManager(groupsDao, groupLogDao);
 
     ExternalGroupCredentialGenerator externalGroupCredentialGenerator    = new ExternalGroupCredentialGenerator(config.getGroupConfiguration().getExternalServiceSecret());
 

@@ -14,6 +14,7 @@
 package com.diskuv.communicator.configurator;
 
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
+import com.diskuv.communicatorservice.storage.configuration.DiskuvGroupsConfiguration;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
@@ -38,7 +39,6 @@ import org.whispersystems.textsecuregcm.configuration.*;
 import org.whispersystems.textsecuregcm.crypto.Curve;
 import org.whispersystems.textsecuregcm.crypto.ECKeyPair;
 import org.whispersystems.textsecuregcm.crypto.ECPrivateKey;
-import org.whispersystems.textsecuregcm.crypto.ECPublicKey;
 import org.whispersystems.textsecuregcm.entities.MessageProtos.ServerCertificate;
 import org.whispersystems.textsecuregcm.metrics.CollectdMetricsReporterFactory;
 import org.whispersystems.textsecuregcm.util.Util;
@@ -219,10 +219,11 @@ public class GenerateConfiguration implements Callable<Integer> {
         // Diskuv specific configurations
         diskuvSyntheticAccounts(config);
         jwtKeys(config);
+        diskuvGroups(config);
 
         // Groups configurations from storage-server
         group(config);
-        bigtable(config);
+        // WAS: bigtable(config);
 
         return config;
     }
@@ -558,6 +559,15 @@ public class GenerateConfiguration implements Callable<Integer> {
         value.setSharedEntropyInput(Util.generateSecretBytes(48));
 
         setField(config, "diskuvSyntheticAccounts", value);
+    }
+
+    private void diskuvGroups(WhisperServerConfiguration config) throws IllegalAccessException {
+        DiskuvGroupsConfiguration value = new DiskuvGroupsConfiguration();
+        value.setRegion("TODO");
+        value.setChecksumSharedKey(Util.generateSecretBytes(16));
+        value.setCredentialsType(DiskuvGroupsConfiguration.CredentialsType.DEFAULT);
+
+        setField(config, "diskuvGroups", value);
     }
 
     private String generateDatabasePassword() {

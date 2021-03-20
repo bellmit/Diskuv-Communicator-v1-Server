@@ -5,7 +5,8 @@
 
 package org.signal.storageservice.storage;
 
-import com.google.cloud.bigtable.data.v2.BigtableDataClient;
+import com.diskuv.communicatorservice.storage.GroupLogDao;
+import com.diskuv.communicatorservice.storage.GroupsDao;
 import com.google.protobuf.ByteString;
 import org.signal.storageservice.storage.protos.groups.Group;
 import org.signal.storageservice.storage.protos.groups.GroupChange;
@@ -15,14 +16,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * This is the group manager for Signal. We've swapped out the entire underlying BigTable
+ * implementation; the group manager now interacts with a DynamoDB database and possibly a cache.
+ */
 public class GroupsManager {
 
-  private final GroupsTable   groupsTable;
-  private final GroupLogTable groupLogTable;
+  // [Diskuv Change] Use Diskuv group database implementation rather Signal's BigTable implementation.
+  private final GroupsDao   groupsTable;
+  // [Diskuv Change] Use Diskuv group database implementation rather Signal's BigTable implementation.
+  private final GroupLogDao groupLogTable;
 
-  public GroupsManager(BigtableDataClient client, String groupsTableId, String groupLogsTableId) {
-    this.groupsTable   = new GroupsTable  (client, groupsTableId   );
-    this.groupLogTable = new GroupLogTable(client, groupLogsTableId);
+  // [Diskuv Change] Use Diskuv group database implementation rather Signal's BigTable implementation.
+  public GroupsManager(GroupsDao groupsDao, GroupLogDao groupLogDao) {
+    this.groupsTable   = groupsDao;
+    this.groupLogTable = groupLogDao;
   }
 
   public CompletableFuture<Optional<Group>> getGroup(ByteString groupId) {

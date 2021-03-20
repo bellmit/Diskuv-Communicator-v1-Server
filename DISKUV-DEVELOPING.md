@@ -16,6 +16,8 @@ FIRST, install the following if you do not have them:
   [OpenTable Embedded PostgreSQL](https://github.com/opentable/otj-pg-embedded)
   is used for unit tests; you may be able to adapt it so you don't
   need a full installation of PostgreSQL for local development.
+* Install [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html),
+  or have an AWS account available.
 
 THEN, before running any Maven (`mvn`) commands, make sure your JAVA_HOME environment variable is set to the JDK 11
 installation. For example, in Windows PowerShell:
@@ -142,6 +144,56 @@ messageCache:
     url: localhost:6379
     replicaUrls:
       - localhost:7777
+```
+
+#### DynamoDB
+
+You'll need to create two tables.
+
+FIRST, if you are using DynamoDB Local (recommended if you are getting started), then in a separate terminal run:
+
+```bash
+install -d /tmp/ddblocal
+# Change ~/opt/dynamodb-local to wherever you installed the program
+java -jar ~/opt/dynamodb-local/DynamoDBLocal.jar -port 8881 -sharedDb -dbPath /tmp/ddblocal -delayTransientStatuses
+```
+
+... and then change the YAML configuration to include the following:
+
+```yaml
+diskuvGroups:
+  region: us-west-2 # Ignored, but must be specified
+  credentialsType: BASIC
+  endpointOverride: http://localhost:8881
+  accessKey: AKIAIOSFODNN7EXAMPLE # Ignored, but must be specified
+  secretKey: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY # Ignored, but must be specified
+```
+
+If you are using a real AWS account, then change the YAML configuration to include either:
+
+```yaml
+# Use this style of configuration when you are running in AWS (ex. EC2, ECS) or have set AWS_ environment variables
+diskuvGroups:
+  region: us-west-2
+  credentialsType: DEFAULT
+```
+
+or
+
+```yaml
+# Use this style of configuration when you have an IAM user
+diskuvGroups:
+  region: us-west-2
+  credentialsType: BASIC
+  accessKey: AKIAIOSFODNN7EXAMPLE
+  secretKey: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+```
+
+SECOND, regardless of whether you are using DynamoDB Local, run the following:
+
+```bash
+java -jar ./TextSecureServer-*.jar creategroupstable   local.yml
+java -jar ./TextSecureServer-*.jar creategrouplogtable local.yml
 ```
 
 #### PostgreSQL
@@ -295,6 +347,7 @@ Make sure you have started:
 
 * the Redis server and at least one replica
 * the PostgreSQL database
+* the DynamoDB Local database
 
 Then run:
 
