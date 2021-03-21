@@ -40,6 +40,8 @@ public class RecaptchaClient {
 
     if (response.success) {
       logger.info("Got successful captcha time: " + response.challenge_ts + ", current time: " + System.currentTimeMillis());
+    } else {
+      logger.warn("Got unsuccessful captcha: " + response.toString());
     }
 
     return response.success;
