@@ -31,7 +31,10 @@ public class RecaptchaClient {
     formData.add("response", captchaToken);
     formData.add("remoteip", ip);
 
-    VerifyResponse response = client.target("https://www.google.com/recaptcha/api/siteverify")
+    // Rather than use `google.com` for reCAPTCHA, use the `recaptcha.net` domain.
+    // That makes it easier to do traffic logging/filtering since it is not a generic domain.
+    // https://developers.google.com/recaptcha/docs/faq#can-i-use-recaptcha-globally
+    VerifyResponse response = client.target("https://www.recaptcha.net/recaptcha/api/siteverify" /* WAS: "https://www.google.com/recaptcha/api/siteverify" */)
                                     .request()
                                     .post(Entity.form(formData), VerifyResponse.class);
 
