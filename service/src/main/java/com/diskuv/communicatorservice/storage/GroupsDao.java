@@ -21,6 +21,9 @@ import com.google.common.hash.Hashing;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.signal.storageservice.storage.protos.groups.Group;
+import org.signal.zkgroup.groups.GroupIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
@@ -32,6 +35,7 @@ import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -42,6 +46,7 @@ import static com.diskuv.communicatorservice.storage.configuration.DiskuvGroupsC
 
 /** Groups direct access object for CRUD operations on {@link GroupItem}s. */
 public class GroupsDao {
+  private static final Logger  LOGGER                          = LoggerFactory.getLogger(GroupsDao.class);
   private static final Integer INITIAL_OPTIMISTIC_LOCK_VERSION = null;
 
   private final DynamoDbAsyncClient asyncClient;
@@ -102,6 +107,23 @@ public class GroupsDao {
     CompletableFuture<GroupItem> item = table.getItem(getKey(groupId));
     return item.thenApply(
         groupItem -> groupItem != null ? Optional.of(toGroup(groupItem)) : Optional.empty());
+  }
+
+  public CompletableFuture<Void> startupProbe(SecureRandom secureRandom) {
+    byte[] groupId = new byte[GroupIdentifier.SIZE];
+    secureRandom.nextBytes(groupId);
+    return getGroup(ByteString.copyFrom(groupId))
+        .exceptionally(
+            throwable -> {
+              throw new RuntimeException(
+                  "Groups could not be probed. Check DynamoDB table: " + table.tableName(),
+                  throwable);
+            })
+        .thenApply(
+                unused -> {
+                  LOGGER.info("Successful probe of {}", table.tableName());
+                  return null;
+                });
   }
 
   /**

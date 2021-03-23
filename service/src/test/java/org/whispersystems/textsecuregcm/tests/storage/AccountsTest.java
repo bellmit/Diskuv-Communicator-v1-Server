@@ -162,7 +162,7 @@ public class AccountsTest {
     List<Account> users = new ArrayList<>();
 
     for (int i=1;i<=100;i++) {
-      Account account = generateAccount(DiskuvUuidUtil.uuidForEmailAddress(String.format("my-%03d@test.com", i)));
+      Account account = generateAccount(DiskuvUuidUtil.uuidForOutdoorEmailAddress(String.format("my-%03d@test.com", i)));
       users.add(account);
       accounts.create(account);
     }

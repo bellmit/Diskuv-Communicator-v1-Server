@@ -13,19 +13,40 @@ public class DiskuvUuidUtilTest {
     public ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
-    public void givenEmailAddress__whenUuidForEmailAddress__thenUUID4() {
+    public void givenEmailAddress__whenUuidForOutdoorEmailAddress__thenUUID4() {
         // given: email address
         String emailAddress = "trees@yahoo.com";
         // when
-        UUID uuid = DiskuvUuidUtil.uuidForEmailAddress(emailAddress);
+        UUID uuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress);
         // then: UUID version 4
         assertThat(uuid.version()).isEqualTo(4);
         // then: variant 1 (IETF variant, which is 10 in binary)
         assertThat(uuid.variant()).isEqualTo(0b10);
-        // then: Diskuv UUID version 0
-        assertThat(uuid.getMostSignificantBits() & 0xc0000000_00000000L).isEqualTo(0);
+        // then: Diskuv UUID type 0
+        assertThat(uuid.getMostSignificantBits() & 0xc0000000_00000000L).isEqualTo(0x00000000_00000000L);
         // then: verified UUID
-        DiskuvUuidUtil.verifyDiskuvUuid(uuid.toString());
+        DiskuvUuidType type = DiskuvUuidUtil.verifyDiskuvUuid(uuid.toString());
+        assertThat(type).isEqualTo(DiskuvUuidType.OUTDOORS);
+    }
+
+    @Test
+    public void givenEmailAddressAndHouseToken__whenUuidForHouseEmailAddress__thenUUID4() {
+        // given: email address
+        String emailAddress = "trees@yahoo.com";
+        byte[] houseToken = new byte[32];
+        // when
+        UUID   uuid       = DiskuvUuidUtil.uuidForHouseEmailAddress(emailAddress, houseToken);
+        // then: UUID version 4
+        assertThat(uuid.version()).isEqualTo(4);
+        // then: variant 1 (IETF variant, which is 10 in binary)
+        assertThat(uuid.variant()).isEqualTo(0b10);
+        // then: Diskuv UUID type 1
+        assertThat(uuid.getMostSignificantBits() & 0xc0000000_00000000L).isEqualTo(0x40000000_00000000L);
+        // then: verified UUID
+        DiskuvUuidType type = DiskuvUuidUtil.verifyDiskuvUuid(uuid.toString());
+        assertThat(type).isEqualTo(DiskuvUuidType.HOUSE_SPECIFIC);
+        // then: different from outdoors uuid
+        assertThat(uuid).isNotEqualTo(DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress));
     }
 
     @Test
@@ -38,11 +59,11 @@ public class DiskuvUuidUtilTest {
     }
 
     @Test
-    public void givenObviouslyInvalidEmailAddress__whenUuidForEmailAddress__thenFail() {
+    public void givenObviouslyInvalidEmailAddress__whenUuidForOutdoorEmailAddress__thenFail() {
         // given: obviously invalid email address
         String emailAddress = "12345";
         // when / then
         exceptionRule.expect(IllegalArgumentException.class);
-        DiskuvUuidUtil.uuidForEmailAddress(emailAddress);
+        DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress);
     }
 }

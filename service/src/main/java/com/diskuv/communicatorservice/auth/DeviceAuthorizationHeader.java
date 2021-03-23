@@ -16,27 +16,30 @@ package com.diskuv.communicatorservice.auth;
 
 import org.whispersystems.textsecuregcm.auth.InvalidAuthorizationHeaderException;
 import org.whispersystems.textsecuregcm.util.Base64;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Util;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Parse the device header which is separate and complementary to the JWT-based Authorization HTTP
- * header. The account identifier is already part of the JWT token, and the device id is the remaining
- * part of the full identifier that is present in the device header.
+ * header.
  *
  * <p>The HTTP header is expected to be {@value #DEVICE_AUTHORIZATION_HEADER}. The format is:
  *
  * <pre>
- *     Basic Base64{DEVICE_ID:Base64{DEVICE_PASSWORD}}
+ *     Basic Base64{ACCOUNT_ID:DEVICE_ID:Base64{DEVICE_PASSWORD}}
  * </pre>
  */
 public class DeviceAuthorizationHeader {
-  public static final String        DEVICE_AUTHORIZATION_HEADER = "X-Diskuv-Device-Authorization";
-  private final long                deviceId;
-  private final byte[]              password;
+  public static final String DEVICE_AUTHORIZATION_HEADER = "X-Diskuv-Device-Authorization";
+  private final       UUID   accountId;
+  private final       long   deviceId;
+  private final       byte[] password;
 
-  private DeviceAuthorizationHeader(long deviceId, byte[] password) {
+  private DeviceAuthorizationHeader(UUID accountId, long deviceId, byte[] password) {
+    this.accountId  = accountId;
     this.deviceId   = deviceId;
     this.password   = password;
   }
@@ -65,18 +68,27 @@ public class DeviceAuthorizationHeader {
 
       String[] credentialParts = concatenatedValues.split(":");
 
-      if (credentialParts.length < 2) {
+      if (credentialParts.length != 3) {
         throw new InvalidAuthorizationHeaderException("Badly formatted credentials: " + concatenatedValues);
       }
 
       try {
-        return new DeviceAuthorizationHeader(Long.parseLong(credentialParts[0]), Base64.decode(credentialParts[1]));
-      } catch (NumberFormatException nfe) {
-        throw new InvalidAuthorizationHeaderException(nfe);
+        String diskuvUuid = credentialParts[0];
+        DiskuvUuidUtil.verifyDiskuvUuid(diskuvUuid);
+        return new DeviceAuthorizationHeader(
+            UUID.fromString(diskuvUuid),
+            Long.parseLong(credentialParts[1]),
+            Base64.decode(credentialParts[2]));
+      } catch (IllegalArgumentException e) {
+        throw new InvalidAuthorizationHeaderException(e);
       }
     } catch (IOException ioe) {
       throw new InvalidAuthorizationHeaderException(ioe);
     }
+  }
+
+  public UUID getAccountId() {
+    return accountId;
   }
 
   public long getDeviceId() {

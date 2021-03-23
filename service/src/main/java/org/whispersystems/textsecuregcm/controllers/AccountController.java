@@ -48,6 +48,7 @@ import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.storage.PendingAccountsManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.util.Constants;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Hex;
 import org.whispersystems.textsecuregcm.util.Util;
 
@@ -141,17 +142,24 @@ public class AccountController {
 
   @Timed
   @GET
-  @Path("/{type}/prereg/{token}")
+  @Path("/{type}/prereg/{accountId}/{token}")
   public Response getPreReg(
       @HeaderParam("Authorization") String authorizationHeader,
       @PathParam("type") String pushType,
+      @PathParam("accountId") String accountId,
       @PathParam("token") String pushToken) {
     if (!"apn".equals(pushType) && !"fcm".equals(pushType)) {
       return Response.status(400).build();
     }
 
-    UUID accountUuid = AuthHeaderSupport.getAndValidateAccountUuid(jwtAuthentication, authorizationHeader);
-    String accountId = accountUuid.toString();
+    try {
+      DiskuvUuidUtil.verifyDiskuvUuid(accountId);
+    } catch (IllegalArgumentException e) {
+      return Response.status(400).build();
+    }
+    UUID accountUuid = UUID.fromString(accountId);
+
+    AuthHeaderSupport.validateJwt(jwtAuthentication, authorizationHeader);
 
     String                 pushChallenge          = generatePushChallenge();
     StoredVerificationCode storedVerificationCode = new StoredVerificationCode(null,
@@ -186,8 +194,7 @@ public class AccountController {
       throws RateLimitExceededException
   {
     // account authentication
-    UUID accountUuid = AuthHeaderSupport.getAndValidateAccountUuid(jwtAuthentication, authorizationHeader);
-    String accountId = accountUuid.toString();
+    AuthHeaderSupport.validateJwt(jwtAuthentication, authorizationHeader);
 
     // device password to be used for subsequent device authentication
     final DeviceAuthorizationHeader deviceHeader;
@@ -196,7 +203,9 @@ public class AccountController {
     } catch (InvalidAuthorizationHeaderException e) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
-    byte[] devicePassword      = deviceHeader.getDevicePassword();
+    byte[] devicePassword = deviceHeader.getDevicePassword();
+    UUID accountUuid = deviceHeader.getAccountId();
+    String accountId = accountUuid.toString();
 
     String requester = Arrays.stream(forwardedFor.split(","))
             .map(String::trim)
@@ -277,7 +286,6 @@ public class AccountController {
   public void setApnRegistrationId(@Auth DisabledPermittedAccount disabledPermittedAccount, @Valid ApnRegistrationId registrationId) {
     Account account           = disabledPermittedAccount.getAccount();
     Device  device            = account.getAuthenticatedDevice().get();
-    boolean wasAccountEnabled = account.isEnabled();
 
     device.setApnId(registrationId.getApnRegistrationId());
     device.setVoipApnId(registrationId.getVoipRegistrationId());

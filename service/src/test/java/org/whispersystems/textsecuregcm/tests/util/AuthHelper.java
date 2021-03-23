@@ -34,7 +34,7 @@ public class AuthHelper {
   public static final long   VALID_DEVICE_ID    = 1L;
   public static final String VALID_DEVICE_ID_STRING = Long.toString(VALID_DEVICE_ID);
   public static final String VALID_NUMBER       = "+14150000000";
-  public static final UUID   VALID_UUID         = DiskuvUuidUtil.uuidForEmailAddress(VALID_EMAIL);
+  public static final UUID   VALID_UUID         = DiskuvUuidUtil.uuidForOutdoorEmailAddress(VALID_EMAIL);
   public static final String VALID_PASSWORD     = "foo";
 
   public static final String VALID_BEARER_TOKEN_TWO     = "bliss";
@@ -42,7 +42,7 @@ public class AuthHelper {
   public static final long   VALID_DEVICE_ID_TWO        = 1L;
   public static final String VALID_DEVICE_ID_STRING_TWO = Long.toString(VALID_DEVICE_ID_TWO);
   public static final String VALID_NUMBER_TWO = "+201511111110";
-  public static final UUID   VALID_UUID_TWO    = DiskuvUuidUtil.uuidForEmailAddress(VALID_EMAIL_TWO);
+  public static final UUID   VALID_UUID_TWO    = DiskuvUuidUtil.uuidForOutdoorEmailAddress(VALID_EMAIL_TWO);
   public static final String VALID_PASSWORD_TWO = "baz";
 
   public static final String INVALID_BEARER_TOKEN = "bleak";
@@ -56,7 +56,7 @@ public class AuthHelper {
   public static final String DISABLED_DEVICE_ID_STRING = Long.toString(DISABLED_DEVICE_ID);
   public static final String DISABLED_EMAIL            = "disbled@test.com";
   public static final String DISABLED_NUMBER           = "+78888888";
-  public static final UUID   DISABLED_UUID             = DiskuvUuidUtil.uuidForEmailAddress(DISABLED_EMAIL);
+  public static final UUID   DISABLED_UUID             = DiskuvUuidUtil.uuidForOutdoorEmailAddress(DISABLED_EMAIL);
   public static final String DISABLED_PASSWORD         = "poof";
 
   public static final String VALID_IDENTITY = "BcxxDU9FGMda70E7+Uvm7pnQcEdXQ64aJCpPUeRSfcFo";
@@ -149,8 +149,12 @@ public class AuthHelper {
   }
 
   public static String getAuthHeader(String number, String password) {
+    return getAuthHeader(VALID_UUID, number, password);
+  }
+
+  public static String getAuthHeader(UUID accountUuid, String number, String password) {
     String encodedPassword = Base64.encodeBytes(password.getBytes(StandardCharsets.UTF_8));
-    return "Basic " + Base64.encodeBytes((number + ":" + encodedPassword).getBytes(StandardCharsets.UTF_8));
+    return "Basic " + Base64.encodeBytes((accountUuid + ":" + number + ":" + encodedPassword).getBytes(StandardCharsets.UTF_8));
   }
 
   public static String getAccountAuthHeader(String bearerToken) {

@@ -569,7 +569,7 @@ public class KeyControllerTest {
                  .target("/v2/keys")
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_UUID, AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                  .put(Entity.entity(preKeyState, MediaType.APPLICATION_JSON_TYPE));
 
     assertThat(response.getStatus()).isEqualTo(204);

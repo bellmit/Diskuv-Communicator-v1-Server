@@ -54,6 +54,9 @@ public class WebSocketConnectionTest {
   private static final String VALID_JWT_TOKEN     = "quality";
   private static final String INVALID_JWT_TOKEN   = "sketchy";
 
+  private static final UUID VALID_ACCOUNT         = UUID.randomUUID();
+  private static final UUID INVALID_ACCOUNT       = UUID.randomUUID();
+
   private static final long VALID_DEVICE_ID_NUM   = 1;
   private static final long INVALID_DEVICE_ID_NUM = 2;
   private static final String VALID_DEVICE_ID     = Long.toString(VALID_DEVICE_ID_NUM);
@@ -67,7 +70,7 @@ public class WebSocketConnectionTest {
   private static final UpgradeRequest       upgradeRequest       = mock(UpgradeRequest.class      );
   private static final PushSender           pushSender           = mock(PushSender.class);
   private static final ReceiptSender        receiptSender        = mock(ReceiptSender.class);
-  private static final ApnFallbackManager   apnFallbackManager   = mock(ApnFallbackManager.class);
+  private static final ApnFallbackManager   apnFallbackManager = mock(ApnFallbackManager.class);
 
   @Test
   public void testCredentials() throws Exception {
@@ -76,10 +79,10 @@ public class WebSocketConnectionTest {
     AuthenticatedConnectListener  connectListener        = new AuthenticatedConnectListener(pushSender, receiptSender, storedMessages, pubSubManager, apnFallbackManager);
     WebSocketSessionContext       sessionContext         = mock(WebSocketSessionContext.class);
 
-    when(accountAuthenticator.authenticate(eq(new DiskuvDeviceCredentials(VALID_JWT_TOKEN, VALID_DEVICE_ID_NUM, VALID_PASSWORD))))
+    when(accountAuthenticator.authenticate(eq(new DiskuvDeviceCredentials(VALID_JWT_TOKEN, VALID_ACCOUNT, VALID_DEVICE_ID_NUM, VALID_PASSWORD))))
         .thenReturn(Optional.of(account));
 
-    when(accountAuthenticator.authenticate(eq(new DiskuvDeviceCredentials(INVALID_JWT_TOKEN, INVALID_DEVICE_ID_NUM, INVALID_PASSWORD))))
+    when(accountAuthenticator.authenticate(eq(new DiskuvDeviceCredentials(INVALID_JWT_TOKEN, INVALID_ACCOUNT, INVALID_DEVICE_ID_NUM, INVALID_PASSWORD))))
         .thenReturn(Optional.<Account>empty());
 
     when(account.getAuthenticatedDevice()).thenReturn(Optional.of(device));
@@ -88,6 +91,7 @@ public class WebSocketConnectionTest {
       put("device-id", new LinkedList<String>() {{add(VALID_DEVICE_ID);}});
       put("device-password", new LinkedList<String>() {{add(Base64.encodeBytes(VALID_PASSWORD, Base64.URL_SAFE));}});
       put("jwt-token", new LinkedList<String>() {{add(VALID_JWT_TOKEN);}});
+      put("account-id", new LinkedList<String>() {{add(VALID_ACCOUNT.toString());}});
     }});
 
     AuthenticationResult<Account> account = webSocketAuthenticator.authenticate(upgradeRequest);
@@ -104,6 +108,7 @@ public class WebSocketConnectionTest {
       put("device-id", new LinkedList<String>() {{add(INVALID_DEVICE_ID);}});
       put("device-password", new LinkedList<String>() {{add(Base64.encodeBytes(INVALID_PASSWORD, Base64.URL_SAFE));}});
       put("jwt-token", new LinkedList<String>() {{add(INVALID_JWT_TOKEN);}});
+      put("account-id", new LinkedList<String>() {{add(INVALID_ACCOUNT.toString());}});
     }});
 
     account = webSocketAuthenticator.authenticate(upgradeRequest);
@@ -117,6 +122,7 @@ public class WebSocketConnectionTest {
       put("device-id", new LinkedList<String>() {{add(VALID_DEVICE_ID);}});
       put("device-password", new LinkedList<String>() {{add("!!bad base64 encoding!!");}});
       put("jwt-token", new LinkedList<String>() {{add(VALID_JWT_TOKEN);}});
+      put("account-id", new LinkedList<String>() {{add(VALID_ACCOUNT.toString());}});
     }});
 
     account = webSocketAuthenticator.authenticate(upgradeRequest);
@@ -130,6 +136,7 @@ public class WebSocketConnectionTest {
       put("device-id", new LinkedList<String>() {{add(VALID_DEVICE_ID);}});
       put("device-password", new LinkedList<String>() {{add("hQUjeNfICbyRWzjdy5+Z6g==");}});
       put("jwt-token", new LinkedList<String>() {{add(VALID_JWT_TOKEN);}});
+      put("account-id", new LinkedList<String>() {{add(VALID_ACCOUNT.toString());}});
     }});
 
     account = webSocketAuthenticator.authenticate(upgradeRequest);
@@ -143,6 +150,7 @@ public class WebSocketConnectionTest {
       put("device-id", new LinkedList<String>() {{add(VALID_DEVICE_ID + " not a number");}});
       put("device-password", new LinkedList<String>() {{add(Base64.encodeBytes(VALID_PASSWORD, Base64.URL_SAFE));}});
       put("jwt-token", new LinkedList<String>() {{add(VALID_JWT_TOKEN);}});
+      put("account-id", new LinkedList<String>() {{add(VALID_ACCOUNT.toString());}});
     }});
 
     account = webSocketAuthenticator.authenticate(upgradeRequest);

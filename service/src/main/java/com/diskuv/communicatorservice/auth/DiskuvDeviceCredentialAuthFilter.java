@@ -76,7 +76,7 @@ public class DiskuvDeviceCredentialAuthFilter<P extends Principal>
         // device
         try {
             DeviceAuthorizationHeader header = DeviceAuthorizationHeader.fromFullHeader(deviceAuthorizationHeader);
-            return new DiskuvDeviceCredentials(bearerToken, header.getDeviceId(), header.getDevicePassword());
+            return new DiskuvDeviceCredentials(bearerToken, header.getAccountId(), header.getDeviceId(), header.getDevicePassword());
         } catch (InvalidAuthorizationHeaderException e) {
             return null;
         }

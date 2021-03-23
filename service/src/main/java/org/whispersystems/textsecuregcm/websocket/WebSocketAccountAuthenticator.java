@@ -4,6 +4,7 @@ import org.eclipse.jetty.websocket.api.UpgradeRequest;
 import org.whispersystems.textsecuregcm.auth.DiskuvAccountAuthenticator;
 import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
 import org.whispersystems.textsecuregcm.storage.Account;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.websocket.auth.WebSocketAuthenticator;
 import org.whispersystems.websocket.util.Base64;
 
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 
 public class WebSocketAccountAuthenticator implements WebSocketAuthenticator<Account> {
@@ -30,8 +32,9 @@ public class WebSocketAccountAuthenticator implements WebSocketAuthenticator<Acc
     List<String>              deviceIds  = parameters.get("device-id");
     List<String>              devicePasswords  = parameters.get("device-password");
     List<String>              jwtTokens  = parameters.get("jwt-token");
+    List<String>              accountIds  = parameters.get("account-id");
 
-    if (deviceIds == null || deviceIds.size() != 1 || devicePasswords == null || devicePasswords.size() != 1 || jwtTokens == null || jwtTokens.size() != 1)
+    if (deviceIds == null || deviceIds.size() != 1 || devicePasswords == null || devicePasswords.size() != 1 || jwtTokens == null || jwtTokens.size() != 1 || accountIds == null || accountIds.size() != 1)
     {
       return new AuthenticationResult<>(Optional.empty(), false);
     }
@@ -57,7 +60,16 @@ public class WebSocketAccountAuthenticator implements WebSocketAuthenticator<Acc
       return new AuthenticationResult<>(Optional.empty(), AUTH_IS_REQUIRED);
     }
 
-    DiskuvDeviceCredentials credentials = new DiskuvDeviceCredentials(jwtTokens.get(0), deviceId, devicePassword);
+    UUID                    accountUuid;
+    try {
+      String accountId = accountIds.get(0);
+      DiskuvUuidUtil.verifyDiskuvUuid(accountId);
+      accountUuid = UUID.fromString(accountId);
+    } catch (IllegalArgumentException e) {
+      return new AuthenticationResult<>(Optional.empty(), AUTH_IS_REQUIRED);
+    }
+
+    DiskuvDeviceCredentials credentials = new DiskuvDeviceCredentials(jwtTokens.get(0), accountUuid, deviceId, devicePassword);
     return new AuthenticationResult<>(accountAuthenticator.authenticate(credentials), AUTH_IS_REQUIRED);
   }
 

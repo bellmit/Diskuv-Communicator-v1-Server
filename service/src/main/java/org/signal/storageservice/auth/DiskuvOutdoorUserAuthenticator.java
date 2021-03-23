@@ -30,9 +30,8 @@ import java.util.UUID;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
-public class DiskuvUserAuthenticator implements Authenticator<String, User> {
+public class DiskuvOutdoorUserAuthenticator implements Authenticator<String, User> {
 
-  private final Logger logger = LoggerFactory.getLogger(DiskuvUserAuthenticator.class);
   private final MetricRegistry metricRegistry =
       SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
   private final Meter invalidJwtTokenMeter =
@@ -40,7 +39,7 @@ public class DiskuvUserAuthenticator implements Authenticator<String, User> {
 
   private final JwtAuthentication jwtAuthentication;
 
-  public DiskuvUserAuthenticator(JwtAuthentication jwtAuthentication) {
+  public DiskuvOutdoorUserAuthenticator(JwtAuthentication jwtAuthentication) {
     this.jwtAuthentication = jwtAuthentication;
   }
 
@@ -49,7 +48,7 @@ public class DiskuvUserAuthenticator implements Authenticator<String, User> {
     final UUID accountId;
     try {
       String emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(bearerToken);
-      accountId = DiskuvUuidUtil.uuidForEmailAddress(emailAddress);
+      accountId = DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress);
 
     } catch (IllegalArgumentException iae) {
       invalidJwtTokenMeter.mark();

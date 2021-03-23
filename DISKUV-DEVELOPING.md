@@ -192,8 +192,9 @@ diskuvGroups:
 SECOND, regardless of whether you are using DynamoDB Local, run the following:
 
 ```bash
-java -jar ./TextSecureServer-*.jar creategroupstable   local.yml
-java -jar ./TextSecureServer-*.jar creategrouplogtable local.yml
+java -jar service/target/TextSecureServer-*.jar creategroupstable   local.yml
+java -jar service/target/TextSecureServer-*.jar creategrouplogtable local.yml
+java -jar service/target/TextSecureServer-*.jar createhousestable   local.yml
 ```
 
 #### PostgreSQL

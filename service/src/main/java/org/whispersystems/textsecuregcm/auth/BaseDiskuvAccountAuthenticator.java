@@ -18,15 +18,26 @@ import java.util.UUID;
 import static com.codahale.metrics.MetricRegistry.name;
 
 public class BaseDiskuvAccountAuthenticator {
-  private final MetricRegistry metricRegistry               = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
-  private final Meter          authenticationFailedMeter    = metricRegistry.meter(name(getClass(), "authentication", "failed"         ));
-  private final Meter          authenticationSucceededMeter = metricRegistry.meter(name(getClass(), "authentication", "succeeded"      ));
-  private final Meter          noSuchAccountMeter           = metricRegistry.meter(name(getClass(), "authentication", "noSuchAccount"  ));
-  private final Meter          noSuchDeviceMeter            = metricRegistry.meter(name(getClass(), "authentication", "noSuchDevice"   ));
-  private final Meter          accountDisabledMeter         = metricRegistry.meter(name(getClass(), "authentication", "accountDisabled"));
-  private final Meter          deviceDisabledMeter          = metricRegistry.meter(name(getClass(), "authentication", "deviceDisabled" ));
-  private final Meter          invalidJwtTokenMeter         = metricRegistry.meter(name(getClass(), "authentication", "invalidJwtToken"));
-  private final Meter          invalidAuthHeaderMeter       = metricRegistry.meter(name(getClass(), "authentication", "invalidHeader"  ));
+  private final MetricRegistry metricRegistry =
+      SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
+  private final Meter authenticationFailedMeter =
+      metricRegistry.meter(name(getClass(), "authentication", "failed"));
+  private final Meter authenticationSucceededMeter =
+      metricRegistry.meter(name(getClass(), "authentication", "succeeded"));
+  private final Meter noSuchAccountMeter =
+      metricRegistry.meter(name(getClass(), "authentication", "noSuchAccount"));
+  private final Meter noSuchDeviceMeter =
+      metricRegistry.meter(name(getClass(), "authentication", "noSuchDevice"));
+  private final Meter accountDisabledMeter =
+      metricRegistry.meter(name(getClass(), "authentication", "accountDisabled"));
+  private final Meter deviceDisabledMeter =
+      metricRegistry.meter(name(getClass(), "authentication", "deviceDisabled"));
+  private final Meter invalidJwtTokenMeter =
+      metricRegistry.meter(name(getClass(), "authentication", "invalidJwtToken"));
+  private final Meter invalidAccountUuidMeter =
+          metricRegistry.meter(name(getClass(), "authentication", "invalidAccountUuid"));
+  private final Meter invalidAuthHeaderMeter =
+      metricRegistry.meter(name(getClass(), "authentication", "invalidHeader"));
 
   private final AccountsManager accountsManager;
   private final JwtAuthentication jwtAuthentication;
@@ -37,26 +48,34 @@ public class BaseDiskuvAccountAuthenticator {
     this.jwtAuthentication = jwtAuthentication;
   }
 
-  public Optional<Account> authenticate(DiskuvDeviceCredentials credentials, boolean enabledRequired) {
-    final UUID accountId;
+  public Optional<Account> authenticate(
+      DiskuvDeviceCredentials credentials, boolean enabledRequired) {
     try {
-      String emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(credentials.getBearerToken());
-      accountId = DiskuvUuidUtil.uuidForEmailAddress(emailAddress);
+      jwtAuthentication.verifyBearerTokenAndGetEmailAddress(credentials.getBearerToken());
     } catch (IllegalArgumentException iae) {
       invalidJwtTokenMeter.mark();
       return Optional.empty();
     }
-    try {
-      Optional<Account> account = accountsManager.get(accountId);
 
-      if (!account.isPresent()) {
+    final UUID accountUuid = credentials.getAccountUuid();
+    try {
+      DiskuvUuidUtil.verifyDiskuvUuid(accountUuid.toString());
+    } catch (IllegalArgumentException iae) {
+      invalidAccountUuidMeter.mark();
+      return Optional.empty();
+    }
+
+    try {
+      Optional<Account> account = accountsManager.get(accountUuid);
+
+      if (account.isEmpty()) {
         noSuchAccountMeter.mark();
         return Optional.empty();
       }
 
       Optional<Device> device = account.get().getDevice(credentials.getDeviceId());
 
-      if (!device.isPresent()) {
+      if (device.isEmpty()) {
         noSuchDeviceMeter.mark();
         return Optional.empty();
       }

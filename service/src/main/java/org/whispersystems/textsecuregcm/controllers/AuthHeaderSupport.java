@@ -17,7 +17,7 @@ public final class AuthHeaderSupport {
     private AuthHeaderSupport() {
     }
 
-    public static UUID getAndValidateAccountUuid(JwtAuthentication jwtAuthentication, String authorizationHeader) {
+    public static void validateJwt(JwtAuthentication jwtAuthentication, String authorizationHeader) {
         final String bearerToken;
         try {
             bearerToken = BearerTokenAuthorizationHeader.fromFullHeader(authorizationHeader);
@@ -25,13 +25,11 @@ public final class AuthHeaderSupport {
             LOGGER.info("Bad Authorization Header", e);
             throw new WebApplicationException(Response.status(401).build());
         }
-        final String emailAddress;
         try {
-            emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(bearerToken);
+            jwtAuthentication.verifyBearerTokenAndGetEmailAddress(bearerToken);
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(Response.status(401).build());
         }
-        return DiskuvUuidUtil.uuidForEmailAddress(emailAddress);
     }
 
 }

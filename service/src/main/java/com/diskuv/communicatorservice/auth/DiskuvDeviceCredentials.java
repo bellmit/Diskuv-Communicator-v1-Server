@@ -17,16 +17,22 @@ import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.UUID;
 
 /** For {@literal @Auth} account. */
 public class DiskuvDeviceCredentials {
   @Nonnull private final String bearerToken;
+  @Nonnull private final UUID accountUuid;
   private final long deviceId;
   @Nonnull private final byte[] devicePassword;
 
   public DiskuvDeviceCredentials(
-      @Nonnull String bearerToken, long deviceId, @Nonnull byte[] devicePassword) {
+      @Nonnull String bearerToken,
+      @Nonnull UUID accountUuid,
+      long deviceId,
+      @Nonnull byte[] devicePassword) {
     this.bearerToken = bearerToken;
+    this.accountUuid = accountUuid;
     this.deviceId = deviceId;
     this.devicePassword = devicePassword;
   }
@@ -38,33 +44,42 @@ public class DiskuvDeviceCredentials {
     DiskuvDeviceCredentials that = (DiskuvDeviceCredentials) o;
     return deviceId == that.deviceId
         && bearerToken.equals(that.bearerToken)
+        && accountUuid.equals(that.accountUuid)
         && Arrays.equals(devicePassword, that.devicePassword);
-  }
-
-  @Override
-  public int hashCode() {
-    int result = Objects.hash(bearerToken, deviceId);
-    result = 31 * result + Arrays.hashCode(devicePassword);
-    return result;
   }
 
   @Override
   public String toString() {
     return new StringJoiner(", ", DiskuvDeviceCredentials.class.getSimpleName() + "[", "]")
         .add("bearerToken='" + bearerToken + "'")
+        .add("accountUuid=" + accountUuid)
         .add("deviceId=" + deviceId)
         .add("devicePassword=" + Arrays.toString(devicePassword))
         .toString();
   }
 
+  @Override
+  public int hashCode() {
+    int result = Objects.hash(bearerToken, accountUuid, deviceId);
+    result = 31 * result + Arrays.hashCode(devicePassword);
+    return result;
+  }
+
+  @Nonnull
   public String getBearerToken() {
     return bearerToken;
+  }
+
+  @Nonnull
+  public UUID getAccountUuid() {
+    return accountUuid;
   }
 
   public long getDeviceId() {
     return deviceId;
   }
 
+  @Nonnull
   public byte[] getDevicePassword() {
     return devicePassword;
   }

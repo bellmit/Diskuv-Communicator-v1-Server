@@ -20,6 +20,9 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import org.signal.storageservice.storage.protos.groups.Group;
 import org.signal.storageservice.storage.protos.groups.GroupChange;
 import org.signal.storageservice.storage.protos.groups.GroupChanges;
+import org.signal.zkgroup.groups.GroupIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
@@ -33,6 +36,7 @@ import software.amazon.awssdk.utils.ThreadFactoryBuilder;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,7 +57,8 @@ import static com.diskuv.communicatorservice.storage.GroupChangeItem.GROUP_LOG_T
  * @author Jonah Beckford
  */
 public class GroupLogDao {
-  private final DynamoDbAsyncTable<GroupChangeItem> table;
+  private static final Logger                              LOGGER = LoggerFactory.getLogger(GroupLogDao.class);
+  private final        DynamoDbAsyncTable<GroupChangeItem> table;
   private final @Nullable GroupChangeCache cache;
   private final @Nullable Executor executorCacheCheck;
 
@@ -131,6 +136,23 @@ public class GroupLogDao {
             cachedGroupChanges ->
                 queryDatabaseForRemaining(
                     groupId, fromVersionInclusive, toVersionExclusive, cachedGroupChanges));
+  }
+
+  public CompletableFuture<Void> startupProbe(SecureRandom secureRandom) {
+    byte[] groupId = new byte[GroupIdentifier.SIZE];
+    secureRandom.nextBytes(groupId);
+    return getRecordsFromVersion(ByteString.copyFrom(groupId), 0, 1)
+        .exceptionally(
+            throwable -> {
+              throw new RuntimeException(
+                  "Group logs could not be probed. Check DynamoDB table: " + table.tableName(),
+                  throwable);
+            })
+        .thenApply(
+            unused -> {
+              LOGGER.info("Successful probe of {}", table.tableName());
+              return null;
+            });
   }
 
   private CachedGroupChanges readAsMuchAsPossibleFromCache(

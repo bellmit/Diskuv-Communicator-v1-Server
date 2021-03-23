@@ -1,10 +1,12 @@
 package org.whispersystems.textsecuregcm.push;
 
+import com.google.common.base.Preconditions;
 import org.whispersystems.textsecuregcm.controllers.NoSuchUserException;
 import org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidType;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import java.util.Optional;
@@ -26,8 +28,12 @@ public class ReceiptSender {
   public void sendReceipt(Account source, String destination, long messageId)
       throws NoSuchUserException, NotPushRegisteredException
   {
-    UUID destinationUuid = DiskuvUuidUtil.verifyDiskuvUuid(destination);
-    if (source.getUuid().equals(destinationUuid)) {
+    DiskuvUuidType sourceType = DiskuvUuidUtil.verifyDiskuvUuid(source.getUuid().toString());
+    DiskuvUuidType destType   = DiskuvUuidUtil.verifyDiskuvUuid(destination);
+    Preconditions.checkArgument(
+        sourceType == destType, "Cannot cross boundary between OUTDOORS and a HOUSE");
+
+    if (source.getUuid().equals(UUID.fromString(destination))) {
       return;
     }
 

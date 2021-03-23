@@ -166,8 +166,7 @@ public class DeviceController {
       throws RateLimitExceededException, DeviceLimitExceededException
   {
     // account authentication
-    UUID accountUuid = AuthHeaderSupport.getAndValidateAccountUuid(jwtAuthentication, authorizationHeader);
-    String accountId = accountUuid.toString();
+    AuthHeaderSupport.validateJwt(jwtAuthentication, authorizationHeader);
 
     // device password to be used for subsequent device authentication.
     // ignore any device id from the device header though. we will create the "next" device id a bit later in this method
@@ -178,6 +177,8 @@ public class DeviceController {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
     }
     byte[] devicePassword      = deviceHeader.getDevicePassword();
+    UUID accountUuid = deviceHeader.getAccountId();
+    String accountId = accountUuid.toString();
 
     rateLimiters.getVerifyDeviceLimiter().validate(accountId);
 

@@ -15,7 +15,12 @@ package com.diskuv.communicatorservice.storage.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.BaseEncoding;
+
+import javax.annotation.Nonnull;
+import java.util.LinkedList;
+import java.util.List;
 
 public class DiskuvGroupsConfiguration {
   public static final int CHECKSUM_SHARED_KEY_SIZE = 16;
@@ -32,6 +37,8 @@ public class DiskuvGroupsConfiguration {
 
   @JsonProperty private String groupLogTableName = "GroupLog";
 
+  @JsonProperty private String houseTableName = "Houses";
+
   public String getRegion() {
     return region;
   }
@@ -46,6 +53,10 @@ public class DiskuvGroupsConfiguration {
 
   public String getGroupLogTableName() {
     return groupLogTableName;
+  }
+
+  public String getHouseTableName() {
+    return houseTableName;
   }
 
   @JsonProperty(required = true)
@@ -70,6 +81,19 @@ public class DiskuvGroupsConfiguration {
 
   public void setNumberOfGroupCacheCheckingThreads(int numberOfGroupCacheCheckingThreads) {
     this.numberOfGroupCacheCheckingThreads = numberOfGroupCacheCheckingThreads;
+  }
+
+  @JsonProperty @Nonnull
+  private List<String> emailAddressesAllowedToDeployHouse = new LinkedList<>();
+
+  @Nonnull
+  public List<String> getEmailAddressesAllowedToDeployHouse() {
+    return ImmutableList.copyOf(emailAddressesAllowedToDeployHouse);
+  }
+
+  public void setEmailAddressesAllowedToDeployHouse(
+      @Nonnull List<String> emailAddressesAllowedToDeployHouse) {
+    this.emailAddressesAllowedToDeployHouse = emailAddressesAllowedToDeployHouse;
   }
 
   @JsonProperty(required = true)

@@ -29,12 +29,15 @@ import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
 import com.diskuv.communicatorservice.auth.DiskuvRoleCredentialAuthFilter;
 import com.diskuv.communicatorservice.auth.DiskuvRoleCredentials;
 import com.diskuv.communicatorservice.auth.JwtAuthentication;
+import com.diskuv.communicatorservice.controllers.HouseController;
 import com.diskuv.communicatorservice.storage.GroupChangeCache;
 import com.diskuv.communicatorservice.storage.GroupLogDao;
 import com.diskuv.communicatorservice.storage.GroupsDao;
+import com.diskuv.communicatorservice.storage.HousesDao;
 import com.diskuv.communicatorservice.storage.clients.AwsClientFactory;
 import com.diskuv.communicatorservice.storage.command.CreateTableGroupLogCommand;
 import com.diskuv.communicatorservice.storage.command.CreateTableGroupsCommand;
+import com.diskuv.communicatorservice.storage.command.CreateTableHousesCommand;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -44,8 +47,6 @@ import io.dropwizard.Application;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.PolymorphicAuthDynamicFeature;
 import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
-import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
-import io.dropwizard.auth.basic.BasicCredentials;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.db.PooledDataSourceFactory;
@@ -56,13 +57,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.jdbi.v3.core.Jdbi;
 import org.signal.storageservice.auth.DiskuvGroupUserAuthenticator;
-import org.signal.storageservice.auth.DiskuvUserAuthenticator;
+import org.signal.storageservice.auth.DiskuvOutdoorUserAuthenticator;
 import org.signal.storageservice.auth.ExternalGroupCredentialGenerator;
-import org.signal.storageservice.auth.ExternalServiceCredentialValidator;
 import org.signal.storageservice.auth.GroupUser;
-import org.signal.storageservice.auth.GroupUserAuthenticator;
 import org.signal.storageservice.auth.User;
-import org.signal.storageservice.auth.UserAuthenticator;
 import org.signal.storageservice.controllers.GroupsController;
 import org.signal.storageservice.providers.CompletionExceptionMapper;
 import org.signal.storageservice.providers.InvalidProtocolBufferExceptionMapper;
@@ -134,10 +132,12 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import javax.servlet.ServletRegistration;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -179,6 +179,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     // [Diskuv Change] Add command to create DynamoDB tables
     bootstrap.addCommand(new CreateTableGroupsCommand());
     bootstrap.addCommand(new CreateTableGroupLogCommand());
+    bootstrap.addCommand(new CreateTableHousesCommand());
   }
 
   @Override
@@ -302,8 +303,8 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     // [Diskuv Change] BEGIN: Import of groups from storage-service
     // WAS:   UserAuthenticator      userAuthenticator      = new UserAuthenticator(new ExternalServiceCredentialValidator(config.getAuthenticationConfiguration().getKey()));
-    DiskuvUserAuthenticator      userAuthenticator      = new DiskuvUserAuthenticator(jwtAuthentication);
-    DiskuvGroupUserAuthenticator groupUserAuthenticator = new DiskuvGroupUserAuthenticator(jwtAuthentication, zkAuthOperations);
+    DiskuvOutdoorUserAuthenticator userAuthenticator      = new DiskuvOutdoorUserAuthenticator(jwtAuthentication);
+    DiskuvGroupUserAuthenticator   groupUserAuthenticator = new DiskuvGroupUserAuthenticator(jwtAuthentication, zkAuthOperations);
 
     // WAS: AuthFilter<BasicCredentials, User>      userAuthFilter      = new BasicCredentialAuthFilter.Builder<User>().setAuthenticator(userAuthenticator).buildAuthFilter();
     AuthFilter<String, User>                        userAuthFilter      = new OAuthCredentialAuthFilter.Builder<User>().setAuthenticator(userAuthenticator).buildAuthFilter();
@@ -383,6 +384,23 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     GroupChangeCache    groupChangeCache = new RedisBackedGroupChangeCache(cacheClient, config.getDiskuvGroupsConfiguration().getNumberOfGroupCacheCheckingThreads());
     GroupsDao           groupsDao        = new GroupsDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupsTableName(), config.getDiskuvGroupsConfiguration().getChecksumSharedKey());
     GroupLogDao         groupLogDao      = new GroupLogDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupLogTableName(), Optional.of(groupChangeCache));
+
+    // [Diskuv Change] Diskuv Houses
+    HousesDao housesDao = new HousesDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getHouseTableName());
+    environment.jersey().register(new HouseController(housesDao, config.getDiskuvGroupsConfiguration(), rateLimiters));
+
+    // [Diskuv Change] Probe backends at startup. NEVER probe backends using a same machine probe (ie. internal health check) because
+    // doing so can cause a simultaneous fleet wide outage. Instead, probing at startup lets us fail deployments that
+    // introduce new but faulty backends. Leave backend probes to external health checking! So first (and recommended) option
+    // is to use a canary. Second option is to setup a single REST api that can be asked to check the backends; that
+    // REST api will only be called from an external machine, and only one machine will be accessed each external
+    // health check period.
+    SecureRandom            secureRandom = new SecureRandom();
+    CompletableFuture<Void> p1           = housesDao.startupProbe(secureRandom);
+    CompletableFuture<Void> p2           = groupsDao.startupProbe(secureRandom);
+    CompletableFuture<Void> p3           = groupLogDao.startupProbe(secureRandom);
+    CompletableFuture.allOf(p1, p2, p3).join();
+
 
     // [Diskuv Change] BEGIN: Import of groups from storage-service
     environment.jersey().register(ProtocolBufferMessageBodyProvider.class);

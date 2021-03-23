@@ -69,8 +69,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_BEARER_TOKEN;
-import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.VALID_EMAIL;
+import static org.whispersystems.textsecuregcm.tests.util.AuthHelper.*;
 
 public class AccountControllerTest {
 
@@ -205,7 +204,7 @@ public class AccountControllerTest {
   @Test
   public void testGetFcmPrereg() throws Exception {
     Response response = resources.getJerseyTest()
-                                 .target("/v1/accounts/fcm/prereg/mytoken")
+                                 .target("/v1/accounts/fcm/prereg/" + VALID_UUID + "/mytoken")
                                  .request()
                                  .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
                                  .get();
@@ -225,7 +224,7 @@ public class AccountControllerTest {
   @Test
   public void testGetApnPrereg() throws Exception {
     Response response = resources.getJerseyTest()
-                                 .target("/v1/accounts/apn/prereg/mytoken")
+                                 .target("/v1/accounts/apn/prereg/"+VALID_UUID+"/mytoken")
                                  .request()
                                  .header("Authorization", AuthHelper.getAccountAuthHeader(VALID_BEARER_TOKEN))
                                  .get();
@@ -880,7 +879,7 @@ public class AccountControllerTest {
                  .target("/v1/accounts/gcm/")
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_UUID, AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                  .put(Entity.json(new GcmRegistrationId("c00lz0rz")));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -896,7 +895,7 @@ public class AccountControllerTest {
                  .target("/v1/accounts/gcm/")
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_UUID, AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                  .put(Entity.json(new GcmRegistrationId("z000")));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -912,7 +911,7 @@ public class AccountControllerTest {
                  .target("/v1/accounts/apn/")
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_UUID, AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                  .put(Entity.json(new ApnRegistrationId("first", "second")));
 
     assertThat(response.getStatus()).isEqualTo(204);
@@ -929,7 +928,7 @@ public class AccountControllerTest {
                  .target("/v1/accounts/apn/")
                  .request()
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.DISABLED_BEARER_TOKEN))
-                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
+                 .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.DISABLED_UUID, AuthHelper.DISABLED_DEVICE_ID_STRING, AuthHelper.DISABLED_PASSWORD))
                  .put(Entity.json(new ApnRegistrationId("third", "fourth")));
 
     assertThat(response.getStatus()).isEqualTo(204);
