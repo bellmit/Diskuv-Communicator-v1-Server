@@ -37,7 +37,7 @@ public class DiskuvGroupsConfiguration {
 
   @JsonProperty private String groupLogTableName = "GroupLog";
 
-  @JsonProperty private String houseTableName = "Houses";
+  @JsonProperty private String sanctuaryTableName = "Sanctuaries";
 
   public String getRegion() {
     return region;
@@ -55,8 +55,8 @@ public class DiskuvGroupsConfiguration {
     return groupLogTableName;
   }
 
-  public String getHouseTableName() {
-    return houseTableName;
+  public String getSanctuaryTableName() {
+    return sanctuaryTableName;
   }
 
   @JsonProperty(required = true)
@@ -84,16 +84,16 @@ public class DiskuvGroupsConfiguration {
   }
 
   @JsonProperty @Nonnull
-  private List<String> emailAddressesAllowedToDeployHouse = new LinkedList<>();
+  private List<String> emailAddressesAllowedToDeploySanctuary = new LinkedList<>();
 
   @Nonnull
-  public List<String> getEmailAddressesAllowedToDeployHouse() {
-    return ImmutableList.copyOf(emailAddressesAllowedToDeployHouse);
+  public List<String> getEmailAddressesAllowedToDeploySanctuary() {
+    return ImmutableList.copyOf(emailAddressesAllowedToDeploySanctuary);
   }
 
-  public void setEmailAddressesAllowedToDeployHouse(
-      @Nonnull List<String> emailAddressesAllowedToDeployHouse) {
-    this.emailAddressesAllowedToDeployHouse = emailAddressesAllowedToDeployHouse;
+  public void setEmailAddressesAllowedToDeploySanctuary(
+      @Nonnull List<String> emailAddressesAllowedToDeploySanctuary) {
+    this.emailAddressesAllowedToDeploySanctuary = emailAddressesAllowedToDeploySanctuary;
   }
 
   @JsonProperty(required = true)

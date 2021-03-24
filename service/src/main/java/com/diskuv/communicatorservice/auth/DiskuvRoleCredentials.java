@@ -17,7 +17,7 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.StringJoiner;
 
-/** For {@literal @Auth} user or {@literal @Auth} group. Eventually {@literal @Auth} house. */
+/** For {@literal @Auth} user or {@literal @Auth} group. Eventually {@literal @Auth} sanctuary. */
 public class DiskuvRoleCredentials {
   @Nonnull private final String bearerToken;
   @Nonnull private final String username;

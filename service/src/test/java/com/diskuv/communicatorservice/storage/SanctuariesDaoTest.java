@@ -35,13 +35,13 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 
 /** @author Jonah Beckford */
-public class HousesDaoTest {
+public class SanctuariesDaoTest {
 
   private static final UUID SUPPORT_CONTACT_ID = UUID.randomUUID();
   private static final UUID SUPPORT_CONTACT_ID2 = UUID.randomUUID();
   @Rule public DDBServerRule ddbServer = new DDBServerRule();
 
-  private HousesDao dao;
+  private SanctuariesDao dao;
   private TestableDynamoDbAsyncClientWrapper asyncClientWrapper;
 
   @Before
@@ -49,16 +49,16 @@ public class HousesDaoTest {
     asyncClientWrapper = new TestableDynamoDbAsyncClientWrapper(ddbServer.client());
     asyncClientWrapper.delegateToRealDynamoDBOperationsExcept(Set.of());
 
-    dao = new HousesDao(asyncClientWrapper.get(), "Houses");
+    dao = new SanctuariesDao(asyncClientWrapper.get(), "Sanctuaries");
 
     // create the table
     dao.getTable().createTable().join();
   }
 
   @Test
-  public void when_createHouse_then_returnsCreatedAsTrue() {
+  public void when_createSanctuary_then_returnsCreatedAsTrue() {
     // when
-    Boolean result = dao.createHouse(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID).join();
+    Boolean result = dao.createSanctuary(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID).join();
 
     // then
     assertThat(result).isNotNull();
@@ -66,7 +66,7 @@ public class HousesDaoTest {
   }
 
   @Test
-  public void given_ddbFailsDuringPutItem_when_createHouse_then_throwsException() {
+  public void given_ddbFailsDuringPutItem_when_createSanctuary_then_throwsException() {
     // given
     asyncClientWrapper.delegateToRealDynamoDBOperationsExcept(
         Set.of(TestableDynamoDbAsyncClientWrapper.DynamoDBOperation.PUT_ITEM));
@@ -78,17 +78,17 @@ public class HousesDaoTest {
     CompletionException completionException =
         assertThrows(
             CompletionException.class,
-            () -> dao.createHouse(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID).join());
+            () -> dao.createSanctuary(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID).join());
     assertThat(completionException).hasCauseInstanceOf(DynamoDbException.class);
   }
 
   @Test
-  public void when_createHouse_twice_then_secondCreationReturnsCreatedAsFalse() {
+  public void when_createSanctuary_twice_then_secondCreationReturnsCreatedAsFalse() {
     // when
     Boolean result =
-        dao.createHouse(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID)
+        dao.createSanctuary(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID)
             .thenCompose(
-                firstResult -> dao.createHouse(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID))
+                firstResult -> dao.createSanctuary(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID))
             .join();
 
     // then
@@ -97,16 +97,16 @@ public class HousesDaoTest {
   }
 
   @Test
-  public void given_noHouses_when_getHouse_then_notPresent() {
+  public void given_noSanctuaries_when_getSanctuary_then_notPresent() {
     // given / when
-    Optional<HouseItem> house = dao.getHouse(GroupsTestObjects.GROUP_ID_ONE).join();
+    Optional<SanctuaryItem> sanctuary = dao.getSanctuary(GroupsTestObjects.GROUP_ID_ONE).join();
 
     // then
-    assertThat(house).isNotPresent();
+    assertThat(sanctuary).isNotPresent();
   }
 
   @Test
-  public void given_ddbFailsDuringGetItem_when_getHouse_then_throwsException() {
+  public void given_ddbFailsDuringGetItem_when_getSanctuary_then_throwsException() {
     // given
     asyncClientWrapper.delegateToRealDynamoDBOperationsExcept(
         Set.of(TestableDynamoDbAsyncClientWrapper.DynamoDBOperation.GET_ITEM));
@@ -117,75 +117,75 @@ public class HousesDaoTest {
     // when / then
     CompletionException completionException =
         assertThrows(
-            CompletionException.class, () -> dao.getHouse(GroupsTestObjects.GROUP_ID_ONE).join());
+            CompletionException.class, () -> dao.getSanctuary(GroupsTestObjects.GROUP_ID_ONE).join());
     assertThat(completionException).hasCauseInstanceOf(DynamoDbException.class);
   }
 
   @Test
-  public void given_houseOneIsCreated_when_getHouse_then_equivalentToHouseOne() {
+  public void given_sanctuaryOneIsCreated_when_getSanctuary_then_equivalentToSanctuaryOne() {
     // given / when
-    Optional<HouseItem> houseItem =
-        dao.createHouse(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID)
-            .thenCompose(success -> dao.getHouse(GroupsTestObjects.GROUP_ID_ONE))
+    Optional<SanctuaryItem> sanctuaryItem =
+        dao.createSanctuary(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID)
+            .thenCompose(success -> dao.getSanctuary(GroupsTestObjects.GROUP_ID_ONE))
             .join();
 
     // then
-    assertThat(houseItem).isPresent();
-    assertThat(ByteString.copyFrom(houseItem.get().getHouseGroupId()))
+    assertThat(sanctuaryItem).isPresent();
+    assertThat(ByteString.copyFrom(sanctuaryItem.get().getSanctuaryGroupId()))
         .isEqualTo(GroupsTestObjects.GROUP_ID_ONE);
   }
 
   @Test
-  public void given_noHouses_when_updateHouse_then_throwsResourceNotFoundException() {
+  public void given_noSanctuaries_when_updateSanctuary_then_throwsResourceNotFoundException() {
     // given / when / then
-    HouseItem house = new HouseItem();
-    house.setHouseGroupId(GroupsTestObjects.GROUP_ID_ONE.toByteArray());
+    SanctuaryItem sanctuary = new SanctuaryItem();
+    sanctuary.setSanctuaryGroupId(GroupsTestObjects.GROUP_ID_ONE.toByteArray());
     CompletionException completionException =
-        assertThrows(CompletionException.class, () -> dao.updateHouse(house).join());
+        assertThrows(CompletionException.class, () -> dao.updateSanctuary(sanctuary).join());
     assertThat(completionException).hasCauseInstanceOf(ResourceNotFoundException.class);
   }
 
   @Test
-  public void given_houseOneIsCreated_when_updateHouse_withModifications_then_updated() {
+  public void given_sanctuaryOneIsCreated_when_updateSanctuary_withModifications_then_updated() {
     // given / when
-    Optional<HouseItem> result =
-        dao.createHouse(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID)
-            .thenCompose(createResult -> dao.getHouse(GroupsTestObjects.GROUP_ID_ONE))
+    Optional<SanctuaryItem> result =
+        dao.createSanctuary(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID)
+            .thenCompose(createResult -> dao.getSanctuary(GroupsTestObjects.GROUP_ID_ONE))
             .thenApply(
-                house -> {
-                  HouseItem houseToBeUpdated = house.get();
-                  houseToBeUpdated.setHouseEnabled(false);
-                  houseToBeUpdated.setSupportContactId(SUPPORT_CONTACT_ID2.toString());
-                  return houseToBeUpdated;
+                sanctuary -> {
+                  SanctuaryItem sanctuaryToBeUpdated = sanctuary.get();
+                  sanctuaryToBeUpdated.setSanctuaryEnabled(false);
+                  sanctuaryToBeUpdated.setSupportContactId(SUPPORT_CONTACT_ID2.toString());
+                  return sanctuaryToBeUpdated;
                 })
-            .thenCompose(houseToBeUpdated -> dao.updateHouse(houseToBeUpdated))
-            .thenCompose(unused -> dao.getHouse(GroupsTestObjects.GROUP_ID_ONE))
+            .thenCompose(sanctuaryToBeUpdated -> dao.updateSanctuary(sanctuaryToBeUpdated))
+            .thenCompose(unused -> dao.getSanctuary(GroupsTestObjects.GROUP_ID_ONE))
             .join();
 
     // then
     assertThat(result).isPresent();
-    assertThat(result.get().isHouseEnabled()).isFalse();
+    assertThat(result.get().isSanctuaryEnabled()).isFalse();
     assertThat(result.get().getSupportContactId()).isEqualTo(SUPPORT_CONTACT_ID2.toString());
   }
 
   @Test
-  public void given_houseOneIsCreated_when_updateHouse_withUnmodifiedHouseOne_then_nothing_changed() {
+  public void given_sanctuaryOneIsCreated_when_updateSanctuary_withUnmodifiedSanctuaryOne_then_nothing_changed() {
     // given / when
-    Optional<HouseItem> result =
-        dao.createHouse(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID)
-            .thenCompose(createResult -> dao.getHouse(GroupsTestObjects.GROUP_ID_ONE))
-            .thenCompose(house -> dao.updateHouse(house.get()))
-            .thenCompose(unused -> dao.getHouse(GroupsTestObjects.GROUP_ID_ONE))
+    Optional<SanctuaryItem> result =
+        dao.createSanctuary(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID)
+            .thenCompose(createResult -> dao.getSanctuary(GroupsTestObjects.GROUP_ID_ONE))
+            .thenCompose(sanctuary -> dao.updateSanctuary(sanctuary.get()))
+            .thenCompose(unused -> dao.getSanctuary(GroupsTestObjects.GROUP_ID_ONE))
             .join();
 
     // then
     assertThat(result).isPresent();
-    assertThat(result.get().isHouseEnabled()).isTrue();
+    assertThat(result.get().isSanctuaryEnabled()).isTrue();
     assertThat(result.get().getSupportContactId()).isEqualTo(SUPPORT_CONTACT_ID.toString());
   }
 
   @Test
-  public void given_ddbFailsDuringUpdateItem_when_updateHouse_then_throwsException() {
+  public void given_ddbFailsDuringUpdateItem_when_updateSanctuary_then_throwsException() {
     // given
     asyncClientWrapper.delegateToRealDynamoDBOperationsExcept(
         Set.of(TestableDynamoDbAsyncClientWrapper.DynamoDBOperation.UPDATE_ITEM));
@@ -198,9 +198,9 @@ public class HousesDaoTest {
         assertThrows(
             CompletionException.class,
             () ->
-                dao.createHouse(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID)
-                    .thenCompose(createResult -> dao.getHouse(GroupsTestObjects.GROUP_ID_ONE))
-                    .thenCompose(house -> dao.updateHouse(house.get()))
+                dao.createSanctuary(GroupsTestObjects.GROUP_ID_ONE, SUPPORT_CONTACT_ID)
+                    .thenCompose(createResult -> dao.getSanctuary(GroupsTestObjects.GROUP_ID_ONE))
+                    .thenCompose(sanctuary -> dao.updateSanctuary(sanctuary.get()))
                     .join());
     assertThat(completionException).hasCauseInstanceOf(DynamoDbException.class);
   }

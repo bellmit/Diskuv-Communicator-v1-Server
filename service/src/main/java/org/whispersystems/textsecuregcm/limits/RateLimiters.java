@@ -48,7 +48,7 @@ public class RateLimiters {
   private final RateLimiter usernameLookupLimiter;
   private final RateLimiter usernameSetLimiter;
   private final RateLimiter connectWebSocketLimiter;
-  private final RateLimiter houseLookupLimiter;
+  private final RateLimiter sanctuaryLookupLimiter;
 
   public RateLimiters(RateLimitsConfiguration config, ReplicatedJedisPool cacheClient) {
     this.smsDestinationLimiter = new RateLimiter(cacheClient, "smsDestination",
@@ -134,9 +134,9 @@ public class RateLimiters {
     this.connectWebSocketLimiter = new RateLimiter(cacheClient, "connectWebSocket",
                                                    config.getConnectWebSocket().getBucketSize(),
                                                    config.getConnectWebSocket().getLeakRatePerMinute());
-    this.houseLookupLimiter = new RateLimiter(cacheClient, "houseLookup",
-                                                   config.getHouseLookup().getBucketSize(),
-                                                   config.getHouseLookup().getLeakRatePerMinute());
+    this.sanctuaryLookupLimiter = new RateLimiter(cacheClient, "sanctuaryLookup",
+                                                   config.getSanctuaryLookup().getBucketSize(),
+                                                   config.getSanctuaryLookup().getLeakRatePerMinute());
   }
 
   @VisibleForTesting
@@ -162,7 +162,7 @@ public class RateLimiters {
     this.usernameLookupLimiter = rateLimiter;
     this.usernameSetLimiter = rateLimiter;
     this.connectWebSocketLimiter = rateLimiter;
-    this.houseLookupLimiter = rateLimiter;
+    this.sanctuaryLookupLimiter = rateLimiter;
   }
 
   public RateLimiter getAllocateDeviceLimiter() {
@@ -249,7 +249,7 @@ public class RateLimiters {
     return connectWebSocketLimiter;
   }
 
-  public RateLimiter getHouseLookupLimiter() {
-    return houseLookupLimiter;
+  public RateLimiter getSanctuaryLookupLimiter() {
+    return sanctuaryLookupLimiter;
   }
 }

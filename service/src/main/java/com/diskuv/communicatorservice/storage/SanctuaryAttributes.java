@@ -4,16 +4,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.UUID;
 
-public class HouseAttributes {
+public class SanctuaryAttributes {
   @JsonProperty(required = true)
   private UUID supportContactId;
 
   @JsonProperty(required = true)
-  private boolean houseEnabled;
+  private boolean sanctuaryEnabled;
 
-  public HouseAttributes() {}
+  public SanctuaryAttributes() {}
 
-  public HouseAttributes(UUID supportContactId) {
+  public SanctuaryAttributes(UUID supportContactId) {
     this.supportContactId = supportContactId;
   }
 
@@ -21,7 +21,7 @@ public class HouseAttributes {
     return supportContactId;
   }
 
-  public boolean isHouseEnabled() {
-    return houseEnabled;
+  public boolean isSanctuaryEnabled() {
+    return sanctuaryEnabled;
   }
 }

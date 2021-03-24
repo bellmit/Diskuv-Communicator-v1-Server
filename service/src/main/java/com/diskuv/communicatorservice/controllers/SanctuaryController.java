@@ -14,8 +14,8 @@
 package com.diskuv.communicatorservice.controllers;
 
 import com.codahale.metrics.annotation.Timed;
-import com.diskuv.communicatorservice.storage.HouseAttributes;
-import com.diskuv.communicatorservice.storage.HousesDao;
+import com.diskuv.communicatorservice.storage.SanctuaryAttributes;
+import com.diskuv.communicatorservice.storage.SanctuariesDao;
 import com.diskuv.communicatorservice.storage.configuration.DiskuvGroupsConfiguration;
 import com.google.protobuf.ByteString;
 import io.dropwizard.auth.Auth;
@@ -40,29 +40,29 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-@Path("/v1/houses")
-public class HouseController {
-  private final HousesDao housesDao;
+@Path("/v1/sanctuaries")
+public class SanctuaryController {
+  private final SanctuariesDao sanctuariesDao;
   private final RateLimiters rateLimiters;
-  private final List<UUID> emailAddressesAllowedToDeployHouse;
+  private final List<UUID> emailAddressesAllowedToDeploySanctuary;
 
-  public HouseController(
+  public SanctuaryController(
       DynamoDbAsyncClient asyncClient,
       DiskuvGroupsConfiguration diskuvGroupsConfiguration,
       RateLimiters rateLimiters) {
     this(
-        new HousesDao(asyncClient, diskuvGroupsConfiguration.getHouseTableName()),
+        new SanctuariesDao(asyncClient, diskuvGroupsConfiguration.getSanctuaryTableName()),
         diskuvGroupsConfiguration,
         rateLimiters);
   }
 
-  public HouseController(
-      HousesDao housesDao,
+  public SanctuaryController(
+      SanctuariesDao sanctuariesDao,
       DiskuvGroupsConfiguration diskuvGroupsConfiguration,
       RateLimiters rateLimiters) {
-    this.housesDao = housesDao;
-    this.emailAddressesAllowedToDeployHouse =
-        diskuvGroupsConfiguration.getEmailAddressesAllowedToDeployHouse().stream()
+    this.sanctuariesDao = sanctuariesDao;
+    this.emailAddressesAllowedToDeploySanctuary =
+        diskuvGroupsConfiguration.getEmailAddressesAllowedToDeploySanctuary().stream()
             .map(emailAddress -> DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress))
             .collect(Collectors.toList());
     this.rateLimiters = rateLimiters;
@@ -71,22 +71,22 @@ public class HouseController {
   @Timed
   @PUT
   @Consumes(MediaType.APPLICATION_JSON)
-  @Path("/{houseGroupId}")
-  public CompletableFuture<Response> createHouse(
+  @Path("/{sanctuaryGroupId}")
+  public CompletableFuture<Response> createSanctuary(
       @Auth User user,
-      @PathParam("houseGroupId") String houseGroupIdBase64,
-      @Valid HouseAttributes houseAttributes) {
-    byte[] houseGroupId = Base64.decodeBase64(houseGroupIdBase64);
+      @PathParam("sanctuaryGroupId") String sanctuaryGroupIdBase64,
+      @Valid SanctuaryAttributes sanctuaryAttributes) {
+    byte[] sanctuaryGroupId = Base64.decodeBase64(sanctuaryGroupIdBase64);
     if (!isAllowedToDeploy(user))
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.UNAUTHORIZED).build());
 
-    if (rateLimitHouse(houseGroupIdBase64))
+    if (rateLimitSanctuary(sanctuaryGroupIdBase64))
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.TOO_MANY_REQUESTS).build());
 
-    return housesDao
-        .createHouse(ByteString.copyFrom(houseGroupId), houseAttributes.getSupportContactId())
+    return sanctuariesDao
+        .createSanctuary(ByteString.copyFrom(sanctuaryGroupId), sanctuaryAttributes.getSupportContactId())
         .thenApply(
             success ->
                 Response.status(success ? Response.Status.OK : Response.Status.CONFLICT).build());
@@ -95,36 +95,36 @@ public class HouseController {
   @Timed
   @PATCH
   @Consumes(MediaType.APPLICATION_JSON)
-  @Path("/{houseGroupId}")
-  public CompletableFuture<Response> updateHouse(
+  @Path("/{sanctuaryGroupId}")
+  public CompletableFuture<Response> updateSanctuary(
       @Auth User user,
-      @PathParam("houseGroupId") String houseGroupIdBase64,
-      @Valid HouseAttributes houseAttributes) {
-    byte[] houseGroupId = Base64.decodeBase64(houseGroupIdBase64);
+      @PathParam("sanctuaryGroupId") String sanctuaryGroupIdBase64,
+      @Valid SanctuaryAttributes sanctuaryAttributes) {
+    byte[] sanctuaryGroupId = Base64.decodeBase64(sanctuaryGroupIdBase64);
     if (!isAllowedToDeploy(user)) {
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.UNAUTHORIZED).build());
     }
 
-    if (rateLimitHouse(houseGroupIdBase64))
+    if (rateLimitSanctuary(sanctuaryGroupIdBase64))
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.TOO_MANY_REQUESTS).build());
 
-    ByteString houseGroup = ByteString.copyFrom(houseGroupId);
-    return housesDao
-        .getHouse(houseGroup)
+    ByteString sanctuaryGroup = ByteString.copyFrom(sanctuaryGroupId);
+    return sanctuariesDao
+        .getSanctuary(sanctuaryGroup)
         .thenApply(
-            houseOpt ->
-                houseOpt.map(
-                    house -> {
-                      house.setSupportContactId(houseAttributes.getSupportContactId().toString());
-                      house.setHouseEnabled(houseAttributes.isHouseEnabled());
-                      return house;
+            sanctuaryOpt ->
+                sanctuaryOpt.map(
+                    sanctuary -> {
+                      sanctuary.setSupportContactId(sanctuaryAttributes.getSupportContactId().toString());
+                      sanctuary.setSanctuaryEnabled(sanctuaryAttributes.isSanctuaryEnabled());
+                      return sanctuary;
                     }))
         .thenCompose(
-            houseOpt ->
-                houseOpt
-                    .map(houseItem -> housesDao.updateHouse(houseItem).thenApply(unused -> true))
+            sanctuaryOpt ->
+                sanctuaryOpt
+                    .map(sanctuaryItem -> sanctuariesDao.updateSanctuary(sanctuaryItem).thenApply(unused -> true))
                     .orElse(CompletableFuture.completedFuture(false)))
         .thenApply(
             success ->
@@ -133,35 +133,35 @@ public class HouseController {
 
   @Timed
   @GET
-  @Path("/{houseGroupId}")
-  public CompletableFuture<Response> getHouse(
-      @Auth User user, @PathParam("houseGroupId") String houseGroupIdBase64) {
-    byte[] houseGroupId;
+  @Path("/{sanctuaryGroupId}")
+  public CompletableFuture<Response> getSanctuary(
+      @Auth User user, @PathParam("sanctuaryGroupId") String sanctuaryGroupIdBase64) {
+    byte[] sanctuaryGroupId;
     try {
-      houseGroupId = Base64.decodeBase64(houseGroupIdBase64);
+      sanctuaryGroupId = Base64.decodeBase64(sanctuaryGroupIdBase64);
     } catch (IllegalArgumentException e) {
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.BAD_REQUEST).build());
     }
 
-    if (rateLimitHouse(houseGroupIdBase64))
+    if (rateLimitSanctuary(sanctuaryGroupIdBase64))
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.TOO_MANY_REQUESTS).build());
 
-    return housesDao
-        .getHouse(ByteString.copyFrom(houseGroupId))
+    return sanctuariesDao
+        .getSanctuary(ByteString.copyFrom(sanctuaryGroupId))
         .thenApply(
-            houseItem -> {
-              if (houseItem.isEmpty()) {
+            sanctuaryItem -> {
+              if (sanctuaryItem.isEmpty()) {
                 return Response.status(Response.Status.NOT_FOUND).build();
               }
               return Response.ok().build();
             });
   }
 
-  private boolean rateLimitHouse(String houseGroupIdBase64) {
+  private boolean rateLimitSanctuary(String sanctuaryGroupIdBase64) {
     try {
-      rateLimiters.getHouseLookupLimiter().validate(houseGroupIdBase64);
+      rateLimiters.getSanctuaryLookupLimiter().validate(sanctuaryGroupIdBase64);
     } catch (RateLimitExceededException e) {
       return true;
     }
@@ -169,6 +169,6 @@ public class HouseController {
   }
 
   private boolean isAllowedToDeploy(User user) {
-    return emailAddressesAllowedToDeployHouse.contains(user.getUuid());
+    return emailAddressesAllowedToDeploySanctuary.contains(user.getUuid());
   }
 }

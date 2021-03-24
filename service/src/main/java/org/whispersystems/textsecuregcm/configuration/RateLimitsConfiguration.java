@@ -84,7 +84,7 @@ public class RateLimitsConfiguration {
   private RateLimitConfiguration connectWebSocket = new RateLimitConfiguration(2, 2);
 
   @JsonProperty
-  private RateLimitConfiguration houseLookup = new RateLimitConfiguration(60, 60);
+  private RateLimitConfiguration sanctuaryLookup = new RateLimitConfiguration(60, 60);
 
   public RateLimitConfiguration getAutoBlock() {
     return autoBlock;
@@ -170,8 +170,8 @@ public class RateLimitsConfiguration {
     return connectWebSocket;
   }
 
-  public RateLimitConfiguration getHouseLookup() {
-    return houseLookup;
+  public RateLimitConfiguration getSanctuaryLookup() {
+    return sanctuaryLookup;
   }
 
   public static class RateLimitConfiguration {

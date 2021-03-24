@@ -27,7 +27,7 @@ import java.security.Principal;
 
 /**
  * Authorizes both the account <tt>Authorization</tt> header and the group {@value
- * RoleAuthorizationHeader#ROLE_AUTHORIZATION_HEADER} header. Eventually it will authorize the house
+ * RoleAuthorizationHeader#ROLE_AUTHORIZATION_HEADER} header. Eventually it will authorize the sanctuary
  * header.
  *
  * <p>Merges {@link io.dropwizard.auth.oauth.OAuthCredentialAuthFilter} for the

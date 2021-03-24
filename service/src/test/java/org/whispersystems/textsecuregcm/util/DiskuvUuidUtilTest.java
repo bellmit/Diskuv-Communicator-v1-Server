@@ -30,12 +30,12 @@ public class DiskuvUuidUtilTest {
     }
 
     @Test
-    public void givenEmailAddressAndHouseToken__whenUuidForHouseEmailAddress__thenUUID4() {
+    public void givenEmailAddressAndSanctuaryToken__whenUuidForSanctuaryEmailAddress__thenUUID4() {
         // given: email address
         String emailAddress = "trees@yahoo.com";
-        byte[] houseToken = new byte[32];
+        byte[] sanctuaryToken = new byte[32];
         // when
-        UUID   uuid       = DiskuvUuidUtil.uuidForHouseEmailAddress(emailAddress, houseToken);
+        UUID   uuid       = DiskuvUuidUtil.uuidForSanctuaryEmailAddress(emailAddress, sanctuaryToken);
         // then: UUID version 4
         assertThat(uuid.version()).isEqualTo(4);
         // then: variant 1 (IETF variant, which is 10 in binary)

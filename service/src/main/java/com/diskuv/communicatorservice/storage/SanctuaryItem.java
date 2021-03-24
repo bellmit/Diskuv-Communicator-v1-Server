@@ -20,36 +20,36 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
 @DynamoDbBean
-public class HouseItem {
-  static final TableSchema<HouseItem> HOUSE_TABLE_SCHEMA = TableSchema.fromClass(HouseItem.class);
-  static final String ATTRIBUTE_GROUP_ID = "houseGroupId";
+public class SanctuaryItem {
+  static final TableSchema<SanctuaryItem> HOUSE_TABLE_SCHEMA = TableSchema.fromClass(SanctuaryItem.class);
+  static final String ATTRIBUTE_GROUP_ID = "sanctuaryGroupId";
   static final String ATTRIBUTE_OPTIMISTIC_LOCK_VERSION = "lockVersion";
-  static final String ATTRIBUTE_HOUSE_ENABLED = "houseEnabled";
+  static final String ATTRIBUTE_HOUSE_ENABLED = "sanctuaryEnabled";
   static final String ATTRIBUTE_SUPPORT_USER_ID = "supportUserId";
 
-  private byte[]  houseGroupId;
+  private byte[]  sanctuaryGroupId;
   private Integer optimisticLockVersion;
-  private boolean houseEnabled;
+  private boolean sanctuaryEnabled;
   private String supportContactId;
 
   @Override
-  protected HouseItem clone() {
-    HouseItem item = new HouseItem();
-    item.setHouseGroupId(houseGroupId.clone());
+  protected SanctuaryItem clone() {
+    SanctuaryItem item = new SanctuaryItem();
+    item.setSanctuaryGroupId(sanctuaryGroupId.clone());
     item.setOptimisticLockVersion(optimisticLockVersion);
-    item.setHouseEnabled(houseEnabled);
+    item.setSanctuaryEnabled(sanctuaryEnabled);
     item.setSupportContactId(supportContactId);
     return item;
   }
 
   @DynamoDbPartitionKey
   @DynamoDbAttribute(ATTRIBUTE_GROUP_ID)
-  public byte[] getHouseGroupId() {
-    return this.houseGroupId;
+  public byte[] getSanctuaryGroupId() {
+    return this.sanctuaryGroupId;
   }
 
-  public void setHouseGroupId(byte[] houseGroupId) {
-    this.houseGroupId = houseGroupId;
+  public void setSanctuaryGroupId(byte[] sanctuaryGroupId) {
+    this.sanctuaryGroupId = sanctuaryGroupId;
   }
 
   @DynamoDbVersionAttribute
@@ -63,17 +63,17 @@ public class HouseItem {
   }
 
   @DynamoDbAttribute(ATTRIBUTE_HOUSE_ENABLED)
-  public boolean isHouseEnabled() {
-    return houseEnabled;
+  public boolean isSanctuaryEnabled() {
+    return sanctuaryEnabled;
   }
 
-  public void setHouseEnabled(boolean houseEnabled) {
-    this.houseEnabled = houseEnabled;
+  public void setSanctuaryEnabled(boolean sanctuaryEnabled) {
+    this.sanctuaryEnabled = sanctuaryEnabled;
   }
 
   /**
    * The user id who should be contacted for any support requests made by people outside of the
-   * house.
+   * sanctuary.
    */
   @DynamoDbAttribute(ATTRIBUTE_SUPPORT_USER_ID)
   public String getSupportContactId() {

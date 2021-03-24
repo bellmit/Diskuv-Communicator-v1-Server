@@ -1,8 +1,8 @@
 package com.diskuv.communicatorservice.controllers;
 
-import com.diskuv.communicatorservice.storage.HouseAttributes;
-import com.diskuv.communicatorservice.storage.HouseItem;
-import com.diskuv.communicatorservice.storage.HousesDao;
+import com.diskuv.communicatorservice.storage.SanctuaryAttributes;
+import com.diskuv.communicatorservice.storage.SanctuaryItem;
+import com.diskuv.communicatorservice.storage.SanctuariesDao;
 import com.diskuv.communicatorservice.storage.configuration.DiskuvGroupsConfiguration;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
@@ -30,7 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-public class HouseControllerTest {
+public class SanctuaryControllerTest {
 
   private RateLimiters rateLimiters;
 
@@ -38,23 +38,23 @@ public class HouseControllerTest {
   public void setUp() {
     RateLimiter rateLimiter = mock(RateLimiter.class);
     this.rateLimiters = mock(RateLimiters.class);
-    doReturn(rateLimiter).when(rateLimiters).getHouseLookupLimiter();
+    doReturn(rateLimiter).when(rateLimiters).getSanctuaryLookupLimiter();
   }
 
   @Test
-  public void given_noEmailAddressesAllowedToDeployHouse_when_createHouse_then_unauthorized() {
+  public void given_noEmailAddressesAllowedToDeploySanctuary_when_createSanctuary_then_unauthorized() {
     // given
     DiskuvGroupsConfiguration diskuvGroupsConfiguration = new DiskuvGroupsConfiguration();
 
     // when
     DynamoDbAsyncClient asyncClient = mock(DynamoDbAsyncClient.class);
-    HouseController controller =
-        new HouseController(asyncClient, diskuvGroupsConfiguration, rateLimiters);
+    SanctuaryController controller =
+        new SanctuaryController(asyncClient, diskuvGroupsConfiguration, rateLimiters);
     User user = new User(UUID.randomUUID());
-    String houseGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
-    HouseAttributes houseAttributes = new HouseAttributes();
+    String sanctuaryGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
+    SanctuaryAttributes sanctuaryAttributes = new SanctuaryAttributes();
     CompletableFuture<Response> future =
-        controller.createHouse(user, houseGroupIdBase64, houseAttributes);
+        controller.createSanctuary(user, sanctuaryGroupIdBase64, sanctuaryAttributes);
 
     // then
     Response response = future.join();
@@ -64,11 +64,11 @@ public class HouseControllerTest {
 
   @Test
   public void
-      given_oneEmailAddressAllowedToDeployHouse_when_createHouse_withAllowedEmail_then_authorized() {
+      given_oneEmailAddressAllowedToDeploySanctuary_when_createSanctuary_withAllowedEmail_then_authorized() {
     // given
     DiskuvGroupsConfiguration diskuvGroupsConfiguration = new DiskuvGroupsConfiguration();
     String allowedEmailAddress = "test@test.com";
-    diskuvGroupsConfiguration.setEmailAddressesAllowedToDeployHouse(
+    diskuvGroupsConfiguration.setEmailAddressesAllowedToDeploySanctuary(
         ImmutableList.of(allowedEmailAddress));
 
     // when
@@ -76,14 +76,14 @@ public class HouseControllerTest {
     doReturn(CompletableFuture.completedFuture(PutItemResponse.builder().build()))
         .when(asyncClient)
         .putItem(any(PutItemRequest.class));
-    HouseController controller =
-        new HouseController(asyncClient, diskuvGroupsConfiguration, rateLimiters);
+    SanctuaryController controller =
+        new SanctuaryController(asyncClient, diskuvGroupsConfiguration, rateLimiters);
     User user = new User(DiskuvUuidUtil.uuidForOutdoorEmailAddress(allowedEmailAddress));
-    String houseGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
+    String sanctuaryGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
     UUID supportContactId = UUID.randomUUID();
-    HouseAttributes houseAttributes = new HouseAttributes(supportContactId);
+    SanctuaryAttributes sanctuaryAttributes = new SanctuaryAttributes(supportContactId);
     CompletableFuture<Response> future =
-        controller.createHouse(user, houseGroupIdBase64, houseAttributes);
+        controller.createSanctuary(user, sanctuaryGroupIdBase64, sanctuaryAttributes);
 
     // then
     Response response = future.join();
@@ -91,11 +91,11 @@ public class HouseControllerTest {
   }
 
   @Test
-  public void given_noHouses_when_updateHouse_then_notFound() {
+  public void given_noSanctuaries_when_updateSanctuary_then_notFound() {
     // given
     DiskuvGroupsConfiguration diskuvGroupsConfiguration = new DiskuvGroupsConfiguration();
     String allowedEmailAddress = "test@test.com";
-    diskuvGroupsConfiguration.setEmailAddressesAllowedToDeployHouse(
+    diskuvGroupsConfiguration.setEmailAddressesAllowedToDeploySanctuary(
         ImmutableList.of(allowedEmailAddress));
 
     // when
@@ -106,14 +106,14 @@ public class HouseControllerTest {
     doReturn(CompletableFuture.completedFuture(PutItemResponse.builder().build()))
         .when(asyncClient)
         .putItem(any(PutItemRequest.class));
-    HouseController controller =
-        new HouseController(asyncClient, diskuvGroupsConfiguration, rateLimiters);
+    SanctuaryController controller =
+        new SanctuaryController(asyncClient, diskuvGroupsConfiguration, rateLimiters);
     User user = new User(DiskuvUuidUtil.uuidForOutdoorEmailAddress(allowedEmailAddress));
-    String houseGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
+    String sanctuaryGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
     UUID supportContactId = UUID.randomUUID();
-    HouseAttributes houseAttributes = new HouseAttributes(supportContactId);
+    SanctuaryAttributes sanctuaryAttributes = new SanctuaryAttributes(supportContactId);
     CompletableFuture<Response> future =
-        controller.updateHouse(user, houseGroupIdBase64, houseAttributes);
+        controller.updateSanctuary(user, sanctuaryGroupIdBase64, sanctuaryAttributes);
 
     // then
     Response response = future.join();
@@ -122,29 +122,29 @@ public class HouseControllerTest {
   }
 
   @Test
-  public void given_oneHouse_when_updateHouse_then_ok() {
+  public void given_oneSanctuary_when_updateSanctuary_then_ok() {
     // given
     DiskuvGroupsConfiguration diskuvGroupsConfiguration = new DiskuvGroupsConfiguration();
     String allowedEmailAddress = "test@test.com";
-    diskuvGroupsConfiguration.setEmailAddressesAllowedToDeployHouse(
+    diskuvGroupsConfiguration.setEmailAddressesAllowedToDeploySanctuary(
         ImmutableList.of(allowedEmailAddress));
 
     // when
-    HousesDao housesDao = mock(HousesDao.class);
-    doReturn(CompletableFuture.completedFuture(Optional.of(new HouseItem())))
-        .when(housesDao)
-        .getHouse(any(ByteString.class));
+    SanctuariesDao sanctuariesDao = mock(SanctuariesDao.class);
+    doReturn(CompletableFuture.completedFuture(Optional.of(new SanctuaryItem())))
+        .when(sanctuariesDao)
+        .getSanctuary(any(ByteString.class));
     doReturn(CompletableFuture.completedFuture(null))
-        .when(housesDao)
-        .updateHouse(any(HouseItem.class));
-    HouseController controller =
-        new HouseController(housesDao, diskuvGroupsConfiguration, rateLimiters);
+        .when(sanctuariesDao)
+        .updateSanctuary(any(SanctuaryItem.class));
+    SanctuaryController controller =
+        new SanctuaryController(sanctuariesDao, diskuvGroupsConfiguration, rateLimiters);
     User user = new User(DiskuvUuidUtil.uuidForOutdoorEmailAddress(allowedEmailAddress));
-    String houseGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
+    String sanctuaryGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
     UUID supportContactId = UUID.randomUUID();
-    HouseAttributes houseAttributes = new HouseAttributes(supportContactId);
+    SanctuaryAttributes sanctuaryAttributes = new SanctuaryAttributes(supportContactId);
     CompletableFuture<Response> future =
-        controller.updateHouse(user, houseGroupIdBase64, houseAttributes);
+        controller.updateSanctuary(user, sanctuaryGroupIdBase64, sanctuaryAttributes);
 
     // then
     Response response = future.join();
@@ -152,21 +152,21 @@ public class HouseControllerTest {
   }
 
   @Test
-  public void given_oneHouse_when_getHouse_then_ok() {
+  public void given_oneSanctuary_when_getSanctuary_then_ok() {
     // given
     DiskuvGroupsConfiguration diskuvGroupsConfiguration = new DiskuvGroupsConfiguration();
-    HouseItem oneHouse = new HouseItem();
+    SanctuaryItem oneSanctuary = new SanctuaryItem();
 
     // when
-    HousesDao housesDao = mock(HousesDao.class);
-    doReturn(CompletableFuture.completedFuture(Optional.of(oneHouse)))
-        .when(housesDao)
-        .getHouse(any(ByteString.class));
-    HouseController controller =
-        new HouseController(housesDao, diskuvGroupsConfiguration, rateLimiters);
+    SanctuariesDao sanctuariesDao = mock(SanctuariesDao.class);
+    doReturn(CompletableFuture.completedFuture(Optional.of(oneSanctuary)))
+        .when(sanctuariesDao)
+        .getSanctuary(any(ByteString.class));
+    SanctuaryController controller =
+        new SanctuaryController(sanctuariesDao, diskuvGroupsConfiguration, rateLimiters);
     User user = new User(DiskuvUuidUtil.uuidForOutdoorEmailAddress("blah@test.com"));
-    String houseGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
-    CompletableFuture<Response> future = controller.getHouse(user, houseGroupIdBase64);
+    String sanctuaryGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
+    CompletableFuture<Response> future = controller.getSanctuary(user, sanctuaryGroupIdBase64);
 
     // then
     Response response = future.join();

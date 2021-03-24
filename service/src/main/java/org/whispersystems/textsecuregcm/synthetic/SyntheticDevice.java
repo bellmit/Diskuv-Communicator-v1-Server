@@ -64,7 +64,7 @@ public class SyntheticDevice implements PossiblySyntheticDevice {
   public Optional<PreKey> generateUniqueSyntheticPreKey() {
     // confer: com.diskuv.communicator.crypto.PreKeyUtil#generatePreKeys
     // confer: org.whispersystems.signalservice.internal.push.PreKeyEntity.ECPublicKeySerializer
-    int preKeyId           = new SecureRandom().nextInt() % MEDIUM_MAX_VALUE;
+    int preKeyId           = new SecureRandom().nextInt(MEDIUM_MAX_VALUE);
     ECKeyPair keyPair      = Curve.generateKeyPair();
     String preKeyPublicKey = Base64.encodeBytesWithoutPadding(keyPair.getPublicKey().serialize());
     return Optional.of(new PreKey(preKeyId, preKeyPublicKey));

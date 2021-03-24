@@ -29,15 +29,15 @@ import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
 import com.diskuv.communicatorservice.auth.DiskuvRoleCredentialAuthFilter;
 import com.diskuv.communicatorservice.auth.DiskuvRoleCredentials;
 import com.diskuv.communicatorservice.auth.JwtAuthentication;
-import com.diskuv.communicatorservice.controllers.HouseController;
+import com.diskuv.communicatorservice.controllers.SanctuaryController;
 import com.diskuv.communicatorservice.storage.GroupChangeCache;
 import com.diskuv.communicatorservice.storage.GroupLogDao;
 import com.diskuv.communicatorservice.storage.GroupsDao;
-import com.diskuv.communicatorservice.storage.HousesDao;
+import com.diskuv.communicatorservice.storage.SanctuariesDao;
 import com.diskuv.communicatorservice.storage.clients.AwsClientFactory;
 import com.diskuv.communicatorservice.storage.command.CreateTableGroupLogCommand;
 import com.diskuv.communicatorservice.storage.command.CreateTableGroupsCommand;
-import com.diskuv.communicatorservice.storage.command.CreateTableHousesCommand;
+import com.diskuv.communicatorservice.storage.command.CreateTableSanctuariesCommand;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -179,7 +179,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     // [Diskuv Change] Add command to create DynamoDB tables
     bootstrap.addCommand(new CreateTableGroupsCommand());
     bootstrap.addCommand(new CreateTableGroupLogCommand());
-    bootstrap.addCommand(new CreateTableHousesCommand());
+    bootstrap.addCommand(new CreateTableSanctuariesCommand());
   }
 
   @Override
@@ -385,9 +385,9 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     GroupsDao           groupsDao        = new GroupsDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupsTableName(), config.getDiskuvGroupsConfiguration().getChecksumSharedKey());
     GroupLogDao         groupLogDao      = new GroupLogDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupLogTableName(), Optional.of(groupChangeCache));
 
-    // [Diskuv Change] Diskuv Houses
-    HousesDao housesDao = new HousesDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getHouseTableName());
-    environment.jersey().register(new HouseController(housesDao, config.getDiskuvGroupsConfiguration(), rateLimiters));
+    // [Diskuv Change] Diskuv Sanctuaries
+    SanctuariesDao sanctuariesDao = new SanctuariesDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getSanctuaryTableName());
+    environment.jersey().register(new SanctuaryController(sanctuariesDao, config.getDiskuvGroupsConfiguration(), rateLimiters));
 
     // [Diskuv Change] Probe backends at startup. NEVER probe backends using a same machine probe (ie. internal health check) because
     // doing so can cause a simultaneous fleet wide outage. Instead, probing at startup lets us fail deployments that
@@ -396,7 +396,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     // REST api will only be called from an external machine, and only one machine will be accessed each external
     // health check period.
     SecureRandom            secureRandom = new SecureRandom();
-    CompletableFuture<Void> p1           = housesDao.startupProbe(secureRandom);
+    CompletableFuture<Void> p1           = sanctuariesDao.startupProbe(secureRandom);
     CompletableFuture<Void> p2           = groupsDao.startupProbe(secureRandom);
     CompletableFuture<Void> p3           = groupLogDao.startupProbe(secureRandom);
     CompletableFuture.allOf(p1, p2, p3).join();
