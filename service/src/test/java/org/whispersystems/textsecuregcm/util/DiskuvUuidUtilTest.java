@@ -13,6 +13,65 @@ public class DiskuvUuidUtilTest {
     public ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
+    public void givenTypicalEmailAddress__whenVerifyAndNormalizeEmailAddress__thenOk() {
+        // given
+        String emailAddress = "trees@yahoo.com";
+        // when / then ok
+        DiskuvUuidUtil.verifyEmailAddress(emailAddress);
+    }
+
+    @Test
+    public void givenQuotedEmailAddress__whenVerifyAndNormalizeEmailAddress__thenOk() {
+        // given
+        String emailAddress = "\"trees@are@all@right\"@yahoo.com";
+        // when / then ok
+        DiskuvUuidUtil.verifyEmailAddress(emailAddress);
+    }
+
+    @Test
+    public void givenQuotedEmailAddressWithNoDotInDomain__whenVerifyAndNormalizeEmailAddress__thenFail() {
+        // given
+        String emailAddress = "\"trees@are@all@right\"@yahoo";
+        // when / then fail
+        exceptionRule.expect(IllegalArgumentException.class);
+        DiskuvUuidUtil.verifyEmailAddress(emailAddress);
+    }
+
+    @Test
+    public void givenInternationalAddress__whenVerifyAndNormalizeEmailAddress__thenOk() {
+        // given
+        String emailAddress = "\u03C7\u03C1\u03AE\u03C3\u03C4\u03B7\u03C2@\u03C0\u03B1\u03C1\u03AC\u03B4\u03B5\u03B9\u03B3\u03BC\u03B1.\u03B5\u03BB";
+        // when / then ok
+        DiskuvUuidUtil.verifyEmailAddress(emailAddress);
+    }
+
+    @Test
+    public void givenInternationalizedDomainName__whenVerifyAndNormalizeEmailAddress__thenOk() {
+        // given
+        String emailAddress = "trees@xn--mller-brombel-rmb4fg.de";
+        // when / then ok
+        DiskuvUuidUtil.verifyEmailAddress(emailAddress);
+    }
+
+    @Test
+    public void givenUucpEmailAddress__whenVerifyAndNormalizeEmailAddress__thenFail() {
+        // given
+        String emailAddress = "bob!alice@example.org";
+        // when / then fail
+        exceptionRule.expect(IllegalArgumentException.class);
+        DiskuvUuidUtil.verifyEmailAddress(emailAddress);
+    }
+
+    @Test
+    public void givenQuotedEmailAddressWithSpace__whenVerifyAndNormalizeEmailAddress__thenFail() {
+        // given
+        String emailAddress = "\"alice bob\"@example.org";
+        // when / then fail
+        exceptionRule.expect(IllegalArgumentException.class);
+        DiskuvUuidUtil.verifyEmailAddress(emailAddress);
+    }
+
+    @Test
     public void givenEmailAddress__whenUuidForOutdoorEmailAddress__thenUUID4() {
         // given: email address
         String emailAddress = "trees@yahoo.com";
@@ -32,10 +91,10 @@ public class DiskuvUuidUtilTest {
     @Test
     public void givenEmailAddressAndSanctuaryToken__whenUuidForSanctuaryEmailAddress__thenUUID4() {
         // given: email address
-        String emailAddress = "trees@yahoo.com";
+        String emailAddress   = "trees@yahoo.com";
         byte[] sanctuaryToken = new byte[32];
         // when
-        UUID   uuid       = DiskuvUuidUtil.uuidForSanctuaryEmailAddress(emailAddress, sanctuaryToken);
+        UUID uuid = DiskuvUuidUtil.uuidForSanctuaryEmailAddress(emailAddress, sanctuaryToken);
         // then: UUID version 4
         assertThat(uuid.version()).isEqualTo(4);
         // then: variant 1 (IETF variant, which is 10 in binary)
