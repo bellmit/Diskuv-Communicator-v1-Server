@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import javax.validation.Valid;
 import javax.validation.valueextraction.Unwrapping;
@@ -21,9 +22,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.StringUtils;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.VerificationFailedException;
 import org.signal.zkgroup.profiles.ProfileKeyCommitment;
@@ -44,6 +47,9 @@ import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.s3.PolicySigner;
 import org.whispersystems.textsecuregcm.s3.PostPolicyGenerator;
 import org.whispersystems.textsecuregcm.storage.Account;
+import org.whispersystems.textsecuregcm.storage.AccountsManager;
+import org.whispersystems.textsecuregcm.storage.DynamicConfigurationManager;
+import org.whispersystems.textsecuregcm.storage.ProfilesManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
 import org.whispersystems.textsecuregcm.storage.VersionedProfile;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount;
@@ -51,6 +57,7 @@ import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManag
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticProfilesManager;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticVersionedProfile;
 import org.whispersystems.textsecuregcm.util.Pair;
+import org.whispersystems.textsecuregcm.util.Util;
 
 import java.util.Collections;
 import java.util.function.Consumer;
@@ -65,6 +72,7 @@ public class ProfileController {
   private final PossiblySyntheticProfilesManager profilesManager;
   private final PossiblySyntheticAccountsManager accountsManager;
   private final UsernamesManager usernamesManager;
+  private final DynamicConfigurationManager dynamicConfigurationManager;
 
   private final PolicySigner              policySigner;
   private final PostPolicyGenerator       policyGenerator;
@@ -75,20 +83,22 @@ public class ProfileController {
   private final String              bucket;
 
   public ProfileController(RateLimiters rateLimiters,
-                           PossiblySyntheticAccountsManager accountsManager,
-                           PossiblySyntheticProfilesManager profilesManager,
-                           UsernamesManager usernamesManager,
-                           AmazonS3 s3client,
-                           PostPolicyGenerator policyGenerator,
-                           PolicySigner policySigner,
-                           String bucket,
-                           ServerZkProfileOperations zkProfileOperations,
-                           boolean isZkEnabled)
+      PossiblySyntheticAccountsManager accountsManager,
+      PossiblySyntheticProfilesManager profilesManager,
+      UsernamesManager usernamesManager,
+      DynamicConfigurationManager dynamicConfigurationManager,
+      AmazonS3 s3client,
+      PostPolicyGenerator policyGenerator,
+      PolicySigner policySigner,
+      String bucket,
+      ServerZkProfileOperations zkProfileOperations,
+      boolean isZkEnabled)
   {
     this.rateLimiters        = rateLimiters;
     this.accountsManager     = accountsManager;
     this.profilesManager     = profilesManager;
     this.usernamesManager    = usernamesManager;
+    this.dynamicConfigurationManager = dynamicConfigurationManager;
     this.zkProfileOperations = zkProfileOperations;
     this.bucket              = bucket;
     this.s3client            = s3client;
