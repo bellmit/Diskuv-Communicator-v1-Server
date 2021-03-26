@@ -1,25 +1,23 @@
 package org.whispersystems.textsecuregcm.synthetic;
 
+import com.google.common.base.Preconditions;
+import com.google.protobuf.ByteString;
 import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.random.RandomGeneratorFactory;
-import org.whispersystems.curve25519.Curve25519;
-import org.whispersystems.curve25519.SecureRandomProvider;
+import org.whispersystems.libsignal.InvalidKeyException;
+import org.whispersystems.libsignal.ecc.Curve;
+import org.whispersystems.libsignal.ecc.ECKeyPair;
+import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.textsecuregcm.controllers.DeviceController;
-import org.whispersystems.textsecuregcm.crypto.DjbECPrivateKey;
-import org.whispersystems.textsecuregcm.crypto.ECPrivateKey;
-import org.whispersystems.textsecuregcm.crypto.ECPublicKey;
 import org.whispersystems.textsecuregcm.entities.SignedPreKey;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.util.Base64;
-import org.whispersystems.textsecuregcm.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import static org.whispersystems.curve25519.Curve25519.BEST;
 
 /**
  * We want a deterministic response since a real account involves a database that has persisted
@@ -66,8 +64,8 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
   private final PoissonDistribution realDevicesPerAccountDistribution;
 
   private final DeterministicSampling sampling;
-  private final String identityKey;
-  private final ECPrivateKey identityPrivateKey;
+  private final String                        identityKey;
+  private final ECKeyPair                     identityKeyPair;
   private final List<PossiblySyntheticDevice> devices;
 
   public SyntheticAccount(byte[] sharedEntropyInput, UUID accountUuid) {
@@ -92,9 +90,8 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
 
     // Make identity key
     // Confer: org.whispersystems.signalservice.internal.util.JsonUtil.IdentityKeySerializer
-    Pair<ECPublicKey, ECPrivateKey> identityKeyPair = makeKeyPair(DISCRIMINATOR_IDENTITY_KEY);
-    this.identityKey = Base64.encodeBytesWithoutPadding(identityKeyPair.first().serialize());
-    this.identityPrivateKey = identityKeyPair.second();
+    identityKeyPair = makeKeyPair(DISCRIMINATOR_IDENTITY_KEY);
+    this.identityKey = Base64.encodeBytesWithoutPadding(identityKeyPair.getPublicKey().serialize());
 
     // Make devices
     this.devices = makeDevices();
@@ -213,34 +210,32 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
   private SignedPreKey makeSignedPreKey(long deviceId) {
     // confer: com.diskuv.communicator.crypto.PreKeyUtil#generateSignedPreKey
     // confer: org.whispersystems.signalservice.api.push.SignedPreKeyEntity.ByteArraySerializer
+
     long signedPreKeyId =
         sampling.deterministicSampledIntInRange(
             DISCRIMINATOR_SIGNED_PRE_KEY_ID + deviceId, 0, MEDIUM_MAX_VALUE);
-    Pair<ECPublicKey, ECPrivateKey> signedPreKeyKeyPair =
+    ECKeyPair signedPreKeyKeyPair =
         makeKeyPair(DISCRIMINATOR_SIGNED_PRE_KEY_KEYPAIR + deviceId);
-    ECPublicKey signedPreKeyPublicKey = signedPreKeyKeyPair.first();
-    byte[] message = signedPreKeyPublicKey.serialize();
-    String signedPreKeyPublicKeyEncoded = Base64.encodeBytesWithoutPadding(message);
-    byte[] signatureBytes =
-        Curve25519.getInstance(
-                BEST,
-                new SecureRandomProvider() {
-                  @Override
-                  public void nextBytes(byte[] output) {
-                    profileState.getRandom().nextBytes(output);
-                  }
+    ECPublicKey signedPreKeyPublicKey = signedPreKeyKeyPair.getPublicKey();
+    byte[] signedPreKeyPublicKeyBytesWithType = signedPreKeyPublicKey.serialize();
+    byte[] signedPreKeyPublicKeyBytes = ByteString.copyFrom(signedPreKeyPublicKeyBytesWithType).substring(1).toByteArray();
+    Preconditions.checkState(signedPreKeyPublicKeyBytesWithType[0] == (byte) Curve.DJB_TYPE);
+    Preconditions.checkState(signedPreKeyPublicKeyBytes.length == 32);
 
-                  @Override
-                  public int nextInt(int maxValue) {
-                    return profileState.getRandom().nextInt(maxValue);
-                  }
-                })
-            .calculateSignature(((DjbECPrivateKey) identityPrivateKey).getPrivateKey(), message);
+    byte[] signatureBytes;
+    try {
+      signatureBytes = Curve.calculateSignature(
+              identityKeyPair.getPrivateKey(), signedPreKeyPublicKeyBytesWithType);
+    } catch (InvalidKeyException e) {
+      throw new IllegalStateException(e);
+    }
+
     String signature = Base64.encodeBytesWithoutPadding(signatureBytes);
+    String signedPreKeyPublicKeyEncoded = Base64.encodeBytesWithoutPadding(signedPreKeyPublicKeyBytesWithType);
     return new SignedPreKey(signedPreKeyId, signedPreKeyPublicKeyEncoded, signature);
   }
 
-  private Pair<ECPublicKey, ECPrivateKey> makeKeyPair(String discriminator) {
+  private ECKeyPair makeKeyPair(String discriminator) {
     return sampling.deterministicSampledKeyPair(discriminator);
   }
 }

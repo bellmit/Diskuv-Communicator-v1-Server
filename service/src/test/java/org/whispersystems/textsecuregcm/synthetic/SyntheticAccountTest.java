@@ -1,9 +1,16 @@
 package org.whispersystems.textsecuregcm.synthetic;
 
+import com.google.protobuf.ByteString;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
+import org.whispersystems.curve25519.Curve25519;
+import org.whispersystems.libsignal.InvalidKeyException;
+import org.whispersystems.libsignal.ecc.Curve;
+import org.whispersystems.libsignal.ecc.ECPublicKey;
+import org.whispersystems.textsecuregcm.util.Base64;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
+import java.io.IOException;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,6 +18,44 @@ import static org.whispersystems.textsecuregcm.synthetic.SyntheticProfileStateTe
 
 public class SyntheticAccountTest {
   private static final UUID UUID2 = DiskuvUuidUtil.uuidForOutdoorEmailAddress("mistle-finger@equator.com");
+
+  @Test
+  public void testSignatureWithCurve25519() throws IOException {
+    SyntheticAccount account =
+            new SyntheticAccount(new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES], UUID1);
+    Curve25519 curve25519 = Curve25519.getInstance(Curve25519.JAVA);
+    PossiblySyntheticDevice device = account.getDevices().iterator().next();
+
+    byte[]     identityPublicKeyWithType  = Base64.decodeWithoutPadding(account.getIdentityKey());
+    assertThat(identityPublicKeyWithType[0]).isEqualTo((byte) org.whispersystems.textsecuregcm.crypto.Curve.DJB_TYPE);
+    byte[] identityPublicKey = ByteString.copyFrom(identityPublicKeyWithType).substring(1).toByteArray();
+
+    byte[]     signedPreKeyPublic = Base64.decodeWithoutPadding(device.getSignedPreKey().getPublicKey());
+
+    byte[] signedPreKeySignature = Base64.decodeWithoutPadding(device.getSignedPreKey().getSignature());
+
+    boolean valid = curve25519.verifySignature(identityPublicKey, signedPreKeyPublic, signedPreKeySignature);
+    assertThat(valid).isTrue();
+  }
+
+  @Test
+  public void testSignatureWithCurveFromSignalClientJava() throws IOException, InvalidKeyException {
+    SyntheticAccount account =
+            new SyntheticAccount(new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES], UUID1);
+    PossiblySyntheticDevice device = account.getDevices().iterator().next();
+
+    byte[]     identityPublicKeyWithType  = Base64.decodeWithoutPadding(account.getIdentityKey());
+    assertThat(identityPublicKeyWithType[0]).isEqualTo((byte) org.whispersystems.libsignal.ecc.Curve.DJB_TYPE);
+    // UNUSED:   byte[] identityPublicKey = ByteString.copyFrom(identityPublicKeyWithType).substring(1).toByteArray();
+
+    byte[]     signedPreKeyPublic = Base64.decodeWithoutPadding(device.getSignedPreKey().getPublicKey());
+
+    byte[] signedPreKeySignature = Base64.decodeWithoutPadding(device.getSignedPreKey().getSignature());
+
+    ECPublicKey signingKey = Curve.decodePoint(identityPublicKeyWithType, 0);
+    boolean     valid      = org.whispersystems.libsignal.ecc.Curve.verifySignature(signingKey, signedPreKeyPublic, signedPreKeySignature);
+    assertThat(valid).isTrue();
+  }
 
   @Test
   public void testStability1() {
@@ -22,7 +67,7 @@ public class SyntheticAccountTest {
     assertThat(account.isEnabled()).isTrue();
     assertThat(account.isGroupsV2Supported()).isFalse();
     assertThat(account.isUnrestrictedUnidentifiedAccess()).isFalse();
-    assertThat(account.getIdentityKey()).isEqualTo("BbbkXgRclvWMPrhGBD05L7yTy30oMrJ0TRBlGlVxVMY7");
+    assertThat(account.getIdentityKey()).isEqualTo("BQcixKf7KQvA5DZ4szVqiy9cP41U5MTboJFv0l51mL0T");
 
     assertThat(account.getUnidentifiedAccessKey()).isNotPresent();
     assertThat(account.getDevices()).hasSize(1);
@@ -37,11 +82,11 @@ public class SyntheticAccountTest {
               softly.assertThat(device.getSignedPreKey().getKeyId()).isEqualTo(8482700L);
               softly
                   .assertThat(device.getSignedPreKey().getPublicKey())
-                  .isEqualTo("BQv4wsQba0lqiLhfwBndAoq8jj0gohiWEZEaYMDNj6MP");
+                  .isEqualTo("BR9Pd+757dGPP1YQog6VmJuxaji2yhal8sEf3Gopk7oT");
               softly
                   .assertThat(device.getSignedPreKey().getSignature())
-                  .isEqualTo(
-                      "/rksEnntgQibQ3FdH3LcHyxHdmuCU3p82e+xKGDbu8F7l4UxGy/j2MXmSjA4AdodFC5xMziphb7Sse0wh41Bgg");
+                  .hasSameSizeAs( // The signature is NOT deterministic after a switch to signal-client-java's Curve, so this is not `isEqualTo`
+                      "7WQTW3FdNQwwpLyqOYC5hvHt+XbX71oKhRhW+Y7ubdlxbjWesbl4CFToJE3l9h6nbhUP/liNsjklaJqAlvXogA");
               softly.assertAll();
             });
   }
@@ -61,7 +106,7 @@ public class SyntheticAccountTest {
     assertThat(account.isEnabled()).isTrue();
     assertThat(account.isGroupsV2Supported()).isFalse();
     assertThat(account.isUnrestrictedUnidentifiedAccess()).isFalse();
-    assertThat(account.getIdentityKey()).isEqualTo("Bc8gsBK5gVR8nE0ng6adCAHb51QDSYx7+hB4xb4Rkk5Z");
+    assertThat(account.getIdentityKey()).isEqualTo("BQt+VoFFW2txhdJ0PkVqGD/RALynEamUv6+sxhJ2m5Vz");
 
     assertThat(account.getUnidentifiedAccessKey()).isNotPresent();
     assertThat(account.getAuthenticatedDevice()).isEqualTo(account.getDevice(1L));
@@ -75,11 +120,11 @@ public class SyntheticAccountTest {
               softly.assertThat(device.getSignedPreKey().getKeyId()).isEqualTo(4709618L);
               softly
                   .assertThat(device.getSignedPreKey().getPublicKey())
-                  .isEqualTo("BendFIcGg4ZabxlyLGofaDcy3Osc9E3qOQFYDrQzbZ0Y");
+                  .isEqualTo("BUUttf2hmnCwYvqSecjED48dDuH+SSCqITcTiRUzN15y");
               softly
                   .assertThat(device.getSignedPreKey().getSignature())
-                  .isEqualTo(
-                      "6fY0rQydf4hJkKggEU3oI3N8DgdiFly2eWzU9qyU9orcehJHLKl4dA2jWJYGfpi0f0Xaj/6R0iCLu6vkPRIXiQ");
+                  .hasSameSizeAs( // The signature is NOT deterministic after a switch to signal-client-java's Curve, so this is not `isEqualTo`
+                                  "RdZw9G73A++m8s0e3ABk/0tR/u15PKru6NH6qfSM5jwePVJC3F4yu2nRf0UwEaEUEA5P3rE34kZrbTirooxvBw");
               softly.assertAll();
             });
     assertThat(account.getDevices())
@@ -92,10 +137,10 @@ public class SyntheticAccountTest {
               softly.assertThat(device.getSignedPreKey().getKeyId()).isEqualTo(5723057L);
               softly
                   .assertThat(device.getSignedPreKey().getPublicKey())
-                  .isEqualTo("Bcc0YUN/jscU2ZjRKbCVu0t/tKy2isiNB2BXogFBXVMM");
+                  .isEqualTo("BS5JVDH9bGLizxoFNeOXq3W98GdB9uRUyx++TwEW8fdx");
               softly
                   .assertThat(device.getSignedPreKey().getSignature())
-                  .isEqualTo(
+                  .hasSameSizeAs( // The signature is NOT deterministic after a switch to signal-client-java's Curve, so this is not `isEqualTo`
                       "+eVx89ysIx+Aw6XafdQ1n1WzOOihwIbPN1Qe7O49xOwPsOION4F/6/EBND+JQ+FEvv+RTrKqoigmPXFC1UCGjg");
               softly.assertAll();
             });
@@ -109,10 +154,10 @@ public class SyntheticAccountTest {
                       softly.assertThat(device.getSignedPreKey().getKeyId()).isEqualTo(9347985L);
                       softly
                               .assertThat(device.getSignedPreKey().getPublicKey())
-                              .isEqualTo("BdVshfmombztWGOJjkI1mh0RDPddv7J1SghZNlIih6M9");
+                              .isEqualTo("BTrHcUD8SFLylkQhQc11yQk0dn5MmnVasKLGaY+KPBNP");
                       softly
                               .assertThat(device.getSignedPreKey().getSignature())
-                              .isEqualTo(
+                              .hasSameSizeAs( // The signature is NOT deterministic after a switch to signal-client-java's Curve, so this is not `isEqualTo`
                                       "IeDFZEweN5quXNRo5WDHon+MKKp3r6S9n7BTH2zeCHArDhbdxaXYbrK4H2UTvIfEubMuFPD5epwbPnGeZbVBig");
                       softly.assertAll();
                     });

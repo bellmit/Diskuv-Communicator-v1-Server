@@ -1,14 +1,12 @@
 package org.whispersystems.textsecuregcm.synthetic;
 
-import org.whispersystems.textsecuregcm.crypto.Curve;
-import org.whispersystems.textsecuregcm.crypto.ECPrivateKey;
-import org.whispersystems.textsecuregcm.crypto.ECPublicKey;
-import org.whispersystems.textsecuregcm.util.DiskuvKeyUtil;
-import org.whispersystems.textsecuregcm.util.Pair;
+import org.whispersystems.libsignal.ecc.Curve;
+import org.whispersystems.libsignal.ecc.ECKeyPair;
+import org.whispersystems.libsignal.ecc.ECPrivateKey;
+import org.whispersystems.libsignal.ecc.ECPublicKey;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -19,7 +17,7 @@ public class DeterministicSampling {
     this.salt = salt;
   }
 
-  public Pair<ECPublicKey, ECPrivateKey> deterministicSampledKeyPair(String discriminator) {
+  public ECKeyPair deterministicSampledKeyPair(String discriminator) {
     try {
       // make sha256(salt | discriminator)
       String actualStringToDigest = salt + discriminator;
@@ -32,10 +30,11 @@ public class DeterministicSampling {
       ECPrivateKey privateKey = Curve.decodePrivatePoint(privateKeyBytes);
 
       // create valid public key
-      ECPublicKey publicKey = DiskuvKeyUtil.constructPublicKeyFromPrivateKey(privateKey);
+      ECPublicKey publicKey = privateKey.publicKey();
 
-      return new Pair<>(publicKey, privateKey);
-    } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+      return new ECKeyPair(publicKey, privateKey);
+
+    } catch (NoSuchAlgorithmException e) {
       throw new AssertionError(e);
     }
   }
