@@ -195,20 +195,20 @@ public class MessageController {
 
     if (source.isPresent() && !source.get().isFor(destinationName)) {
       assert source.get().getMasterDevice().isPresent();
+      assert source.get().getUuid() != null;
 
       final Device masterDevice = source.get().getMasterDevice().get();
-      final String senderCountryCode = Util.getCountryCode(source.get().getNumber());
 
       if (StringUtils.isAllBlank(masterDevice.getApnId(), masterDevice.getVoipApnId(), masterDevice.getGcmId()) || masterDevice.getUninstalledFeedbackTimestamp() > 0) {
         Metrics.counter(UNSEALED_SENDER_WITHOUT_PUSH_TOKEN_COUNTER_NAME).increment();
       }
 
       try {
-        rateLimiters.getUnsealedSenderLimiter().validate(source.get().getNumber(), destinationName.toString());
+        rateLimiters.getUnsealedSenderLimiter().validate(source.get().getUuid().toString(), destinationName.toString());
       } catch (RateLimitExceededException e) {
 
         if (dynamicConfigurationManager.getConfiguration().getMessageRateConfiguration().isEnforceUnsealedSenderRateLimit()) {
-          Metrics.counter(REJECT_UNSEALED_SENDER_COUNTER_NAME, SENDER_COUNTRY_TAG_NAME, senderCountryCode).increment();
+          Metrics.counter(REJECT_UNSEALED_SENDER_COUNTER_NAME).increment();
           logger.debug("Rejected unsealed sender limit from: {}", source.get().getNumber());
           throw e;
         } else {

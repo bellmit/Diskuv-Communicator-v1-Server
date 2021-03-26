@@ -292,7 +292,7 @@ public class AccountsManager {
   }
 
   private Optional<Account> databaseGet(String number) {
-    return accounts.get(number);
+    throw new UnsupportedOperationException("Diskuv does not support lookups by phone numbers");
   }
 
   private Optional<Account> databaseGet(UUID uuid) {
@@ -312,7 +312,7 @@ public class AccountsManager {
   }
 
   private Optional<Account> dynamoGet(String number) {
-    return accountsDynamoDb.get(number);
+    throw new UnsupportedOperationException("Diskuv does not support lookups by phone numbers");
   }
 
   private Optional<Account> dynamoGet(UUID uuid) {

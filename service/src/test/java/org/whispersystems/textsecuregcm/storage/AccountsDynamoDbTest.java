@@ -193,7 +193,8 @@ class AccountsDynamoDbTest {
   @Test
   void testUpdate() {
     Device  device  = generateDevice (1                                            );
-    Account account = generateAccount("+14151112222", UUID.randomUUID(), Collections.singleton(device));
+    UUID uuidFirst = UUID.randomUUID();
+    Account account = generateAccount("+14151112222", uuidFirst, Collections.singleton(device));
 
     accountsDynamoDb.create(account);
 
@@ -201,7 +202,7 @@ class AccountsDynamoDbTest {
 
     accountsDynamoDb.update(account);
 
-    Optional<Account> retrieved = accountsDynamoDb.get(account.getUuid());
+    Optional<Account> retrieved = accountsDynamoDb.get(uuidFirst);
 
     assertThat(retrieved.isPresent()).isTrue();
     verifyStoredState("+14151112222", account.getUuid(), retrieved.get(), account);
@@ -278,11 +279,12 @@ class AccountsDynamoDbTest {
   @Test
   void testMissing() {
     Device  device  = generateDevice (1                                            );
-    Account account = generateAccount("+14151112222", UUID.randomUUID(), Collections.singleton(device));
+    UUID uuidFirst = UUID.randomUUID();
+    Account account = generateAccount("+14151112222", uuidFirst, Collections.singleton(device));
 
     accountsDynamoDb.create(account);
 
-    Optional<Account> retrieved = accountsDynamoDb.get("+11111111");
+    Optional<Account> retrieved = accountsDynamoDb.get(UUID.fromString("cf7fc3a1-f8a4-452f-8efd-71654d9678fa"));
     assertThat(retrieved.isPresent()).isFalse();
 
     retrieved = accountsDynamoDb.get(UUID.randomUUID());
@@ -362,6 +364,8 @@ class AccountsDynamoDbTest {
 
     verifyStoredState("+14151112222", account.getUuid(), account);
 
+    // In Diskuv, a UUID is permanent. You can't re-migrate an account from one UUID to another
+    /*
     UUID secondUuid = UUID.randomUUID();
 
     device = generateDevice(1);
@@ -371,6 +375,7 @@ class AccountsDynamoDbTest {
 
     assertThat(migrated).isFalse();
     verifyStoredState("+14151112222", firstUuid, account);
+    */
 
     account.setDynamoDbMigrationVersion(account.getDynamoDbMigrationVersion() + 1);
 

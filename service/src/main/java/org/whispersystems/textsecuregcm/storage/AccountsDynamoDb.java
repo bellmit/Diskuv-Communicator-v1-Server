@@ -355,7 +355,7 @@ public class AccountsDynamoDb extends AbstractDynamoDbStore implements AccountSt
     try {
       Account account = SystemMapper.getMapper().readValue(item.getBinary(ATTR_ACCOUNT_DATA), Account.class);
 
-      account.setNumber(item.getString(ATTR_ACCOUNT_E164));
+      account.setNumber(""); // WAS: account.setNumber(item.getString(ATTR_ACCOUNT_E164));
       account.setUuid(UUIDUtil.fromByteBuffer(item.getByteBuffer(KEY_ACCOUNT_UUID)));
 
       return account;

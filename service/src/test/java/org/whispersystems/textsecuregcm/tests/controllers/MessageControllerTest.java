@@ -270,14 +270,15 @@ class MessageControllerTest {
 
     if (rateLimited) {
       doThrow(RateLimitExceededException.class)
-          .when(unsealedSenderLimiter).validate(eq(AuthHelper.VALID_NUMBER), eq(INTERNATIONAL_RECIPIENT));
+          .when(unsealedSenderLimiter).validate(eq(AuthHelper.VALID_UUID.toString()), eq(INTERNATIONAL_UUID.toString()));
     }
 
     Response response =
         resources.getJerseyTest()
-            .target(String.format("/v1/messages/%s", INTERNATIONAL_RECIPIENT))
+            .target(String.format("/v1/messages/%s", INTERNATIONAL_UUID))
             .request()
-            .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_NUMBER, AuthHelper.VALID_PASSWORD))
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
+            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
             .put(Entity.entity(mapper.readValue(jsonFixture("fixtures/current_message_single_device.json"), IncomingMessageList.class),
                 MediaType.APPLICATION_JSON_TYPE));
 

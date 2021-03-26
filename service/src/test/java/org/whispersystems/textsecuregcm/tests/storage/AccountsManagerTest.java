@@ -342,7 +342,6 @@ class AccountsManagerTest {
     FaultTolerantRedisCluster                    cacheCluster        = RedisClusterHelper.buildMockRedisCluster(commands);
     Accounts                                     accounts            = mock(Accounts.class);
     AccountsDynamoDb                             accountsDynamoDb    = mock(AccountsDynamoDb.class);
-    DirectoryQueue                               directoryQueue      = mock(DirectoryQueue.class);
     KeysDynamoDb                                 keysDynamoDb        = mock(KeysDynamoDb.class);
     MessagesManager                              messagesManager     = mock(MessagesManager.class);
     UsernamesManager                             usernamesManager    = mock(UsernamesManager.class);
@@ -357,7 +356,7 @@ class AccountsManagerTest {
     when(commands.get(eq("Account3::" + uuid))).thenReturn(null);
     doThrow(ConditionalCheckFailedException.class).when(accountsDynamoDb).update(any(Account.class));
 
-    AccountsManager   accountsManager = new AccountsManager(accounts, accountsDynamoDb, cacheCluster, directoryQueue, keysDynamoDb, messagesManager, usernamesManager, profilesManager, secureStorageClient, secureBackupClient, experimentEnrollmentManager, dynamicConfigurationManager);
+    AccountsManager   accountsManager = new AccountsManager(accounts, accountsDynamoDb, cacheCluster, keysDynamoDb, messagesManager, usernamesManager, profilesManager, secureStorageClient, secureBackupClient, experimentEnrollmentManager, dynamicConfigurationManager);
 
     assertEquals(0, account.getDynamoDbMigrationVersion());
 

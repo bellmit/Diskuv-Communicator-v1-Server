@@ -1407,6 +1407,7 @@ class AccountControllerTest {
             .target(String.format("/v1/accounts/sms/code/%s", SENDER))
             .queryParam("challenge", "1234-push")
             .request()
+            .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
             .header("X-Forwarded-For", NICE_HOST)
             .get();
 
