@@ -307,7 +307,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     DiskuvGroupUserAuthenticator   groupUserAuthenticator = new DiskuvGroupUserAuthenticator(jwtAuthentication, zkAuthOperations);
 
     // WAS: AuthFilter<BasicCredentials, User>      userAuthFilter      = new BasicCredentialAuthFilter.Builder<User>().setAuthenticator(userAuthenticator).buildAuthFilter();
-    AuthFilter<String, User>                        userAuthFilter      = new OAuthCredentialAuthFilter.Builder<User>().setAuthenticator(userAuthenticator).buildAuthFilter();
+    AuthFilter<String, User>                        userAuthFilter      = new OAuthCredentialAuthFilter.Builder<User>().setAuthenticator(userAuthenticator).setPrefix("Bearer").buildAuthFilter();
     // WAS: AuthFilter<BasicCredentials, GroupUser> groupUserAuthFilter = new BasicCredentialAuthFilter.Builder<GroupUser>().setAuthenticator(groupUserAuthenticator).buildAuthFilter();
     AuthFilter<DiskuvRoleCredentials, GroupUser>    groupUserAuthFilter = new DiskuvRoleCredentialAuthFilter.Builder<GroupUser>().setAuthenticator(groupUserAuthenticator).buildAuthFilter();
 
