@@ -7,6 +7,7 @@ import com.diskuv.communicatorservice.storage.configuration.DiskuvGroupsConfigur
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
 import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,10 +52,10 @@ public class SanctuaryControllerTest {
     SanctuaryController controller =
         new SanctuaryController(asyncClient, diskuvGroupsConfiguration, rateLimiters);
     User user = new User(UUID.randomUUID());
-    String sanctuaryGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
+    String sanctuaryGroupIdHex = Hex.encodeHexString(new byte[] {1, 2, 3});
     SanctuaryAttributes sanctuaryAttributes = new SanctuaryAttributes();
     CompletableFuture<Response> future =
-        controller.createSanctuary(user, sanctuaryGroupIdBase64, sanctuaryAttributes);
+        controller.createSanctuary(user, sanctuaryGroupIdHex, sanctuaryAttributes);
 
     // then
     Response response = future.join();
@@ -79,11 +80,11 @@ public class SanctuaryControllerTest {
     SanctuaryController controller =
         new SanctuaryController(asyncClient, diskuvGroupsConfiguration, rateLimiters);
     User user = new User(DiskuvUuidUtil.uuidForOutdoorEmailAddress(allowedEmailAddress));
-    String sanctuaryGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
+    String sanctuaryGroupIdHex = Hex.encodeHexString(new byte[] {1, 2, 3});
     UUID supportContactId = UUID.randomUUID();
     SanctuaryAttributes sanctuaryAttributes = new SanctuaryAttributes(supportContactId);
     CompletableFuture<Response> future =
-        controller.createSanctuary(user, sanctuaryGroupIdBase64, sanctuaryAttributes);
+        controller.createSanctuary(user, sanctuaryGroupIdHex, sanctuaryAttributes);
 
     // then
     Response response = future.join();
@@ -109,11 +110,11 @@ public class SanctuaryControllerTest {
     SanctuaryController controller =
         new SanctuaryController(asyncClient, diskuvGroupsConfiguration, rateLimiters);
     User user = new User(DiskuvUuidUtil.uuidForOutdoorEmailAddress(allowedEmailAddress));
-    String sanctuaryGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
+    String sanctuaryGroupIdHex = Hex.encodeHexString(new byte[] {1, 2, 3});
     UUID supportContactId = UUID.randomUUID();
     SanctuaryAttributes sanctuaryAttributes = new SanctuaryAttributes(supportContactId);
     CompletableFuture<Response> future =
-        controller.updateSanctuary(user, sanctuaryGroupIdBase64, sanctuaryAttributes);
+        controller.updateSanctuary(user, sanctuaryGroupIdHex, sanctuaryAttributes);
 
     // then
     Response response = future.join();
@@ -140,11 +141,11 @@ public class SanctuaryControllerTest {
     SanctuaryController controller =
         new SanctuaryController(sanctuariesDao, diskuvGroupsConfiguration, rateLimiters);
     User user = new User(DiskuvUuidUtil.uuidForOutdoorEmailAddress(allowedEmailAddress));
-    String sanctuaryGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
+    String sanctuaryGroupIdHex = Hex.encodeHexString(new byte[] {1, 2, 3});
     UUID supportContactId = UUID.randomUUID();
     SanctuaryAttributes sanctuaryAttributes = new SanctuaryAttributes(supportContactId);
     CompletableFuture<Response> future =
-        controller.updateSanctuary(user, sanctuaryGroupIdBase64, sanctuaryAttributes);
+        controller.updateSanctuary(user, sanctuaryGroupIdHex, sanctuaryAttributes);
 
     // then
     Response response = future.join();
@@ -165,8 +166,8 @@ public class SanctuaryControllerTest {
     SanctuaryController controller =
         new SanctuaryController(sanctuariesDao, diskuvGroupsConfiguration, rateLimiters);
     User user = new User(DiskuvUuidUtil.uuidForOutdoorEmailAddress("blah@test.com"));
-    String sanctuaryGroupIdBase64 = Base64.encodeBase64String(new byte[] {1, 2, 3});
-    CompletableFuture<Response> future = controller.getSanctuary(user, sanctuaryGroupIdBase64);
+    String sanctuaryGroupIdHex = Hex.encodeHexString(new byte[] {1, 2, 3});
+    CompletableFuture<Response> future = controller.getSanctuary(user, sanctuaryGroupIdHex);
 
     // then
     Response response = future.join();

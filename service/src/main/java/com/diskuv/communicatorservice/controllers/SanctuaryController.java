@@ -14,12 +14,13 @@
 package com.diskuv.communicatorservice.controllers;
 
 import com.codahale.metrics.annotation.Timed;
-import com.diskuv.communicatorservice.storage.SanctuaryAttributes;
 import com.diskuv.communicatorservice.storage.SanctuariesDao;
+import com.diskuv.communicatorservice.storage.SanctuaryAttributes;
 import com.diskuv.communicatorservice.storage.configuration.DiskuvGroupsConfiguration;
 import com.google.protobuf.ByteString;
 import io.dropwizard.auth.Auth;
-import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.signal.storageservice.auth.User;
 import org.whispersystems.textsecuregcm.controllers.RateLimitExceededException;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
@@ -76,7 +77,14 @@ public class SanctuaryController {
       @Auth User user,
       @PathParam("sanctuaryGroupId") String sanctuaryGroupIdBase64,
       @Valid SanctuaryAttributes sanctuaryAttributes) {
-    byte[] sanctuaryGroupId = Base64.decodeBase64(sanctuaryGroupIdBase64);
+    byte[] sanctuaryGroupId;
+    try {
+      sanctuaryGroupId = Hex.decodeHex(sanctuaryGroupIdBase64);
+    } catch (DecoderException e) {
+      return CompletableFuture.completedFuture(
+          Response.status(Response.Status.BAD_REQUEST).build());
+    }
+
     if (!isAllowedToDeploy(user))
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.UNAUTHORIZED).build());
@@ -86,7 +94,8 @@ public class SanctuaryController {
           Response.status(Response.Status.TOO_MANY_REQUESTS).build());
 
     return sanctuariesDao
-        .createSanctuary(ByteString.copyFrom(sanctuaryGroupId), sanctuaryAttributes.getSupportContactId())
+        .createSanctuary(
+            ByteString.copyFrom(sanctuaryGroupId), sanctuaryAttributes.getSupportContactId())
         .thenApply(
             success ->
                 Response.status(success ? Response.Status.OK : Response.Status.CONFLICT).build());
@@ -100,7 +109,14 @@ public class SanctuaryController {
       @Auth User user,
       @PathParam("sanctuaryGroupId") String sanctuaryGroupIdBase64,
       @Valid SanctuaryAttributes sanctuaryAttributes) {
-    byte[] sanctuaryGroupId = Base64.decodeBase64(sanctuaryGroupIdBase64);
+    byte[] sanctuaryGroupId;
+    try {
+      sanctuaryGroupId = Hex.decodeHex(sanctuaryGroupIdBase64);
+    } catch (DecoderException e) {
+      return CompletableFuture.completedFuture(
+          Response.status(Response.Status.BAD_REQUEST).build());
+    }
+
     if (!isAllowedToDeploy(user)) {
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.UNAUTHORIZED).build());
@@ -117,14 +133,17 @@ public class SanctuaryController {
             sanctuaryOpt ->
                 sanctuaryOpt.map(
                     sanctuary -> {
-                      sanctuary.setSupportContactId(sanctuaryAttributes.getSupportContactId().toString());
+                      sanctuary.setSupportContactId(
+                          sanctuaryAttributes.getSupportContactId().toString());
                       sanctuary.setSanctuaryEnabled(sanctuaryAttributes.isSanctuaryEnabled());
                       return sanctuary;
                     }))
         .thenCompose(
             sanctuaryOpt ->
                 sanctuaryOpt
-                    .map(sanctuaryItem -> sanctuariesDao.updateSanctuary(sanctuaryItem).thenApply(unused -> true))
+                    .map(
+                        sanctuaryItem ->
+                            sanctuariesDao.updateSanctuary(sanctuaryItem).thenApply(unused -> true))
                     .orElse(CompletableFuture.completedFuture(false)))
         .thenApply(
             success ->
@@ -138,8 +157,8 @@ public class SanctuaryController {
       @Auth User user, @PathParam("sanctuaryGroupId") String sanctuaryGroupIdBase64) {
     byte[] sanctuaryGroupId;
     try {
-      sanctuaryGroupId = Base64.decodeBase64(sanctuaryGroupIdBase64);
-    } catch (IllegalArgumentException e) {
+      sanctuaryGroupId = Hex.decodeHex(sanctuaryGroupIdBase64);
+    } catch (DecoderException e) {
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.BAD_REQUEST).build());
     }
