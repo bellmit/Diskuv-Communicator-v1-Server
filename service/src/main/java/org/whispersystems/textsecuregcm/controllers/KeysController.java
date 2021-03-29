@@ -16,8 +16,29 @@
  */
 package org.whispersystems.textsecuregcm.controllers;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.annotation.Timed;
 import io.dropwizard.auth.Auth;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.validation.Valid;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import io.micrometer.core.instrument.Metrics;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
 import org.whispersystems.textsecuregcm.auth.Anonymous;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
@@ -32,24 +53,7 @@ import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.KeysDynamoDb;
-
-import javax.validation.Valid;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import org.whispersystems.textsecuregcm.util.Util;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/v2/keys")
@@ -58,6 +62,11 @@ public class KeysController {
   private final RateLimiters                rateLimiters;
   private final KeysDynamoDb                keysDynamoDb;
   private final org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager accounts;
+
+  private static final String INTERNATIONAL_PREKEY_REQUEST_COUNTER_NAME =
+  name(KeysController.class, "internationalPreKeyGet");
+
+  private static final String SOURCE_COUNTRY_TAG_NAME = "sourceCountry";
 
   public KeysController(RateLimiters rateLimiters, KeysDynamoDb keysDynamoDb, org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager accounts) {
     this.rateLimiters                = rateLimiters;
