@@ -45,7 +45,7 @@ public class GetRedisSlowlogCommand extends ConfiguredCommand<WhisperServerConfi
 
         for (final FaultTolerantRedisCluster cluster : List.of(cacheCluster, messagesCacheCluster, metricsCluster)) {
             cluster.useCluster(connection -> connection.sync()
-                                                       .masters()
+                                                       .upstream()
                                                        .commands()
                                                        .slowlogGet(entries)
                                                        .asMap()

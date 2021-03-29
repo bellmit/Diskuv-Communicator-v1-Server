@@ -1,5 +1,7 @@
 package org.whispersystems.textsecuregcm.push;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
@@ -12,13 +14,6 @@ import io.lettuce.core.cluster.api.sync.RedisAdvancedClusterCommands;
 import io.lettuce.core.cluster.event.ClusterTopologyChangedEvent;
 import io.lettuce.core.cluster.models.partitions.RedisClusterNode;
 import io.lettuce.core.cluster.pubsub.RedisClusterPubSubAdapter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.whispersystems.textsecuregcm.redis.ClusterLuaScript;
-import org.whispersystems.textsecuregcm.redis.FaultTolerantPubSubConnection;
-import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
-import org.whispersystems.textsecuregcm.util.Constants;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
@@ -31,8 +26,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import static com.codahale.metrics.MetricRegistry.name;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.whispersystems.textsecuregcm.redis.ClusterLuaScript;
+import org.whispersystems.textsecuregcm.redis.FaultTolerantPubSubConnection;
+import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
+import org.whispersystems.textsecuregcm.util.Constants;
 
 /**
  * The client presence manager keeps track of which clients are actively connected and "present" to receive messages.
@@ -107,7 +106,7 @@ public class ClientPresenceManager extends RedisClusterPubSubAdapter<String, Str
             final String presenceChannel = getManagerPresenceChannel(managerId);
             final int    slot            = SlotHash.getSlot(presenceChannel);
 
-            connection.sync().nodes(node -> node.is(RedisClusterNode.NodeFlag.MASTER) && node.hasSlot(slot)).commands().subscribe(presenceChannel);
+            connection.sync().nodes(node -> node.is(RedisClusterNode.NodeFlag.UPSTREAM) && node.hasSlot(slot)).commands().subscribe(presenceChannel);
         });
 
         presenceCluster.useCluster(connection -> connection.sync().sadd(MANAGER_SET_KEY, managerId));
@@ -138,7 +137,7 @@ public class ClientPresenceManager extends RedisClusterPubSubAdapter<String, Str
             connection.sync().del(getConnectedClientSetKey(managerId));
         });
 
-        pubSubConnection.usePubSubConnection(connection -> connection.sync().masters().commands().unsubscribe(getManagerPresenceChannel(managerId)));
+        pubSubConnection.usePubSubConnection(connection -> connection.sync().upstream().commands().unsubscribe(getManagerPresenceChannel(managerId)));
     }
 
     public void setPresent(final UUID accountUuid, final long deviceId, final DisplacedPresenceListener displacementListener) {
@@ -199,7 +198,7 @@ public class ClientPresenceManager extends RedisClusterPubSubAdapter<String, Str
     private void subscribeForRemotePresenceChanges(final String presenceKey) {
         final int slot = SlotHash.getSlot(presenceKey);
 
-        pubSubConnection.usePubSubConnection(connection -> connection.sync().nodes(node -> node.is(RedisClusterNode.NodeFlag.MASTER) && node.hasSlot(slot))
+        pubSubConnection.usePubSubConnection(connection -> connection.sync().nodes(node -> node.is(RedisClusterNode.NodeFlag.UPSTREAM) && node.hasSlot(slot))
                                                                             .commands()
                                                                             .subscribe(getKeyspaceNotificationChannel(presenceKey)));
     }
@@ -211,7 +210,7 @@ public class ClientPresenceManager extends RedisClusterPubSubAdapter<String, Str
     }
 
     private void unsubscribeFromRemotePresenceChanges(final String presenceKey) {
-        pubSubConnection.usePubSubConnection(connection -> connection.sync().masters().commands().unsubscribe(getKeyspaceNotificationChannel(presenceKey)));
+        pubSubConnection.usePubSubConnection(connection -> connection.sync().upstream().commands().unsubscribe(getKeyspaceNotificationChannel(presenceKey)));
     }
 
     void pruneMissingPeers() {

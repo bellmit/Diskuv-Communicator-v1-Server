@@ -54,7 +54,7 @@ public class MessagePersisterIntegrationTest extends AbstractRedisClusterTest {
 
         getRedisCluster().useCluster(connection -> {
             connection.sync().flushall();
-            connection.sync().masters().commands().configSet("notify-keyspace-events", "K$glz");
+            connection.sync().upstream().commands().configSet("notify-keyspace-events", "K$glz");
         });
 
         final MessagesDynamoDb messagesDynamoDb = new MessagesDynamoDb(messagesDynamoDbRule.getDynamoDB(), MessagesDynamoDbRule.TABLE_NAME, Duration.ofDays(7));
