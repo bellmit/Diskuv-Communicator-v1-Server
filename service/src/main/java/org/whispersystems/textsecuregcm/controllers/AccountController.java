@@ -29,7 +29,6 @@ import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -51,7 +50,20 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.textsecuregcm.auth.*;
+import org.whispersystems.textsecuregcm.auth.AuthenticationCredentials;
+import org.whispersystems.textsecuregcm.auth.AuthorizationHeader;
+import org.whispersystems.textsecuregcm.auth.BearerTokenAuthorizationHeader;
+import org.whispersystems.textsecuregcm.auth.DeviceAuthorizationHeader;
+import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
+import org.whispersystems.textsecuregcm.auth.ExternalServiceCredentialGenerator;
+import org.whispersystems.textsecuregcm.auth.ExternalServiceCredentials;
+import org.whispersystems.textsecuregcm.auth.InvalidAuthorizationHeaderException;
+import org.whispersystems.textsecuregcm.auth.JwtAuthentication;
+import org.whispersystems.textsecuregcm.auth.StoredRegistrationLock;
+import org.whispersystems.textsecuregcm.auth.StoredVerificationCode;
+import org.whispersystems.textsecuregcm.auth.TurnToken;
+import org.whispersystems.textsecuregcm.auth.TurnTokenGenerator;
+import org.whispersystems.textsecuregcm.configuration.dynamic.DynamicSignupCaptchaConfiguration;
 import org.whispersystems.textsecuregcm.entities.AccountAttributes;
 import org.whispersystems.textsecuregcm.entities.AccountCreationResult;
 import org.whispersystems.textsecuregcm.entities.ApnRegistrationId;
@@ -72,6 +84,7 @@ import org.whispersystems.textsecuregcm.storage.AbusiveHostRules;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
+import org.whispersystems.textsecuregcm.storage.DynamicConfigurationManager;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.storage.PendingAccountsManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
@@ -123,6 +136,7 @@ public class AccountController {
   private final RateLimiters                       rateLimiters;
   private final SmsSender                          smsSender;
   private final MessagesManager                    messagesManager;
+  private final DynamicConfigurationManager        dynamicConfigurationManager;
   private final TurnTokenGenerator                 turnTokenGenerator;
   private final Map<String, Integer>               testDevices;
   private final RecaptchaClient                    recaptchaClient;
@@ -139,6 +153,7 @@ public class AccountController {
                            RateLimiters rateLimiters,
                            SmsSender smsSenderFactory,
                            MessagesManager messagesManager,
+                           DynamicConfigurationManager dynamicConfigurationManager,
                            TurnTokenGenerator turnTokenGenerator,
                            Map<String, Integer> testDevices,
                            RecaptchaClient recaptchaClient,
@@ -154,6 +169,7 @@ public class AccountController {
     this.rateLimiters                      = rateLimiters;
     this.smsSender                         = smsSenderFactory;
     this.messagesManager                   = messagesManager;
+    this.dynamicConfigurationManager       = dynamicConfigurationManager;
     this.testDevices                       = testDevices;
     this.turnTokenGenerator                = turnTokenGenerator;
     this.recaptchaClient                   = recaptchaClient;
