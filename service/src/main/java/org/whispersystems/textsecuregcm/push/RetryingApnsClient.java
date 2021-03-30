@@ -30,6 +30,7 @@ import static com.codahale.metrics.MetricRegistry.name;
 
 public class RetryingApnsClient {
 
+  private static final String APNS_CA_FILENAME = "AAACertificateServices.crt";
   private static final Logger logger = LoggerFactory.getLogger(RetryingApnsClient.class);
 
   private final ApnsClient apnsClient;
@@ -46,6 +47,7 @@ public class RetryingApnsClient {
 
     this.apnsClient = new ApnsClientBuilder().setSigningKey(ApnsSigningKey.loadFromInputStream(new ByteArrayInputStream(apnSigningKey.getBytes()), teamId, keyId))
                                              .setMetricsListener(metricsListener)
+                                             .setTrustedServerCertificateChain(getClass().getResourceAsStream(APNS_CA_FILENAME))
                                              .setApnsServer(sandbox ? ApnsClientBuilder.DEVELOPMENT_APNS_HOST : ApnsClientBuilder.PRODUCTION_APNS_HOST)
                                              .build();
   }
