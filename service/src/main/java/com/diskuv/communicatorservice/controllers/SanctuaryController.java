@@ -16,6 +16,7 @@ package com.diskuv.communicatorservice.controllers;
 import com.codahale.metrics.annotation.Timed;
 import com.diskuv.communicatorservice.storage.SanctuariesDao;
 import com.diskuv.communicatorservice.storage.SanctuaryAttributes;
+import com.diskuv.communicatorservice.storage.SanctuaryItem;
 import com.diskuv.communicatorservice.storage.configuration.DiskuvGroupsConfiguration;
 import com.google.protobuf.ByteString;
 import io.dropwizard.auth.Auth;
@@ -34,6 +35,7 @@ import javax.ws.rs.PATCH;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -152,6 +154,7 @@ public class SanctuaryController {
 
   @Timed
   @GET
+  @Produces(MediaType.APPLICATION_JSON)
   @Path("/{sanctuaryGroupId}")
   public CompletableFuture<Response> getSanctuary(
       @Auth User user, @PathParam("sanctuaryGroupId") String sanctuaryGroupIdBase64) {
@@ -174,7 +177,9 @@ public class SanctuaryController {
               if (sanctuaryItem.isEmpty()) {
                 return Response.status(Response.Status.NOT_FOUND).build();
               }
-              return Response.ok().build();
+              SanctuaryItem       item  = sanctuaryItem.get();
+              SanctuaryAttributes attrs = new SanctuaryAttributes(UUID.fromString(item.getSupportContactId()), item.isSanctuaryEnabled());
+              return Response.ok(attrs).build();
             });
   }
 

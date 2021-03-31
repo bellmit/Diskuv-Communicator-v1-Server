@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -153,10 +154,13 @@ public class SanctuaryControllerTest {
   }
 
   @Test
-  public void given_oneSanctuary_when_getSanctuary_then_ok() {
+  public void given_oneSanctuary_when_getSanctuary_then_oneSanctuary() {
     // given
     DiskuvGroupsConfiguration diskuvGroupsConfiguration = new DiskuvGroupsConfiguration();
     SanctuaryItem oneSanctuary = new SanctuaryItem();
+    UUID contactUuid = UUID.randomUUID();
+    oneSanctuary.setSupportContactId(contactUuid.toString());
+    oneSanctuary.setSanctuaryEnabled(true);
 
     // when
     SanctuariesDao sanctuariesDao = mock(SanctuariesDao.class);
@@ -172,5 +176,9 @@ public class SanctuaryControllerTest {
     // then
     Response response = future.join();
     assertThat(response.getStatus(), CoreMatchers.equalTo(Response.Status.OK.getStatusCode()));
+    assertThat(response.getEntity(), CoreMatchers.instanceOf(SanctuaryAttributes.class));
+    SanctuaryAttributes attr = (SanctuaryAttributes) response.getEntity();
+    assertTrue(attr.isSanctuaryEnabled());
+    assertThat(attr.getSupportContactId(), CoreMatchers.equalTo(contactUuid));
   }
 }

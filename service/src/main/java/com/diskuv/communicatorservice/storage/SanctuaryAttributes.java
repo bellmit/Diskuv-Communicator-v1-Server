@@ -17,6 +17,11 @@ public class SanctuaryAttributes {
     this.supportContactId = supportContactId;
   }
 
+  public SanctuaryAttributes(UUID supportContactId, boolean sanctuaryEnabled) {
+    this.supportContactId = supportContactId;
+    this.sanctuaryEnabled = sanctuaryEnabled;
+  }
+
   public UUID getSupportContactId() {
     return supportContactId;
   }
