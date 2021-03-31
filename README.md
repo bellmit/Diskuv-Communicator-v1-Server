@@ -50,3 +50,5 @@ The code in the `com/diskuv/communicator` folders are:
 
 > Copyright 2021 Diskuv, Inc.
 > Licensed under Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+
+By distributing this software, you comply with both the GPLv3 and Apache licenses.
