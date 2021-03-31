@@ -54,7 +54,7 @@ public class SanctuaryController {
       DiskuvGroupsConfiguration diskuvGroupsConfiguration,
       RateLimiters rateLimiters) {
     this(
-        new SanctuariesDao(asyncClient, diskuvGroupsConfiguration.getSanctuaryTableName()),
+        new SanctuariesDao(asyncClient, diskuvGroupsConfiguration.getSanctuariesTableName()),
         diskuvGroupsConfiguration,
         rateLimiters);
   }

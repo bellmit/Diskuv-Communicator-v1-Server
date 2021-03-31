@@ -37,7 +37,7 @@ public class DiskuvGroupsConfiguration {
 
   @JsonProperty private String groupLogTableName = "GroupLog";
 
-  @JsonProperty private String sanctuaryTableName = "Sanctuaries";
+  @JsonProperty private String sanctuariesTableName = "Sanctuaries";
 
   public String getRegion() {
     return region;
@@ -55,8 +55,8 @@ public class DiskuvGroupsConfiguration {
     return groupLogTableName;
   }
 
-  public String getSanctuaryTableName() {
-    return sanctuaryTableName;
+  public String getSanctuariesTableName() {
+    return sanctuariesTableName;
   }
 
   @JsonProperty(required = true)

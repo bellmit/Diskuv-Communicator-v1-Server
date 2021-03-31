@@ -23,7 +23,7 @@ public class CreateTableSanctuariesCommand extends BaseCreateTableCommand {
 
     // setup ddb
     DynamoDbAsyncClient dbAsyncClient = new AwsClientFactory(config).getDynamoDbAsyncClient();
-    SanctuariesDao dao = new SanctuariesDao(dbAsyncClient, config.getSanctuaryTableName());
+    SanctuariesDao dao = new SanctuariesDao(dbAsyncClient, config.getSanctuariesTableName());
 
     // create table
     createTable(dao.getTable());

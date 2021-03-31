@@ -386,7 +386,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     GroupLogDao         groupLogDao      = new GroupLogDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupLogTableName(), Optional.of(groupChangeCache));
 
     // [Diskuv Change] Diskuv Sanctuaries
-    SanctuariesDao sanctuariesDao = new SanctuariesDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getSanctuaryTableName());
+    SanctuariesDao sanctuariesDao = new SanctuariesDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getSanctuariesTableName());
     environment.jersey().register(new SanctuaryController(sanctuariesDao, config.getDiskuvGroupsConfiguration(), rateLimiters));
 
     // [Diskuv Change] Probe backends at startup. NEVER probe backends using a same machine probe (ie. internal health check) because
