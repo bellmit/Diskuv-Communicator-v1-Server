@@ -159,7 +159,6 @@ public class AccountsManager {
       logger.warn("Failed to delete account", e);
 
       Metrics.counter(DELETE_ERROR_COUNTER_NAME,
-          COUNTRY_CODE_TAG_NAME, Util.getCountryCode(account.getNumber()),
           DELETION_REASON_TAG_NAME, deletionReason.tagValue).increment();
 
       throw e;

@@ -20,6 +20,8 @@ import static com.codahale.metrics.MetricRegistry.name;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dropwizard.auth.Auth;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tags;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,7 +40,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import io.micrometer.core.instrument.Metrics;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
 import org.whispersystems.textsecuregcm.auth.Anonymous;
 import org.whispersystems.textsecuregcm.auth.DisabledPermittedAccount;
@@ -67,6 +68,7 @@ public class KeysController {
   name(KeysController.class, "internationalPreKeyGet");
 
   private static final String SOURCE_COUNTRY_TAG_NAME = "sourceCountry";
+  private static final String PREKEY_TARGET_IDENTIFIER_TAG_NAME =  "identifierType";
 
   public KeysController(RateLimiters rateLimiters, KeysDynamoDb keysDynamoDb, org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager accounts) {
     this.rateLimiters                = rateLimiters;
