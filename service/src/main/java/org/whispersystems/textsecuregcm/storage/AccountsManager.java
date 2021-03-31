@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.AmbiguousIdentifier;
 import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
+import org.whispersystems.textsecuregcm.securebackup.SecureBackupClient;
 import org.whispersystems.textsecuregcm.securestorage.SecureStorageClient;
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.SystemMapper;
@@ -69,6 +70,7 @@ public class AccountsManager {
   private final UsernamesManager          usernamesManager;
   private final ProfilesManager           profilesManager;
   private final SecureStorageClient       secureStorageClient;
+  private final SecureBackupClient        secureBackupClient;
   private final ObjectMapper              mapper;
 
   public enum DeletionReason {
@@ -83,7 +85,10 @@ public class AccountsManager {
     }
   }
 
-  public AccountsManager(Accounts accounts, FaultTolerantRedisCluster cacheCluster, final KeysDynamoDb keysDynamoDb, final MessagesManager messagesManager, final UsernamesManager usernamesManager, final ProfilesManager profilesManager, final SecureStorageClient secureStorageClient) {
+  public AccountsManager(Accounts accounts, FaultTolerantRedisCluster cacheCluster,
+      final KeysDynamoDb keysDynamoDb, final MessagesManager messagesManager, final UsernamesManager usernamesManager,
+      final ProfilesManager profilesManager, final SecureStorageClient secureStorageClient,
+      final SecureBackupClient secureBackupClient) {
     this.accounts            = accounts;
     this.cacheCluster        = cacheCluster;
     this.keysDynamoDb        = keysDynamoDb;
@@ -91,6 +96,7 @@ public class AccountsManager {
     this.usernamesManager    = usernamesManager;
     this.profilesManager     = profilesManager;
     this.secureStorageClient = secureStorageClient;
+    this.secureBackupClient  = secureBackupClient;
     this.mapper              = SystemMapper.getMapper();
   }
 
@@ -145,6 +151,7 @@ public class AccountsManager {
   public void delete(final Account account, final DeletionReason deletionReason) {
     try (final Timer.Context ignored = deleteTimer.time()) {
       final CompletableFuture<Void> deleteStorageServiceDataFuture = secureStorageClient.deleteStoredData(account.getUuid());
+      final CompletableFuture<Void> deleteBackupServiceDataFuture = secureBackupClient.deleteBackups(account.getUuid());
 
       usernamesManager.delete(account.getUuid());
       profilesManager.deleteAll(account.getUuid());
@@ -152,6 +159,7 @@ public class AccountsManager {
       messagesManager.clear(account.getUuid());
 
       deleteStorageServiceDataFuture.join();
+      deleteBackupServiceDataFuture.join();
 
       redisDelete(account);
       databaseDelete(account);
