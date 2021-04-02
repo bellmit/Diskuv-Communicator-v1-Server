@@ -22,7 +22,10 @@ import com.google.protobuf.ByteString;
 import io.dropwizard.auth.Auth;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.glassfish.jersey.server.ManagedAsync;
 import org.signal.storageservice.auth.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.controllers.RateLimitExceededException;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
@@ -36,6 +39,8 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -45,6 +50,7 @@ import java.util.stream.Collectors;
 
 @Path("/v1/sanctuaries")
 public class SanctuaryController {
+  private final Logger logger = LoggerFactory.getLogger(SanctuaryController.class);
   private final SanctuariesDao sanctuariesDao;
   private final RateLimiters rateLimiters;
   private final List<UUID> emailAddressesAllowedToDeploySanctuary;
@@ -66,7 +72,7 @@ public class SanctuaryController {
     this.sanctuariesDao = sanctuariesDao;
     this.emailAddressesAllowedToDeploySanctuary =
         diskuvGroupsConfiguration.getEmailAddressesAllowedToDeploySanctuary().stream()
-            .map(emailAddress -> DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress))
+            .map(DiskuvUuidUtil::uuidForOutdoorEmailAddress)
             .collect(Collectors.toList());
     this.rateLimiters = rateLimiters;
   }
@@ -77,11 +83,11 @@ public class SanctuaryController {
   @Path("/{sanctuaryGroupId}")
   public CompletableFuture<Response> createSanctuary(
       @Auth User user,
-      @PathParam("sanctuaryGroupId") String sanctuaryGroupIdBase64,
+      @PathParam("sanctuaryGroupId") String sanctuaryGroupIdHex,
       @Valid SanctuaryAttributes sanctuaryAttributes) {
     byte[] sanctuaryGroupId;
     try {
-      sanctuaryGroupId = Hex.decodeHex(sanctuaryGroupIdBase64);
+      sanctuaryGroupId = Hex.decodeHex(sanctuaryGroupIdHex);
     } catch (DecoderException e) {
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.BAD_REQUEST).build());
@@ -91,7 +97,7 @@ public class SanctuaryController {
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.UNAUTHORIZED).build());
 
-    if (rateLimitSanctuary(sanctuaryGroupIdBase64))
+    if (rateLimitSanctuary(sanctuaryGroupIdHex))
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.TOO_MANY_REQUESTS).build());
 
@@ -109,11 +115,11 @@ public class SanctuaryController {
   @Path("/{sanctuaryGroupId}")
   public CompletableFuture<Response> updateSanctuary(
       @Auth User user,
-      @PathParam("sanctuaryGroupId") String sanctuaryGroupIdBase64,
+      @PathParam("sanctuaryGroupId") String sanctuaryGroupIdHex,
       @Valid SanctuaryAttributes sanctuaryAttributes) {
     byte[] sanctuaryGroupId;
     try {
-      sanctuaryGroupId = Hex.decodeHex(sanctuaryGroupIdBase64);
+      sanctuaryGroupId = Hex.decodeHex(sanctuaryGroupIdHex);
     } catch (DecoderException e) {
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.BAD_REQUEST).build());
@@ -124,7 +130,7 @@ public class SanctuaryController {
           Response.status(Response.Status.UNAUTHORIZED).build());
     }
 
-    if (rateLimitSanctuary(sanctuaryGroupIdBase64))
+    if (rateLimitSanctuary(sanctuaryGroupIdHex))
       return CompletableFuture.completedFuture(
           Response.status(Response.Status.TOO_MANY_REQUESTS).build());
 
@@ -156,36 +162,55 @@ public class SanctuaryController {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("/{sanctuaryGroupId}")
-  public CompletableFuture<Response> getSanctuary(
-      @Auth User user, @PathParam("sanctuaryGroupId") String sanctuaryGroupIdBase64) {
+  @ManagedAsync
+  public void getSanctuary(
+      @Auth User user,
+      @PathParam("sanctuaryGroupId") String sanctuaryGroupIdHex,
+      @Suspended final AsyncResponse asyncResponse) {
+
     byte[] sanctuaryGroupId;
     try {
-      sanctuaryGroupId = Hex.decodeHex(sanctuaryGroupIdBase64);
+      sanctuaryGroupId = Hex.decodeHex(sanctuaryGroupIdHex);
     } catch (DecoderException e) {
-      return CompletableFuture.completedFuture(
-          Response.status(Response.Status.BAD_REQUEST).build());
+      asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST).build());
+      return;
     }
 
-    if (rateLimitSanctuary(sanctuaryGroupIdBase64))
-      return CompletableFuture.completedFuture(
-          Response.status(Response.Status.TOO_MANY_REQUESTS).build());
+    if (rateLimitSanctuary(sanctuaryGroupIdHex)) {
+      asyncResponse.resume(Response.status(Response.Status.TOO_MANY_REQUESTS).build());
+      return;
+    }
 
-    return sanctuariesDao
+    sanctuariesDao
         .getSanctuary(ByteString.copyFrom(sanctuaryGroupId))
         .thenApply(
             sanctuaryItem -> {
               if (sanctuaryItem.isEmpty()) {
-                return Response.status(Response.Status.NOT_FOUND).build();
+                return asyncResponse.resume(Response.status(Response.Status.NOT_FOUND).build());
               }
-              SanctuaryItem       item  = sanctuaryItem.get();
-              SanctuaryAttributes attrs = new SanctuaryAttributes(UUID.fromString(item.getSupportContactId()), item.isSanctuaryEnabled());
-              return Response.ok(attrs).build();
+              SanctuaryItem item = sanctuaryItem.get();
+              UUID supportContactId;
+              try {
+                supportContactId = UUID.fromString(item.getSupportContactId());
+              } catch (IllegalArgumentException e) {
+                logger.error("The sanctuary " + sanctuaryGroupIdHex + " had a non-UUID support contact id: " + item.getSupportContactId(), e);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+              }
+              SanctuaryAttributes attrs =
+                  new SanctuaryAttributes(supportContactId, item.isSanctuaryEnabled());
+              return asyncResponse.resume(Response.ok(attrs).build());
+            })
+        .exceptionally(
+            e -> {
+              logger.warn("Could not give back sanctuary", e);
+              return asyncResponse.resume(
+                  Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
             });
   }
 
-  private boolean rateLimitSanctuary(String sanctuaryGroupIdBase64) {
+  private boolean rateLimitSanctuary(String sanctuaryGroupIdHex) {
     try {
-      rateLimiters.getSanctuaryLookupLimiter().validate(sanctuaryGroupIdBase64);
+      rateLimiters.getSanctuaryLookupLimiter().validate(sanctuaryGroupIdHex);
     } catch (RateLimitExceededException e) {
       return true;
     }

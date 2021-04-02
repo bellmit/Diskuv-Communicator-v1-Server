@@ -11,6 +11,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.signal.storageservice.auth.User;
 import org.whispersystems.textsecuregcm.limits.RateLimiter;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
@@ -21,6 +22,7 @@ import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 
+import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,8 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class SanctuaryControllerTest {
 
@@ -171,10 +172,14 @@ public class SanctuaryControllerTest {
         new SanctuaryController(sanctuariesDao, diskuvGroupsConfiguration, rateLimiters);
     User user = new User(DiskuvUuidUtil.uuidForOutdoorEmailAddress("blah@test.com"));
     String sanctuaryGroupIdHex = Hex.encodeHexString(new byte[] {1, 2, 3});
-    CompletableFuture<Response> future = controller.getSanctuary(user, sanctuaryGroupIdHex);
+    AsyncResponse asyncResponse = mock(AsyncResponse.class);
+    controller.getSanctuary(user, sanctuaryGroupIdHex, asyncResponse);
+
+    ArgumentCaptor<Response> captor = ArgumentCaptor.forClass(Response.class);
+    verify(asyncResponse).resume(captor.capture());
+    Response response = captor.getValue();
 
     // then
-    Response response = future.join();
     assertThat(response.getStatus(), CoreMatchers.equalTo(Response.Status.OK.getStatusCode()));
     assertThat(response.getEntity(), CoreMatchers.instanceOf(SanctuaryAttributes.class));
     SanctuaryAttributes attr = (SanctuaryAttributes) response.getEntity();
