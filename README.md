@@ -1,5 +1,5 @@
-Signal-Server
-=================
+Diskuv-Communicator-Server
+==========================
 
 Signal is a messaging app for simple private communication with friends.
 Diskuv Communicator is a fork of the Signal messaging app, customized for the needs of the Diskuv community.
