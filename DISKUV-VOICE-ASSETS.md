@@ -23,11 +23,3 @@ You will need to create or generate the following MP3 files:
 * `7_falling.mp3` - "7", at the end of the six-digit code
 * `8_falling.mp3` - "8", at the end of the six-digit code
 * `9_falling.mp3` - "9", at the end of the six-digit code
-
-# Generating audio
-
-You do NOT need to auto-generate the mp3 files; you can instead record the
-audio.
-
-There is another project Diskuv-Communicator-Server-Voice-Assets that was used
-to generate the mp3 files for several different languages.
