@@ -74,6 +74,9 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
   @JsonProperty("inCds")
   private boolean discoverableByPhoneNumber = true;
 
+  @JsonProperty("_ddbV")
+  private int dynamoDbMigrationVersion;
+
   @JsonIgnore
   private Device authenticatedDevice;
 
@@ -117,13 +120,13 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
   }
 
   /**
-   * To be compatible with the Account API, we only accept a number that is an empty string.
+   * To be compatible with the Account API, we accept the API call but always
+   * store an empty string.
    * That will cause both Redis and the PostgreSQL databases to store
    * an empty string via {@link AccountsManager#update(Account)}.
    */
   public void setNumber(String number) {
-    Preconditions.checkArgument("".equals(number), "The number was '%s' rather than empty", number);
-    this.number = number;
+    this.number = "";
   }
 
   /**
@@ -315,6 +318,14 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
 
   public void setDiscoverableByPhoneNumber(final boolean discoverableByPhoneNumber) {
     this.discoverableByPhoneNumber = discoverableByPhoneNumber;
+  }
+
+  public int getDynamoDbMigrationVersion() {
+    return dynamoDbMigrationVersion;
+  }
+
+  public void setDynamoDbMigrationVersion(int dynamoDbMigrationVersion) {
+    this.dynamoDbMigrationVersion = dynamoDbMigrationVersion;
   }
 
   // Principal implementation

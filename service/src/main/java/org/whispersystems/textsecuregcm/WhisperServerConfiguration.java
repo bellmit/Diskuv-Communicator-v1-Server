@@ -20,7 +20,15 @@ import com.diskuv.communicatorservice.storage.configuration.DiskuvGroupsConfigur
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.JerseyClientConfiguration;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import org.whispersystems.textsecuregcm.configuration.AccountDatabaseCrawlerConfiguration;
+import org.whispersystems.textsecuregcm.configuration.AccountsDatabaseConfiguration;
+import org.whispersystems.textsecuregcm.configuration.AccountsDynamoDbConfiguration;
 import org.whispersystems.textsecuregcm.configuration.ApnConfiguration;
 import org.whispersystems.textsecuregcm.configuration.AppConfigConfiguration;
 import org.whispersystems.textsecuregcm.configuration.AwsAttachmentsConfiguration;
@@ -30,7 +38,6 @@ import org.whispersystems.textsecuregcm.configuration.DynamoDbConfiguration;
 import org.whispersystems.textsecuregcm.configuration.GcmConfiguration;
 import org.whispersystems.textsecuregcm.configuration.GcpAttachmentsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.JwtKeysConfiguration;
-import org.whispersystems.textsecuregcm.configuration.AccountsDatabaseConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MaxDeviceConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MessageCacheConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MessageDynamoDbConfiguration;
@@ -51,13 +58,6 @@ import org.whispersystems.textsecuregcm.configuration.UnidentifiedDeliveryConfig
 import org.whispersystems.textsecuregcm.configuration.VoiceVerificationConfiguration;
 import org.whispersystems.textsecuregcm.configuration.ZkConfig;
 import org.whispersystems.websocket.configuration.WebSocketConfiguration;
-
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 /** @noinspection MismatchedQueryAndUpdateOfCollection, WeakerAccess */
 public class WhisperServerConfiguration extends Configuration {
@@ -136,6 +136,11 @@ public class WhisperServerConfiguration extends Configuration {
   @NotNull
   @JsonProperty
   private DynamoDbConfiguration keysDynamoDb;
+
+  @Valid
+  @NotNull
+  @JsonProperty
+  private AccountsDynamoDbConfiguration accountsDynamoDb;
 
   @Valid
   @NotNull
@@ -314,6 +319,10 @@ public class WhisperServerConfiguration extends Configuration {
 
   public DynamoDbConfiguration getKeysDynamoDbConfiguration() {
     return keysDynamoDb;
+  }
+
+  public AccountsDynamoDbConfiguration getAccountsDynamoDbConfiguration() {
+    return accountsDynamoDb;
   }
 
   public DatabaseConfiguration getAbuseDatabaseConfiguration() {

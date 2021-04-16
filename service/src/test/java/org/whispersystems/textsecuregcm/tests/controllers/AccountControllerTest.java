@@ -1389,6 +1389,7 @@ class AccountControllerTest {
     verify(accountsManager).delete(AuthHelper.VALID_ACCOUNT, AccountsManager.DeletionReason.USER_REQUEST);
   }
 
+  @Disabled("Diskuv replaced the verify code API with the pre-registration API")
   @ParameterizedTest
   @MethodSource
   void testSignupCaptcha(final String message, final boolean enforced, final Set<String> countryCodes, final int expectedResponseStatusCode) {

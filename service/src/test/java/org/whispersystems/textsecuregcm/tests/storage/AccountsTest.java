@@ -1,10 +1,29 @@
 package org.whispersystems.textsecuregcm.tests.storage;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+
 import com.fasterxml.uuid.UUIDComparator;
 import com.opentable.db.postgres.embedded.LiquibasePreparer;
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
 import com.opentable.db.postgres.junit.PreparedDbRule;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import java.io.IOException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 import org.jdbi.v3.core.HandleConsumer;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.transaction.TransactionException;
@@ -20,26 +39,6 @@ import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.FaultTolerantDatabase;
 import org.whispersystems.textsecuregcm.storage.mappers.AccountRowMapper;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
-
-import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.whispersystems.textsecuregcm.tests.util.UuidHelpers.*;
 
 public class AccountsTest {
 
@@ -60,7 +59,7 @@ public class AccountsTest {
   @Test
   public void testStore() throws SQLException, IOException {
     Device  device  = generateDevice (1                                            );
-    UUID    uuid    = UUID_ALICE;
+    UUID    uuid    = org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
     Account account = generateAccount(uuid, Collections.singleton(device));
 
     accounts.create(account);
@@ -89,61 +88,66 @@ public class AccountsTest {
     devicesFirst.add(generateDevice(1));
     devicesFirst.add(generateDevice(2));
 
-    Account accountFirst = generateAccount(UUID_ALICE, devicesFirst);
+    Account accountFirst = generateAccount(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, devicesFirst);
 
     Set<Device> devicesSecond = new HashSet<>();
     devicesSecond.add(generateDevice(1));
     devicesSecond.add(generateDevice(2));
 
-    Account accountSecond = generateAccount(UUID_BOB, devicesSecond);
+    Account accountSecond = generateAccount(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_BOB, devicesSecond);
 
     accounts.create(accountFirst);
     accounts.create(accountSecond);
 
-    Optional<Account> retrievedFirst = accounts.get(UUID_ALICE);
-    Optional<Account> retrievedSecond = accounts.get(UUID_BOB);
+    Optional<Account> retrievedFirst = accounts.get(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE);
+    Optional<Account> retrievedSecond = accounts.get(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_BOB);
 
     assertThat(retrievedFirst.isPresent()).isTrue();
     assertThat(retrievedSecond.isPresent()).isTrue();
 
-    verifyStoredState(UUID_ALICE, retrievedFirst.get(), accountFirst);
-    verifyStoredState(UUID_BOB, retrievedSecond.get(), accountSecond);
+    verifyStoredState(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, retrievedFirst.get(), accountFirst);
+    verifyStoredState(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_BOB, retrievedSecond.get(), accountSecond);
 
-    retrievedFirst = accounts.get(UUID_ALICE);
-    retrievedSecond = accounts.get(UUID_BOB);
+    retrievedFirst = accounts.get(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE);
+    retrievedSecond = accounts.get(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_BOB);
 
     assertThat(retrievedFirst.isPresent()).isTrue();
     assertThat(retrievedSecond.isPresent()).isTrue();
 
-    verifyStoredState(UUID_ALICE, retrievedFirst.get(), accountFirst);
-    verifyStoredState(UUID_BOB, retrievedSecond.get(), accountSecond);
+    verifyStoredState(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, retrievedFirst.get(), accountFirst);
+    verifyStoredState(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_BOB, retrievedSecond.get(), accountSecond);
   }
 
-  @Test
   @Ignore("Diskuv does not support overwriting by UUID")
+  @Test
   public void testOverwrite() throws Exception {
     Device  device  = generateDevice (1                                            );
-    UUID    firstUuid = UUID_ALICE;
+    UUID    firstUuid = org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
     Account account   = generateAccount(firstUuid, Collections.singleton(device));
 
     accounts.create(account);
 
-    PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM accounts WHERE uuid = ?");
+    PreparedStatement statement = db.getTestDatabase().getConnection().prepareStatement("SELECT * FROM accounts WHERE uuid::text = ?");
     verifyStoredState(statement, account.getUuid(), account);
 
-    UUID secondUuid = UUID_BOB;
+    UUID secondUuid = org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_BOB;
 
     device = generateDevice(1);
-    account = generateAccount(UUID_ALICE, Collections.singleton(device));
+    account = generateAccount(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, Collections.singleton(device));
 
     accounts.create(account);
-    verifyStoredState(statement, UUID_ALICE, account);
+    verifyStoredState(statement, firstUuid, account);
+
+    device = generateDevice(1);
+    Account invalidAccount = generateAccount(firstUuid, Collections.singleton(device));
+
+    assertThatThrownBy(() -> accounts.create(invalidAccount));
   }
 
   @Test
   public void testUpdate() {
     Device  device  = generateDevice (1                                            );
-    UUID    uuid    = UUID_ALICE;
+    UUID    uuid    = org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
     Account account = generateAccount(uuid, Collections.singleton(device));
 
     accounts.create(account);
@@ -210,12 +214,23 @@ public class AccountsTest {
     assertThat(accounts.get(deletedAccount.getUuid())).isNotPresent();
 
     verifyStoredState(retainedAccount.getUuid(), accounts.get(retainedAccount.getUuid()).get(), retainedAccount);
+
+    {
+      final Account recreatedAccount = generateAccount(UUID.randomUUID(),
+          Collections.singleton(generateDevice(1)));
+
+      accounts.create(recreatedAccount);
+
+      assertThat(accounts.get(recreatedAccount.getUuid())).isPresent();
+      verifyStoredState(recreatedAccount.getUuid(),
+          accounts.get(recreatedAccount.getUuid()).get(), recreatedAccount);
+    }
   }
 
   @Test
   public void testVacuum() {
     Device  device  = generateDevice (1                                            );
-    UUID    uuid    = UUID_ALICE;
+    UUID    uuid    = org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
     Account account = generateAccount(uuid, Collections.singleton(device));
 
     accounts.create(account);
@@ -230,11 +245,11 @@ public class AccountsTest {
   @Test
   public void testMissing() {
     Device  device  = generateDevice (1                                            );
-    Account account = generateAccount(UUID_ALICE, Collections.singleton(device));
+    Account account = generateAccount(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, Collections.singleton(device));
 
     accounts.create(account);
 
-    Optional<Account> retrieved = accounts.get(UUID_MISSING);
+    Optional<Account> retrieved = accounts.get(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_MISSING);
     assertThat(retrieved.isPresent()).isFalse();
 
     retrieved = accounts.get(UUID.randomUUID());
@@ -253,7 +268,7 @@ public class AccountsTest {
     configuration.setFailureRateThreshold(50);
 
     Accounts accounts = new Accounts(new FaultTolerantDatabase("testAccountBreaker", jdbi, configuration));
-    Account  account  = generateAccount(UUID_ALICE);
+    Account  account  = generateAccount(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE);
 
     try {
       accounts.update(account);
