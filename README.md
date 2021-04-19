@@ -9,16 +9,16 @@ Pronunciation: "Diskuv" sounds just like "discover", without the "er".
 Goals
 -----
 
-We at Diskuv won't be perfect, but we strive for:
+Diskuv won't be perfect, but we strive for:
 
-- Safety. Let Diskuv survivors have safe communities comprised of other survivors and vetted counseling and advocacy staff
-- Trust. Give Diskuv survivors a high level of assurance that Diskuv does not have access to the communities' conversations beyond what its members explicitly give it
-- Kindness. Diskuv survivors should find communicating easy, friendly to use and above all helpful as they manage their lives
+- Safety. Have safe communities comprised of other peers (ex. other family members, other support group members, etc.)
+- Trust. A high level of assurance that Diskuv does not have access to the communities' conversations beyond what its members explicitly give it
+- Kindness. Communicating should be easy, friendly to use and above all helpful as members' manage their lives
 
 Anti Goals
 ----------
 
-- Anonymity. Instead, Diskuv survivors should have a high degree of confidence that they are talking to a) other survivors in general, and/or b) other survivors specifically from their counseling or advocacy groups
+- Anonymity. Instead, members should have a high degree of confidence that they know the _affiliation_ of the person they are talking to. That is, members should know they are talking to people who share the same family/job/counselor etc.
 
 Documentation
 -------------
