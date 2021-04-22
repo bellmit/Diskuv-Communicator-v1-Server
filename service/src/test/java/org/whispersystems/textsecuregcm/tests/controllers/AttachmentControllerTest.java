@@ -6,9 +6,6 @@ import io.dropwizard.testing.junit.ResourceTestRule;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMWriter;
-import org.bouncycastle.openssl.PKCS8Generator;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -32,7 +29,6 @@ import org.whispersystems.textsecuregcm.util.SystemMapper;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -41,8 +37,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.Security;
+import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,17 +59,14 @@ public class AttachmentControllerTest {
 
   static {
     try {
-      final Provider          provider         = new BouncyCastleProvider();
-      final KeyPairGenerator  keyPairGenerator = KeyPairGenerator.getInstance("RSA", provider);
+      final KeyPairGenerator  keyPairGenerator = KeyPairGenerator.getInstance("RSA");
       keyPairGenerator.initialize(1024);
       final KeyPair           keyPair          = keyPairGenerator.generateKeyPair();
-      final StringWriter      stringWriter     = new StringWriter();
-      final PEMWriter         pemWriter        = new PEMWriter(stringWriter);
-      final PKCS8Generator pkcs8Generator      = new PKCS8Generator(keyPair.getPrivate());
-      pemWriter.writeObject(pkcs8Generator);
-      pemWriter.close();
-      RSA_PRIVATE_KEY_PEM = stringWriter.toString();
-    } catch (NoSuchAlgorithmException | IOException e) {
+
+      RSA_PRIVATE_KEY_PEM = "-----BEGIN PRIVATE KEY-----\n" +
+          Base64.encodeBytes(keyPair.getPrivate().getEncoded()) + "\n" +
+          "-----END PRIVATE KEY-----";
+    } catch (NoSuchAlgorithmException e) {
       throw new AssertionError(e);
     }
   }
@@ -84,7 +76,6 @@ public class AttachmentControllerTest {
 
   static {
     try {
-      Security.insertProviderAt(new BouncyCastleProvider(), 0);
       resources = ResourceTestRule.builder()
               .addProvider(AuthHelper.getAuthFilter())
               .addProvider(new PolymorphicAuthValueFactoryProvider.Binder<>(ImmutableSet.of(Account.class, DisabledPermittedAccount.class)))
@@ -94,20 +85,9 @@ public class AttachmentControllerTest {
               .addResource(new AttachmentControllerV2(rateLimiters, "accessKey", "accessSecret", "us-east-1", "attachmentv2-bucket"))
               .addResource(new AttachmentControllerV3(rateLimiters, "some-cdn.signal.org", "signal@example.com", 1000, "/attach-here", RSA_PRIVATE_KEY_PEM))
               .build();
-      Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
-    } catch (IOException | InvalidKeyException e) {
+    } catch (IOException | InvalidKeyException | InvalidKeySpecException e) {
       throw new AssertionError(e);
     }
-  }
-
-  @BeforeClass
-  public static void setup() {
-    Security.insertProviderAt(new BouncyCastleProvider(), 0);
-  }
-
-  @AfterClass
-  public static void tearDown() {
-    Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
   }
 
   @Test

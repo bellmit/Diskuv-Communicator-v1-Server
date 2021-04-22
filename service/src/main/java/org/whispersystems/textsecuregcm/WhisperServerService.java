@@ -86,7 +86,6 @@ import java.util.concurrent.TimeUnit;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import javax.servlet.ServletRegistration;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.jdbi.v3.core.Jdbi;
 import org.signal.storageservice.auth.DiskuvGroupUserAuthenticator;
@@ -224,10 +223,6 @@ import org.whispersystems.websocket.setup.WebSocketEnvironment;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 
 public class WhisperServerService extends Application<WhisperServerConfiguration> {
-
-  static {
-    Security.addProvider(new BouncyCastleProvider());
-  }
 
   @Override
   public void initialize(Bootstrap<WhisperServerConfiguration> bootstrap) {
