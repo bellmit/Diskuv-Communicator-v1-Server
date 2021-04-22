@@ -426,7 +426,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     org.signal.storageservice.s3.PolicySigner policySigner               = new org.signal.storageservice.s3.PolicySigner(config.getCdnConfiguration().getAccessSecret(), config.getCdnConfiguration().getRegion());
     org.signal.storageservice.s3.PostPolicyGenerator postPolicyGenerator = new org.signal.storageservice.s3.PostPolicyGenerator(config.getCdnConfiguration().getRegion(), config.getCdnConfiguration().getBucket(), config.getCdnConfiguration().getAccessKey());
 
-    environment.jersey().register(new GroupsController(groupsManager, serverSecretParams, policySigner, postPolicyGenerator, config.getGroupConfiguration(), externalGroupCredentialGenerator));
+    environment.jersey().register(new GroupsController(groupsManager, serverSecretParams, policySigner, postPolicyGenerator, config.getGroupConfiguration(), sanctuariesDao, externalGroupCredentialGenerator));
     // [Diskuv Change] END: Import of groups from storage-service
   }
 

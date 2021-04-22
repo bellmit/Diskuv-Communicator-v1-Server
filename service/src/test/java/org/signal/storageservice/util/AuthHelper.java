@@ -81,6 +81,7 @@ public class AuthHelper {
 
       new SecureRandom().nextBytes(VALID_USER_PROFILE_KEY);
       new SecureRandom().nextBytes(VALID_USER_TWO_PROFILE_KEY);
+      new SecureRandom().nextBytes(VALID_USER_THREE_PROFILE_KEY);
 
       ProfileKey validUserProfileKey    = new ProfileKey(VALID_USER_PROFILE_KEY    );
       ProfileKey validUserTwoProfileKey = new ProfileKey(VALID_USER_TWO_PROFILE_KEY);

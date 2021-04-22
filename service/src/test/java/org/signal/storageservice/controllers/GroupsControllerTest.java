@@ -10,6 +10,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.UnknownFieldSet;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -45,6 +46,11 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 public class GroupsControllerTest extends BaseGroupsControllerTest {
+
+  @Before
+  public void setupNoSanctuaries() {
+    when(sanctuariesDao.getSanctuary(any(ByteString.class))).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+  }
 
   @Test
   public void testCreateGroup() {
@@ -3163,7 +3169,6 @@ public class GroupsControllerTest extends BaseGroupsControllerTest {
     assertThat(response.getStatus()).isEqualTo(404);
     assertThat(response.hasEntity()).isFalse();
   }
-
 
   private GroupChangeState generateSubjectChange(final Group group, final String newTitle, final int version) {
     return GroupChangeState.newBuilder()

@@ -5,6 +5,7 @@
 
 package org.signal.storageservice.controllers;
 
+import com.diskuv.communicatorservice.storage.SanctuariesDao;
 import com.google.api.client.util.Base64;
 import com.google.protobuf.ByteString;
 import io.dropwizard.auth.AuthValueFactoryProvider;
@@ -46,6 +47,7 @@ public abstract class BaseGroupsControllerTest {
   protected final GroupsManager                    groupsManager              = mock(GroupsManager.class);
   protected final PostPolicyGenerator              postPolicyGenerator        = new PostPolicyGenerator("us-west-1", "profile-bucket", "accessKey");
   protected final PolicySigner                     policySigner               = new PolicySigner("accessSecret", "us-west-1");
+  protected final SanctuariesDao                   sanctuariesDao             = mock(SanctuariesDao.class);
   protected final Group                            group                      = Group.newBuilder()
                                                                                      .setPublicKey(ByteString.copyFrom(groupPublicParams.serialize()))
                                                                                      .setAccessControl(AccessControl.newBuilder()
@@ -78,7 +80,7 @@ public abstract class BaseGroupsControllerTest {
                                                             .addProvider(new ProtocolBufferValidationErrorMessageBodyWriter())
                                                             .addProvider(new InvalidProtocolBufferExceptionMapper())
                                                             .setMapper(SystemMapper.getMapper())
-                                                            .addResource(new GroupsController(groupsManager, AuthHelper.GROUPS_SERVER_KEY, policySigner, postPolicyGenerator, getGroupConfiguration(), groupCredentialGenerator))
+                                                            .addResource(new GroupsController(groupsManager, AuthHelper.GROUPS_SERVER_KEY, policySigner, postPolicyGenerator, getGroupConfiguration(), sanctuariesDao, groupCredentialGenerator))
                                                             .build();
 
   protected GroupConfiguration getGroupConfiguration() {
@@ -88,7 +90,7 @@ public abstract class BaseGroupsControllerTest {
     return groupConfiguration;
   }
 
-  protected String avatarFor(byte[] groupId) {
+  protected static String avatarFor(byte[] groupId) {
     byte[] object = new byte[16];
     new SecureRandom().nextBytes(object);
 

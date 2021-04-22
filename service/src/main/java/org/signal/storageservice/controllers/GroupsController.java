@@ -6,6 +6,7 @@
 package org.signal.storageservice.controllers;
 
 import com.codahale.metrics.annotation.Timed;
+import com.diskuv.communicatorservice.storage.SanctuariesDao;
 import com.google.protobuf.ByteString;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.util.Strings;
@@ -22,6 +23,8 @@ import org.signal.storageservice.providers.NoUnknownFields;
 import org.signal.storageservice.providers.ProtocolBufferMediaType;
 import org.signal.storageservice.s3.PolicySigner;
 import org.signal.storageservice.s3.PostPolicyGenerator;
+import org.signal.storageservice.sanctuaries.GroupPlusSanctuary;
+import org.signal.storageservice.sanctuaries.SanctuaryPruner;
 import org.signal.storageservice.storage.GroupsManager;
 import org.signal.storageservice.storage.protos.groups.*;
 import org.signal.storageservice.storage.protos.groups.GroupChange.Actions;
@@ -55,6 +58,7 @@ public class GroupsController {
   private final ServerSecretParams        serverSecretParams;
   private final GroupValidator            groupValidator;
   private final GroupChangeApplicator     groupChangeApplicator;
+  private final SanctuariesDao            sanctuariesDao;
 
   private final PolicySigner          policySigner;
   private final PostPolicyGenerator   policyGenerator;
@@ -66,6 +70,7 @@ public class GroupsController {
                           PolicySigner                     policySigner,
                           PostPolicyGenerator              policyGenerator,
                           GroupConfiguration               groupConfiguration,
+                          SanctuariesDao                   sanctuariesDao,
                           ExternalGroupCredentialGenerator externalGroupCredentialGenerator)
   {
     this.groupsManager                    = groupsManager;
@@ -74,6 +79,7 @@ public class GroupsController {
     this.groupChangeApplicator            = new GroupChangeApplicator(this.groupValidator                                            );
     this.policySigner                     = policySigner;
     this.policyGenerator                  = policyGenerator;
+    this.sanctuariesDao                   = sanctuariesDao;
     this.externalGroupCredentialGenerator = externalGroupCredentialGenerator;
   }
 
@@ -81,13 +87,15 @@ public class GroupsController {
   @GET
   @Produces(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
   public CompletableFuture<Response> getGroup(@Auth GroupUser user) {
-    return groupsManager.getGroup(user.getGroupId()).thenApply(group -> {
+    return getGroupPlus(user.getGroupId()).thenApply(groupPlusSanctuary -> {
+      Optional<Group> group = groupPlusSanctuary.getGroup();
       if (group.isEmpty()) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
 
       if (GroupAuth.isMember(user, group.get()) || GroupAuth.isMemberPendingProfileKey(user, group.get())) {
-        return Response.ok(group.get()).build();
+        boolean sanctuary = groupPlusSanctuary.isSanctuary();
+        return Response.ok(SanctuaryPruner.pruneGroup(user, group.get(), sanctuary)).build();
       } else  {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
@@ -139,7 +147,8 @@ public class GroupsController {
   @Produces(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
   @Path("/logs/{fromVersion}")
   public CompletableFuture<Response> getGroupLogs(@Auth GroupUser user, @PathParam("fromVersion") int fromVersion) {
-    return groupsManager.getGroup(user.getGroupId()).thenCompose(group -> {
+    return getGroupPlus(user.getGroupId()).thenCompose(groupPlusSanctuary -> {
+      Optional<Group> group = groupPlusSanctuary.getGroup();
       if (group.isEmpty()) {
         return CompletableFuture.completedFuture(Response.status(Response.Status.NOT_FOUND).build());
       }
@@ -159,8 +168,10 @@ public class GroupsController {
         return CompletableFuture.completedFuture(Response.ok(GroupChanges.newBuilder().build()).build());
       }
 
+      boolean sanctuary = groupPlusSanctuary.isSanctuary();
       if (latestGroupVersion + 1 - fromVersion > LOG_VERSION_LIMIT) {
         return groupsManager.getChangeRecords(user.getGroupId(), group.get(), fromVersion, fromVersion + LOG_VERSION_LIMIT)
+                            .thenApply(groupChangeStates -> SanctuaryPruner.pruneChangeRecords(user, group.get(), sanctuary, groupChangeStates))
                             .thenApply(records -> Response.status(HttpStatus.SC_PARTIAL_CONTENT)
                                                           .header(HttpHeaders.CONTENT_RANGE, String.format(Locale.US, "versions %d-%d/%d", fromVersion, fromVersion + LOG_VERSION_LIMIT - 1, latestGroupVersion))
                                                           .entity(GroupChanges.newBuilder()
@@ -169,6 +180,7 @@ public class GroupsController {
                                                           .build());
       } else {
         return groupsManager.getChangeRecords(user.getGroupId(), group.get(), fromVersion, latestGroupVersion + 1)
+                            .thenApply(groupChangeStates -> SanctuaryPruner.pruneChangeRecords(user, group.get(), sanctuary, groupChangeStates))
                             .thenApply(records -> Response.ok(GroupChanges.newBuilder()
                                                                           .addAllGroupChanges(records)
                                                                           .build())
@@ -407,6 +419,15 @@ public class GroupsController {
       } else {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
+    });
+  }
+
+  private CompletableFuture<GroupPlusSanctuary> getGroupPlus(ByteString groupId) {
+    return groupsManager.getGroup(groupId).thenCompose(group -> {
+      if (group.isEmpty()) {
+        return CompletableFuture.completedFuture(new GroupPlusSanctuary(group, false));
+      }
+      return sanctuariesDao.getSanctuary(groupId).thenApply(sanctuaryItem -> new GroupPlusSanctuary(group, sanctuaryItem.isPresent()));
     });
   }
 }
