@@ -14,7 +14,6 @@
 package com.diskuv.communicatorservice.auth;
 
 import org.whispersystems.textsecuregcm.auth.InvalidAuthorizationHeaderException;
-import org.whispersystems.textsecuregcm.util.Base64;
 import org.whispersystems.textsecuregcm.util.Util;
 
 import java.io.IOException;
@@ -60,7 +59,7 @@ public class RoleAuthorizationHeader {
             "Unsupported authorization method: " + headerParts[0]);
       }
 
-      String concatenatedValues = new String(Base64.decode(headerParts[1]));
+      String concatenatedValues = new String(java.util.Base64.getDecoder().decode(headerParts[1]));
 
       if (Util.isEmpty(concatenatedValues)) {
         throw new InvalidAuthorizationHeaderException("Bad decoded value: " + concatenatedValues);
@@ -75,7 +74,7 @@ public class RoleAuthorizationHeader {
       final String username = concatenatedValues.substring(0, i);
       final String password = concatenatedValues.substring(i + 1);
       return new RoleAuthorizationHeader(username, password);
-    } catch (IOException ioe) {
+    } catch (IllegalArgumentException ioe) {
       throw new InvalidAuthorizationHeaderException(ioe);
     }
   }

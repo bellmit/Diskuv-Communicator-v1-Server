@@ -4,9 +4,9 @@ import org.junit.Test;
 import org.whispersystems.textsecuregcm.auth.Anonymous;
 import org.whispersystems.textsecuregcm.auth.OptionalAccess;
 import org.whispersystems.textsecuregcm.storage.Account;
-import org.whispersystems.textsecuregcm.util.Base64;
 
 import javax.ws.rs.WebApplicationException;
+import java.util.Base64;
 import java.util.Optional;
 
 import static junit.framework.TestCase.assertEquals;
@@ -24,7 +24,7 @@ public class OptionalAccessTest {
     when(account.getUnidentifiedAccessKey()).thenReturn(Optional.of("1234".getBytes()));
 
     try {
-      OptionalAccess.verify(Optional.empty(), Optional.of(new Anonymous(Base64.encodeBytes("1234".getBytes()))), account, "10");
+      OptionalAccess.verify(Optional.empty(), Optional.of(new Anonymous(Base64.getEncoder().encodeToString("1234".getBytes()))), account, "10");
     } catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), 401);
     }
@@ -38,7 +38,7 @@ public class OptionalAccessTest {
     when(account.getUnidentifiedAccessKey()).thenReturn(Optional.of("1234".getBytes()));
 
     try {
-      OptionalAccess.verify(Optional.empty(), Optional.of(new Anonymous(Base64.encodeBytes("1234".getBytes()))), account, "$$");
+      OptionalAccess.verify(Optional.empty(), Optional.of(new Anonymous(Base64.getEncoder().encodeToString("1234".getBytes()))), account, "$$");
     } catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), 422);
     }
@@ -52,7 +52,21 @@ public class OptionalAccessTest {
     when(account.getUnidentifiedAccessKey()).thenReturn(Optional.of("1234".getBytes()));
 
     try {
-      OptionalAccess.verify(Optional.empty(), Optional.of(new Anonymous(Base64.encodeBytes("5678".getBytes()))), account);
+      OptionalAccess.verify(Optional.empty(), Optional.of(new Anonymous(Base64.getEncoder().encodeToString("5678".getBytes()))), account);
+      throw new AssertionError("should fail");
+    } catch (WebApplicationException e) {
+      assertEquals(e.getResponse().getStatus(), 401);
+    }
+  }
+
+  @org.junit.Ignore("Cannot use optional target")
+  @Test
+  public void testIdentifiedMissingTarget() {
+    Account account =  mock(Account.class);
+    when(account.isEnabled()).thenReturn(true);
+
+    try {
+      OptionalAccess.verify(Optional.of(account), Optional.empty(), null /*Optional.empty()*/);
       throw new AssertionError("should fail");
     } catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), 401);
@@ -87,7 +101,7 @@ public class OptionalAccessTest {
     Account account = mock(Account.class);
     when(account.getUnidentifiedAccessKey()).thenReturn(Optional.of("1234".getBytes()));
     when(account.isEnabled()).thenReturn(true);
-    OptionalAccess.verify(Optional.empty(), Optional.of(new Anonymous(Base64.encodeBytes("1234".getBytes()))), account);
+    OptionalAccess.verify(Optional.empty(), Optional.of(new Anonymous(Base64.getEncoder().encodeToString("1234".getBytes()))), account);
   }
 
   @Test
@@ -97,7 +111,7 @@ public class OptionalAccessTest {
     when(account.isEnabled()).thenReturn(false);
 
     try {
-      OptionalAccess.verify(Optional.empty(), Optional.of(new Anonymous(Base64.encodeBytes("1234".getBytes()))), account);
+      OptionalAccess.verify(Optional.empty(), Optional.of(new Anonymous(Base64.getEncoder().encodeToString("1234".getBytes()))), account);
       throw new AssertionError();
     } catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), 401);

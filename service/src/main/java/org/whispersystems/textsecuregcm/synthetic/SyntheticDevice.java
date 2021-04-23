@@ -5,9 +5,9 @@ import org.whispersystems.textsecuregcm.crypto.ECKeyPair;
 import org.whispersystems.textsecuregcm.entities.PreKey;
 import org.whispersystems.textsecuregcm.entities.SignedPreKey;
 import org.whispersystems.textsecuregcm.storage.Device;
-import org.whispersystems.textsecuregcm.util.Base64;
 
 import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Optional;
 
 import static org.whispersystems.textsecuregcm.synthetic.SyntheticAccount.MEDIUM_MAX_VALUE;
@@ -66,7 +66,7 @@ public class SyntheticDevice implements PossiblySyntheticDevice {
     // confer: org.whispersystems.signalservice.internal.push.PreKeyEntity.ECPublicKeySerializer
     int preKeyId           = new SecureRandom().nextInt(MEDIUM_MAX_VALUE);
     ECKeyPair keyPair      = Curve.generateKeyPair();
-    String preKeyPublicKey = Base64.encodeBytesWithoutPadding(keyPair.getPublicKey().serialize());
+    String preKeyPublicKey = Base64.getEncoder().withoutPadding().encodeToString(keyPair.getPublicKey().serialize());
     return Optional.of(new PreKey(preKeyId, preKeyPublicKey));
   }
 }

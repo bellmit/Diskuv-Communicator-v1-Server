@@ -362,8 +362,8 @@ class AccountControllerTest {
     assertThat(response.getStatus()).isEqualTo(200);
 
     if (enrolledInVerifyExperiment) {
-      ArgumentCaptor<StoredVerificationCode> storedVerificationCodeArgumentCaptor = ArgumentCaptor
-          .forClass(StoredVerificationCode.class);
+      ArgumentCaptor<org.whispersystems.textsecuregcm.auth.StoredVerificationCode> storedVerificationCodeArgumentCaptor = ArgumentCaptor
+          .forClass(org.whispersystems.textsecuregcm.auth.StoredVerificationCode.class);
 
       verify(smsSender).deliverSmsVerificationWithTwilioVerify(eq(SENDER), eq(Optional.empty()), anyString(), eq(Collections.emptyList()));
       // Broken compile: verify(pendingAccountsManager, times(2)).store(eq(SENDER), storedVerificationCodeArgumentCaptor.capture());

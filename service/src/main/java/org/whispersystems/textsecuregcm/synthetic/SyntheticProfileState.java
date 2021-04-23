@@ -6,7 +6,6 @@ import org.apache.commons.math3.random.RandomGeneratorFactory;
 import org.apache.commons.text.RandomStringGenerator;
 import org.signal.zkgroup.InvalidInputException;
 import org.signal.zkgroup.profiles.ProfileKey;
-import org.whispersystems.textsecuregcm.util.Base64;
 import org.whispersystems.textsecuregcm.util.ByteUtil;
 
 import javax.crypto.BadPaddingException;
@@ -20,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.Random;
 import java.util.UUID;
 
@@ -293,7 +293,7 @@ public class SyntheticProfileState {
 
       // Jackson Json encode it. Same as
       // org.whispersystems.signalservice.internal.push.PushServiceSocket#writeProfile
-      return Base64.encodeBytes(profileName);
+      return Base64.getEncoder().encodeToString(profileName);
     } catch (NoSuchAlgorithmException
         | NoSuchPaddingException
         | InvalidKeyException

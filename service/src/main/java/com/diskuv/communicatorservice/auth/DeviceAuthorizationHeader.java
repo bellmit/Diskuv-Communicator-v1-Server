@@ -15,11 +15,11 @@ package com.diskuv.communicatorservice.auth;
 
 
 import org.whispersystems.textsecuregcm.auth.InvalidAuthorizationHeaderException;
-import org.whispersystems.textsecuregcm.util.Base64;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Util;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.UUID;
 
 /**
@@ -60,7 +60,7 @@ public class DeviceAuthorizationHeader {
         throw new InvalidAuthorizationHeaderException("Unsupported authorization method: " + headerParts[0]);
       }
 
-      String concatenatedValues = new String(Base64.decode(headerParts[1]));
+      String concatenatedValues = new String(Base64.getDecoder().decode(headerParts[1]));
 
       if (Util.isEmpty(concatenatedValues)) {
         throw new InvalidAuthorizationHeaderException("Bad decoded value: " + concatenatedValues);
@@ -72,17 +72,13 @@ public class DeviceAuthorizationHeader {
         throw new InvalidAuthorizationHeaderException("Badly formatted credentials: " + concatenatedValues);
       }
 
-      try {
-        String diskuvUuid = credentialParts[0];
-        DiskuvUuidUtil.verifyDiskuvUuid(diskuvUuid);
-        return new DeviceAuthorizationHeader(
-            UUID.fromString(diskuvUuid),
-            Long.parseLong(credentialParts[1]),
-            Base64.decode(credentialParts[2]));
-      } catch (IllegalArgumentException e) {
-        throw new InvalidAuthorizationHeaderException(e);
-      }
-    } catch (IOException ioe) {
+      String diskuvUuid = credentialParts[0];
+      DiskuvUuidUtil.verifyDiskuvUuid(diskuvUuid);
+      return new DeviceAuthorizationHeader(
+          UUID.fromString(diskuvUuid),
+          Long.parseLong(credentialParts[1]),
+          Base64.getDecoder().decode(credentialParts[2]));
+    } catch (IllegalArgumentException ioe) {
       throw new InvalidAuthorizationHeaderException(ioe);
     }
   }

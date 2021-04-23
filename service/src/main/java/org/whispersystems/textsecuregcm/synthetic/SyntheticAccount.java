@@ -12,9 +12,9 @@ import org.whispersystems.textsecuregcm.controllers.DeviceController;
 import org.whispersystems.textsecuregcm.entities.SignedPreKey;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Device;
-import org.whispersystems.textsecuregcm.util.Base64;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -73,7 +73,7 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
     this.profileState = new SyntheticProfileState(sharedEntropyInput, accountUuid);
 
     // configure security parameters
-    String salt = Base64.encodeBytesWithoutPadding(sharedEntropyInput) + accountUuid.toString();
+    String salt = Base64.getEncoder().withoutPadding().encodeToString(sharedEntropyInput) + accountUuid.toString();
 
     // make random samplers
     realDevicesPerAccountDistribution =
@@ -92,7 +92,7 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
     // Make identity key
     // Confer: org.whispersystems.signalservice.internal.util.JsonUtil.IdentityKeySerializer
     identityKeyPair = makeKeyPair(DISCRIMINATOR_IDENTITY_KEY);
-    this.identityKey = Base64.encodeBytesWithoutPadding(identityKeyPair.getPublicKey().serialize());
+    this.identityKey = Base64.getEncoder().withoutPadding().encodeToString(identityKeyPair.getPublicKey().serialize());
 
     // Make devices
     this.devices = makeDevices();
@@ -236,8 +236,8 @@ public class SyntheticAccount implements PossiblySyntheticAccount {
       throw new IllegalStateException(e);
     }
 
-    String signature = Base64.encodeBytesWithoutPadding(signatureBytes);
-    String signedPreKeyPublicKeyEncoded = Base64.encodeBytesWithoutPadding(signedPreKeyPublicKeyBytesWithType);
+    String signature = Base64.getEncoder().withoutPadding().encodeToString(signatureBytes);
+    String signedPreKeyPublicKeyEncoded = Base64.getEncoder().withoutPadding().encodeToString(signedPreKeyPublicKeyBytesWithType);
     return new SignedPreKey(signedPreKeyId, signedPreKeyPublicKeyEncoded, signature);
   }
 

@@ -7,10 +7,10 @@ import org.whispersystems.curve25519.Curve25519;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.ecc.Curve;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
-import org.whispersystems.textsecuregcm.util.Base64;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,13 +26,13 @@ public class SyntheticAccountTest {
     Curve25519 curve25519 = Curve25519.getInstance(Curve25519.JAVA);
     PossiblySyntheticDevice device = account.getDevices().iterator().next();
 
-    byte[]     identityPublicKeyWithType  = Base64.decodeWithoutPadding(account.getIdentityKey());
+    byte[]     identityPublicKeyWithType  = Base64.getDecoder().decode(account.getIdentityKey());
     assertThat(identityPublicKeyWithType[0]).isEqualTo((byte) org.whispersystems.textsecuregcm.crypto.Curve.DJB_TYPE);
     byte[] identityPublicKey = ByteString.copyFrom(identityPublicKeyWithType).substring(1).toByteArray();
 
-    byte[]     signedPreKeyPublic = Base64.decodeWithoutPadding(device.getSignedPreKey().getPublicKey());
+    byte[]     signedPreKeyPublic = Base64.getDecoder().decode(device.getSignedPreKey().getPublicKey());
 
-    byte[] signedPreKeySignature = Base64.decodeWithoutPadding(device.getSignedPreKey().getSignature());
+    byte[] signedPreKeySignature = Base64.getDecoder().decode(device.getSignedPreKey().getSignature());
 
     boolean valid = curve25519.verifySignature(identityPublicKey, signedPreKeyPublic, signedPreKeySignature);
     assertThat(valid).isTrue();
@@ -44,13 +44,13 @@ public class SyntheticAccountTest {
             new SyntheticAccount(new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES], UUID1);
     PossiblySyntheticDevice device = account.getDevices().iterator().next();
 
-    byte[]     identityPublicKeyWithType  = Base64.decodeWithoutPadding(account.getIdentityKey());
+    byte[]     identityPublicKeyWithType  = Base64.getDecoder().decode(account.getIdentityKey());
     assertThat(identityPublicKeyWithType[0]).isEqualTo((byte) org.whispersystems.libsignal.ecc.Curve.DJB_TYPE);
     // UNUSED:   byte[] identityPublicKey = ByteString.copyFrom(identityPublicKeyWithType).substring(1).toByteArray();
 
-    byte[]     signedPreKeyPublic = Base64.decodeWithoutPadding(device.getSignedPreKey().getPublicKey());
+    byte[]     signedPreKeyPublic = Base64.getDecoder().decode(device.getSignedPreKey().getPublicKey());
 
-    byte[] signedPreKeySignature = Base64.decodeWithoutPadding(device.getSignedPreKey().getSignature());
+    byte[] signedPreKeySignature = Base64.getDecoder().decode(device.getSignedPreKey().getSignature());
 
     ECPublicKey signingKey = Curve.decodePoint(identityPublicKeyWithType, 0);
     boolean     valid      = org.whispersystems.libsignal.ecc.Curve.verifySignature(signingKey, signedPreKeyPublic, signedPreKeySignature);

@@ -33,6 +33,7 @@ import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -82,10 +83,6 @@ import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.DynamicConfigurationManager;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
-import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount;
-import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
-import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice;
-import org.whispersystems.textsecuregcm.util.Base64;
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.ForwardedIpUtil;
 import org.whispersystems.textsecuregcm.util.Util;
@@ -109,7 +106,7 @@ public class MessageController {
   private final RateLimiters                rateLimiters;
   private final MessageSender               messageSender;
   private final ReceiptSender               receiptSender;
-  private final PossiblySyntheticAccountsManager             accountsManager;
+  private final org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager             accountsManager;
   private final MessagesManager             messagesManager;
   private final ApnFallbackManager          apnFallbackManager;
   private final DynamicConfigurationManager dynamicConfigurationManager;
@@ -137,7 +134,7 @@ public class MessageController {
                            RateLimiters rateLimiters,
                            MessageSender messageSender,
                            ReceiptSender receiptSender,
-                           PossiblySyntheticAccountsManager accountsManager,
+                           org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager accountsManager,
                            MessagesManager messagesManager,
                            ApnFallbackManager apnFallbackManager,
                            DynamicConfigurationManager dynamicConfigurationManager,
@@ -251,7 +248,7 @@ public class MessageController {
     try {
       boolean isSyncMessage = source.isPresent() && source.get().isFor(destinationName);
 
-      Optional<? extends PossiblySyntheticAccount> destination;
+      Optional<? extends org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount> destination;
 
       if (!isSyncMessage) destination = Optional.of(accountsManager.get(destinationName.getUuid()));
       else                destination = source;
@@ -280,7 +277,7 @@ public class MessageController {
 
       for (IncomingMessage incomingMessage : messages.getMessages()) {
         // Don't send anything if a synthetic device
-        Optional<? extends PossiblySyntheticDevice> possibleDestinationDevice = destination.get().getDevice(incomingMessage.getDestinationDeviceId());
+        Optional<? extends org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice> possibleDestinationDevice = destination.get().getDevice(incomingMessage.getDestinationDeviceId());
         if (possibleDestinationDevice.isEmpty() || possibleDestinationDevice.get().getRealDevice().isEmpty()) {
           continue;
         }
@@ -484,13 +481,13 @@ public class MessageController {
     }
   }
 
-  private void validateRegistrationIds(PossiblySyntheticAccount account, List<IncomingMessage> messages)
+  private void validateRegistrationIds(org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount account, List<IncomingMessage> messages)
       throws StaleDevicesException
   {
     List<Long> staleDevices = new LinkedList<>();
 
     for (IncomingMessage message : messages) {
-      Optional<? extends PossiblySyntheticDevice> device = account.getDevice(message.getDestinationDeviceId());
+      Optional<? extends org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice> device = account.getDevice(message.getDestinationDeviceId());
 
       if (device.isPresent() &&
           message.getDestinationRegistrationId() > 0 &&
@@ -505,7 +502,7 @@ public class MessageController {
     }
   }
 
-  private void validateCompleteDeviceList(PossiblySyntheticAccount account,
+  private void validateCompleteDeviceList(org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccount account,
                                           List<IncomingMessage> messages,
                                           boolean isSyncMessage)
       throws MismatchedDevicesException
@@ -520,7 +517,7 @@ public class MessageController {
       messageDeviceIds.add(message.getDestinationDeviceId());
     }
 
-    for (PossiblySyntheticDevice device : account.getDevices()) {
+    for (org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticDevice device : account.getDevices()) {
       if (device.isEnabled() &&
           !(isSyncMessage && device.getId() == account.getAuthenticatedDevice().get().getId()))
       {
@@ -547,9 +544,9 @@ public class MessageController {
     if (Util.isEmpty(message.getBody())) return Optional.empty();
 
     try {
-      return Optional.of(Base64.decode(message.getBody()));
-    } catch (IOException ioe) {
-      logger.debug("Bad B64", ioe);
+      return Optional.of(Base64.getDecoder().decode(message.getBody()));
+    } catch (IllegalArgumentException e) {
+      logger.debug("Bad B64", e);
       return Optional.empty();
     }
   }
@@ -558,9 +555,9 @@ public class MessageController {
     if (Util.isEmpty(message.getContent())) return Optional.empty();
 
     try {
-      return Optional.of(Base64.decode(message.getContent()));
-    } catch (IOException ioe) {
-      logger.debug("Bad B64", ioe);
+      return Optional.of(Base64.getDecoder().decode(message.getContent()));
+    } catch (IllegalArgumentException e) {
+      logger.debug("Bad B64", e);
       return Optional.empty();
     }
   }

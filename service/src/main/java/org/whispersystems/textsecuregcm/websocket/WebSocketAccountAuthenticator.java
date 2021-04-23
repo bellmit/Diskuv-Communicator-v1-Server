@@ -6,9 +6,9 @@ import com.diskuv.communicatorservice.auth.DiskuvDeviceCredentials;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.websocket.auth.WebSocketAuthenticator;
-import org.whispersystems.websocket.util.Base64;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,8 +47,8 @@ public class WebSocketAccountAuthenticator implements WebSocketAuthenticator<Acc
     String encodedDevicePassword = devicePasswords.get(0);
     byte[] devicePassword;
     try {
-      devicePassword = Base64.decode(encodedDevicePassword, Base64.URL_SAFE);
-    } catch (IOException e) {
+      devicePassword = Base64.getUrlDecoder().decode(encodedDevicePassword);
+    } catch (IllegalArgumentException e) {
       return new AuthenticationResult<>(Optional.empty(), AUTH_IS_REQUIRED);
     }
 

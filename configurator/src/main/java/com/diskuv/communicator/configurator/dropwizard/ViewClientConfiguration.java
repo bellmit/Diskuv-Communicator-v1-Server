@@ -18,7 +18,6 @@ import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.whispersystems.textsecuregcm.WhisperServerConfiguration;
 import org.whispersystems.textsecuregcm.crypto.ECPublicKey;
-import org.whispersystems.textsecuregcm.util.Base64;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -77,7 +76,7 @@ public class ViewClientConfiguration implements Callable<Integer> {
     System.out.println("------------------------------------");
     System.out.println();
     System.out.println("ZKGROUP_SERVER_PUBLIC_PARAMS (Android), serverPublicParamsBase64 (iOS) := ");
-    System.out.println("  "  + Base64.encodeBytes(config.getZkConfig().getServerPublic()));
+    System.out.println("  "  + java.util.Base64.getEncoder().encodeToString(config.getZkConfig().getServerPublic()));
     System.out.println("Examples:");
     System.out.println("* https://github.com/signalapp/Signal-Android/blob/fc41fb50144791deb17a3b240ebc4b84cbaf4ad3/app/build.gradle#L129");
     System.out.println("* https://github.com/signalapp/Signal-Android/blob/fc41fb50144791deb17a3b240ebc4b84cbaf4ad3/app/build.gradle#L259");
@@ -89,7 +88,7 @@ public class ViewClientConfiguration implements Callable<Integer> {
     System.out.println("------------------------------");
     System.out.println();
     System.out.println("UNIDENTIFIED_SENDER_TRUST_ROOT (Android), kUDTrustRoot (iOS) := ");
-    System.out.println("  "  + Base64.encodeBytes(signingPublicKey.serialize()));
+    System.out.println("  "  + java.util.Base64.getEncoder().encodeToString(signingPublicKey.serialize()));
     System.out.println("Examples:");
     System.out.println("* https://github.com/signalapp/Signal-Android/blob/fc41fb50144791deb17a3b240ebc4b84cbaf4ad3/app/build.gradle#L128");
     System.out.println("* https://github.com/signalapp/Signal-Android/blob/fc41fb50144791deb17a3b240ebc4b84cbaf4ad3/app/build.gradle#L258");

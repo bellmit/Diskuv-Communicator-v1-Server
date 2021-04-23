@@ -31,6 +31,7 @@ import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
 import io.lettuce.core.cluster.api.sync.RedisAdvancedClusterCommands;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -85,15 +86,13 @@ import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.synthetic.PossiblySyntheticAccountsManager;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
 import org.whispersystems.textsecuregcm.tests.util.RedisClusterHelper;
-import org.whispersystems.textsecuregcm.tests.util.UuidHelpers;
-import org.whispersystems.textsecuregcm.util.Base64;
 
 @ExtendWith(DropwizardExtensionsSupport.class)
 class MessageControllerTest {
   private static final String EMPTY_SOURCE            = "";
-  private static final UUID   SINGLE_DEVICE_UUID      = UuidHelpers.UUID_BOB;
+  private static final UUID   SINGLE_DEVICE_UUID      = org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_BOB;
 
-  private static final UUID   MULTI_DEVICE_UUID       = UuidHelpers.UUID_ALICE;
+  private static final UUID   MULTI_DEVICE_UUID       = org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
 
   private static final UUID   INTERNATIONAL_UUID      = org.whispersystems.textsecuregcm.util.DiskuvUuidUtil.uuidForOutdoorEmailAddress("international@example.com");
 
@@ -215,7 +214,7 @@ class MessageControllerTest {
     assertTrue(captor.getValue().hasSourceDevice());
   }
 
-  @org.junit.Ignore("Diskuv has not international phone number detection logic")
+  @org.junit.jupiter.api.Disabled("Diskuv has not international phone number detection logic")
   @Test
   void testInternationalUnsealedSenderFromRateLimitedHost() throws Exception {
     final String senderHost = "10.0.0.1";
@@ -278,7 +277,7 @@ class MessageControllerTest {
             .target(String.format("/v1/messages/%s", INTERNATIONAL_UUID))
             .request()
             .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
-            .header(DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+            .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
             .put(Entity.entity(mapper.readValue(jsonFixture("fixtures/current_message_single_device.json"), IncomingMessageList.class),
                 MediaType.APPLICATION_JSON_TYPE));
 
@@ -297,9 +296,9 @@ class MessageControllerTest {
         resources.getJerseyTest()
                  .target(String.format("/v1/messages/%s", SINGLE_DEVICE_UUID))
                  .request()
-                 .header(OptionalAccess.UNIDENTIFIED, Base64.encodeBytes("1234".getBytes()))
                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                  .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
+                 .header(OptionalAccess.UNIDENTIFIED, Base64.getEncoder().encodeToString("1234".getBytes()))
                  .put(Entity.entity(mapper.readValue(jsonFixture("fixtures/current_message_single_device.json"), IncomingMessageList.class),
                                     MediaType.APPLICATION_JSON_TYPE));
 
@@ -408,11 +407,11 @@ class MessageControllerTest {
     final long timestampTwo = 313388;
 
     final UUID messageGuidOne = UUID.randomUUID();
-    final UUID sourceUuid     = UuidHelpers.UUID_ALICE;
+    final UUID sourceUuid     = org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE;
 
     List<OutgoingMessageEntity> messages = new LinkedList<>() {{
-      add(new OutgoingMessageEntity(1L, false, messageGuidOne, Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 2, "hi there".getBytes(), null, 0, null));
-      add(new OutgoingMessageEntity(2L, false, null, Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 2, null, null, 0, null));
+      add(new OutgoingMessageEntity(1L, false, messageGuidOne, Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 2, "hi there".getBytes(), null, 0, null));
+      add(new OutgoingMessageEntity(2L, false, null, Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 2, null, null, 0, null));
     }};
 
     OutgoingMessageEntityList messagesList = new OutgoingMessageEntityList(messages, false);
@@ -449,8 +448,8 @@ class MessageControllerTest {
     final long timestampTwo = 313388;
 
     List<OutgoingMessageEntity> messages = new LinkedList<OutgoingMessageEntity>() {{
-      add(new OutgoingMessageEntity(1L, false, UUID.randomUUID(), Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 2, "hi there".getBytes(), null, 0, null));
-      add(new OutgoingMessageEntity(2L, false, UUID.randomUUID(), Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 2, null, null, 0, null));
+      add(new OutgoingMessageEntity(1L, false, UUID.randomUUID(), Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 2, "hi there".getBytes(), null, 0, null));
+      add(new OutgoingMessageEntity(2L, false, UUID.randomUUID(), Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 2, null, null, 0, null));
     }};
 
     OutgoingMessageEntityList messagesList = new OutgoingMessageEntityList(messages, false);
@@ -474,34 +473,34 @@ class MessageControllerTest {
 
     UUID sourceUuid = UUID.randomUUID();
 
-    when(messagesManager.delete(AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31337))
+    when(messagesManager.delete(AuthHelper.VALID_UUID, 1, org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 31337))
         .thenReturn(Optional.of(new OutgoingMessageEntity(31337L, true, null,
                                                           Envelope.Type.CIPHERTEXT_VALUE,
                                                           null, timestamp,
-                                                          EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 1, "hi".getBytes(), null, 0, null)));
+                                                          EMPTY_SOURCE, org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 1, "hi".getBytes(), null, 0, null)));
 
-    when(messagesManager.delete(AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31338))
+    when(messagesManager.delete(AuthHelper.VALID_UUID, 1, org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 31338))
         .thenReturn(Optional.of(new OutgoingMessageEntity(31337L, true, null,
                                                           Envelope.Type.RECEIPT_VALUE,
                                                           null, System.currentTimeMillis(),
-                                                          EMPTY_SOURCE, UuidHelpers.UUID_ALICE, 1, null, null, 0, null)));
+                                                          EMPTY_SOURCE, org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 1, null, null, 0, null)));
 
 
-    when(messagesManager.delete(AuthHelper.VALID_UUID, 1, UuidHelpers.UUID_ALICE, 31339))
+    when(messagesManager.delete(AuthHelper.VALID_UUID, 1, org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 31339))
         .thenReturn(Optional.empty());
 
     Response response = resources.getJerseyTest()
-                                 .target(String.format("/v1/messages/%s/%d", UuidHelpers.UUID_ALICE, 31337))
+                                 .target(String.format("/v1/messages/%s/%d", org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 31337))
                                  .request()
                                  .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                                  .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
                                  .delete();
 
     assertThat("Good Response Code", response.getStatus(), is(equalTo(204)));
-    verify(receiptSender).sendReceipt(any(Account.class), eq(UuidHelpers.UUID_ALICE_STRING), eq(timestamp));
+    verify(receiptSender).sendReceipt(any(Account.class), eq(org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE_STRING), eq(timestamp));
 
     response = resources.getJerseyTest()
-                        .target(String.format("/v1/messages/%s/%d", UuidHelpers.UUID_ALICE, 31338))
+                        .target(String.format("/v1/messages/%s/%d", org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 31338))
                         .request()
                         .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                         .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))
@@ -511,7 +510,7 @@ class MessageControllerTest {
     verifyNoMoreInteractions(receiptSender);
 
     response = resources.getJerseyTest()
-                        .target(String.format("/v1/messages/%s/%d", UuidHelpers.UUID_ALICE, 31339))
+                        .target(String.format("/v1/messages/%s/%d", org.whispersystems.textsecuregcm.tests.util.UuidHelpers.UUID_ALICE, 31339))
                         .request()
                         .header("Authorization", AuthHelper.getAccountAuthHeader(AuthHelper.VALID_BEARER_TOKEN))
                         .header(com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader.DEVICE_AUTHORIZATION_HEADER, AuthHelper.getAuthHeader(AuthHelper.VALID_DEVICE_ID_STRING, AuthHelper.VALID_PASSWORD))

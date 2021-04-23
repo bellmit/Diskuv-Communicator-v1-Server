@@ -11,6 +11,7 @@ import io.dropwizard.auth.PolymorphicAuthDynamicFeature;
 import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
 import io.dropwizard.auth.basic.BasicCredentials;
 import java.security.Principal;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
@@ -26,7 +27,6 @@ import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
-import org.whispersystems.textsecuregcm.util.Base64;
 
 public class AuthHelper {
   public static final String VALID_BEARER_TOKEN = "blah";
@@ -209,8 +209,8 @@ public class AuthHelper {
   }
 
   public static String getAuthHeader(UUID accountUuid, String number, String password) {
-    String encodedPassword = Base64.encodeBytes(password.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-    return "Basic " + Base64.encodeBytes((accountUuid + ":" + number + ":" + encodedPassword).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    String encodedPassword = Base64.getEncoder().encodeToString(password.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    return "Basic " + Base64.getEncoder().encodeToString((accountUuid + ":" + number + ":" + encodedPassword).getBytes(java.nio.charset.StandardCharsets.UTF_8));
   }
 
   public static String getAccountAuthHeader(String bearerToken) {
@@ -218,7 +218,7 @@ public class AuthHelper {
   }
 
   public static String getUnidentifiedAccessHeader(byte[] key) {
-    return Base64.encodeBytes(key);
+    return Base64.getEncoder().encodeToString(key);
   }
 
   public static UUID getRandomUUID(Random random) {

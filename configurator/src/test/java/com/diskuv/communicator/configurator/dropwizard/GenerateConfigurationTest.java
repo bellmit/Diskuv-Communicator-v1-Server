@@ -27,7 +27,6 @@ import org.whispersystems.textsecuregcm.crypto.Curve;
 import org.whispersystems.textsecuregcm.crypto.ECPrivateKey;
 import org.whispersystems.textsecuregcm.crypto.ECPublicKey;
 import org.whispersystems.textsecuregcm.entities.MessageProtos;
-import org.whispersystems.textsecuregcm.util.Base64;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
@@ -118,8 +117,8 @@ public class GenerateConfigurationTest {
         Map<String, Map<String, String>> config = YAML.load(serverKeyPairStream);
         Map<String, String> unidentifiedDelivery = config.get("unidentifiedDelivery");
         byte[] expectedSignedCertificate =
-            Base64.decodeWithoutPadding(unidentifiedDelivery.get("certificate"));
-        byte[] privateKey = Base64.decodeWithoutPadding(unidentifiedDelivery.get("privateKey"));
+            java.util.Base64.getDecoder().decode(unidentifiedDelivery.get("certificate"));
+        byte[] privateKey = java.util.Base64.getDecoder().decode(unidentifiedDelivery.get("privateKey"));
         ECPrivateKey serverPrivateKey = Curve.decodePrivatePoint(privateKey);
 
         // get ECPublicKey from ECPrivateKey
