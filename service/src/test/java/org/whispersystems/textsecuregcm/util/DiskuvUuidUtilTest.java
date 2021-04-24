@@ -89,12 +89,12 @@ public class DiskuvUuidUtilTest {
     }
 
     @Test
-    public void givenEmailAddressAndSanctuaryToken__whenUuidForSanctuaryEmailAddress__thenUUID4() {
+    public void givenEmailAddressAndSanctuaryGroupMasterKey__whenUuidForSanctuaryEmailAddress__thenUUID4() {
         // given: email address
-        String emailAddress   = "trees@yahoo.com";
-        byte[] sanctuaryToken = new byte[32];
+        String emailAddress            = "trees@yahoo.com";
+        byte[] sanctuaryGroupMasterKey = new byte[32];
         // when
-        UUID uuid = DiskuvUuidUtil.uuidForSanctuaryEmailAddress(emailAddress, sanctuaryToken);
+        UUID uuid = DiskuvUuidUtil.uuidForSanctuaryEmailAddress(emailAddress, sanctuaryGroupMasterKey);
         // then: UUID version 4
         assertThat(uuid.version()).isEqualTo(4);
         // then: variant 1 (IETF variant, which is 10 in binary)
@@ -103,7 +103,7 @@ public class DiskuvUuidUtilTest {
         assertThat(uuid.getMostSignificantBits() & 0xc0000000_00000000L).isEqualTo(0x40000000_00000000L);
         // then: verified UUID
         DiskuvUuidType type = DiskuvUuidUtil.verifyDiskuvUuid(uuid.toString());
-        assertThat(type).isEqualTo(DiskuvUuidType.HOUSE_SPECIFIC);
+        assertThat(type).isEqualTo(DiskuvUuidType.SANCTUARY_SPECIFIC);
         // then: different from outdoors uuid
         assertThat(uuid).isNotEqualTo(DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress));
     }

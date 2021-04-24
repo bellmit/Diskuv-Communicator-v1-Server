@@ -4,5 +4,5 @@ public enum DiskuvUuidType {
   /** Outdoors is anywhere outside of a sanctuary. Everyone starts outdoors. */
   OUTDOORS,
   /** A sanctuary-specific user. */
-  HOUSE_SPECIFIC
+  SANCTUARY_SPECIFIC
 }
