@@ -132,7 +132,7 @@ public class DiskuvUuidUtil {
 
   /**
    * Truncate the digest into a UUID-sized byte array, and twiddle with the bits to make it a valid Version
-   * 4 IETF variant UUID
+   * 4 IETF/RFC-4122 variant UUID
    */
   private static byte[] truncateDigestAndBitTwiddleIntoUUID(byte[] digest) {
     // Truncate the digest
@@ -143,7 +143,7 @@ public class DiskuvUuidUtil {
     uuidType4Bytes[6] &= 0x0f; /* clear version        */
     uuidType4Bytes[6] |= 0x40; /* set to version 4     */
     uuidType4Bytes[8] &= 0x3f; /* clear variant        */
-    uuidType4Bytes[8] |= 0x80; /* set to IETF variant  */
+    uuidType4Bytes[8] |= 0x80; /* set to IETF / RFC 4122 variant  */
 
     return uuidType4Bytes;
   }
@@ -202,7 +202,7 @@ public class DiskuvUuidUtil {
     UUID uuid = UUID.fromString(possibleDiskuvUuid);
     // UUID version 4
     Preconditions.checkArgument(uuid.version() == 4);
-    // variant 1 (IETF variant, which is 10 in binary)
+    // variant 1 (IETF / RFC 4122 variant, which is 10 in binary)
     Preconditions.checkArgument(uuid.variant() == 0b10);
     // Diskuv UUID type 0 or 1?
     long l = uuid.getMostSignificantBits() >>> 62;

@@ -79,13 +79,15 @@ public class DiskuvUuidUtilTest {
         UUID uuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress);
         // then: UUID version 4
         assertThat(uuid.version()).isEqualTo(4);
-        // then: variant 1 (IETF variant, which is 10 in binary)
+        // then: variant 1 (IETF / RFC 4122 variant, which is 10 in binary)
         assertThat(uuid.variant()).isEqualTo(0b10);
         // then: Diskuv UUID type 0
         assertThat(uuid.getMostSignificantBits() & 0xc0000000_00000000L).isEqualTo(0x00000000_00000000L);
         // then: verified UUID
         DiskuvUuidType type = DiskuvUuidUtil.verifyDiskuvUuid(uuid.toString());
         assertThat(type).isEqualTo(DiskuvUuidType.OUTDOORS);
+        // then: hex constant
+        assertThat(uuid.toString()).isEqualTo("3c5437da-d904-497b-a61c-9227dbbad7e5");
     }
 
     @Test
@@ -97,7 +99,7 @@ public class DiskuvUuidUtilTest {
         UUID uuid = DiskuvUuidUtil.uuidForSanctuaryEmailAddress(emailAddress, sanctuaryGroupMasterKey);
         // then: UUID version 4
         assertThat(uuid.version()).isEqualTo(4);
-        // then: variant 1 (IETF variant, which is 10 in binary)
+        // then: variant 1 (IETF / RFC 4122 variant, which is 10 in binary)
         assertThat(uuid.variant()).isEqualTo(0b10);
         // then: Diskuv UUID type 1
         assertThat(uuid.getMostSignificantBits() & 0xc0000000_00000000L).isEqualTo(0x40000000_00000000L);
@@ -106,6 +108,8 @@ public class DiskuvUuidUtilTest {
         assertThat(type).isEqualTo(DiskuvUuidType.SANCTUARY_SPECIFIC);
         // then: different from outdoors uuid
         assertThat(uuid).isNotEqualTo(DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress));
+        // then: hex constant
+        assertThat(uuid.toString()).isEqualTo("45e1c7de-d47d-49d3-8352-e4cfa24b166e");
     }
 
     @Test
