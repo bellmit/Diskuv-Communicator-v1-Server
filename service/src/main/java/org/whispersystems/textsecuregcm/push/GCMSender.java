@@ -17,9 +17,12 @@ import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.SystemMapper;
 import org.whispersystems.textsecuregcm.util.Util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -93,7 +96,19 @@ public class GCMSender implements Managed {
           success.mark();
         }
       } else {
-        logger.warn("FCM Failed: " + throwable + ", " + throwable.getCause());
+        List<String> msg = new ArrayList<>();
+        if (result != null && result.getError() != null) {
+          msg.add(result.getError());
+        }
+        if (throwable != null) {
+          msg.add(throwable.getMessage());
+        }
+        if (throwable != null && throwable.getCause() != null) {
+          msg.add(throwable.getCause().getMessage());
+        }
+        if (!msg.isEmpty()) {
+          logger.warn("FCM Failed: " + String.join(", ", msg));
+        }
       }
 
       return null;
