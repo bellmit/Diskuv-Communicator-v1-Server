@@ -23,6 +23,7 @@ import org.whispersystems.textsecuregcm.configuration.RateLimitsConfiguration.Ca
 import org.whispersystems.textsecuregcm.configuration.RateLimitsConfiguration.RateLimitConfiguration;
 import org.whispersystems.textsecuregcm.redis.FaultTolerantRedisCluster;
 import org.whispersystems.textsecuregcm.storage.DynamicConfigurationManager;
+import javax.annotation.Nullable;
 
 public class RateLimiters {
 
@@ -55,11 +56,13 @@ public class RateLimiters {
   private final AtomicReference<RateLimiter> unsealedIpLimiter;
 
   private final FaultTolerantRedisCluster   cacheCluster;
+  private final FaultTolerantRedisCluster   newCacheCluster;
   private final DynamicConfigurationManager dynamicConfig;
 
-  public RateLimiters(RateLimitsConfiguration config, DynamicConfigurationManager dynamicConfig, FaultTolerantRedisCluster cacheCluster) {
-    this.cacheCluster  = cacheCluster;
-    this.dynamicConfig = dynamicConfig;
+  public RateLimiters(RateLimitsConfiguration config, DynamicConfigurationManager dynamicConfig, FaultTolerantRedisCluster cacheCluster, FaultTolerantRedisCluster newCacheCluster) {
+    this.cacheCluster    = cacheCluster;
+    this.newCacheCluster = newCacheCluster;
+    this.dynamicConfig   = dynamicConfig;
 
     this.smsDestinationLimiter = new RateLimiter(cacheCluster, "smsDestination",
                                                  config.getSmsDestination().getBucketSize(),
@@ -81,11 +84,11 @@ public class RateLimiters {
                                                  config.getSmsVoicePrefix().getBucketSize(),
                                                  config.getSmsVoicePrefix().getLeakRatePerMinute());
 
-    this.autoBlockLimiter = new RateLimiter(cacheCluster, "autoBlock",
+    this.autoBlockLimiter = new RateLimiter(cacheCluster, newCacheCluster, "autoBlock",
                                             config.getAutoBlock().getBucketSize(),
                                             config.getAutoBlock().getLeakRatePerMinute());
 
-    this.verifyLimiter = new LockingRateLimiter(cacheCluster, "verify",
+    this.verifyLimiter = new LockingRateLimiter(cacheCluster, newCacheCluster, "verify",
                                                 config.getVerifyNumber().getBucketSize(),
                                                 config.getVerifyNumber().getLeakRatePerMinute());
 
@@ -117,7 +120,7 @@ public class RateLimiters {
                                        config.getTurnAllocations().getBucketSize(),
                                        config.getTurnAllocations().getLeakRatePerMinute());
 
-    this.profileLimiter = new RateLimiter(cacheCluster, "profile",
+    this.profileLimiter = new RateLimiter(cacheCluster, newCacheCluster, "profile",
                                           config.getProfile().getBucketSize(),
                                           config.getProfile().getLeakRatePerMinute());
 
@@ -141,8 +144,8 @@ public class RateLimiters {
                                                    config.getSanctuaryLookup().getBucketSize(),
                                                    config.getSanctuaryLookup().getLeakRatePerMinute());
 
-    this.unsealedSenderLimiter = new AtomicReference<>(createUnsealedSenderLimiter(cacheCluster, dynamicConfig.getConfiguration().getLimits().getUnsealedSenderNumber()));
-    this.unsealedIpLimiter     = new AtomicReference<>(createUnsealedIpLimiter(cacheCluster, dynamicConfig.getConfiguration().getLimits().getUnsealedSenderIp()));
+    this.unsealedSenderLimiter = new AtomicReference<>(createUnsealedSenderLimiter(cacheCluster, null, dynamicConfig.getConfiguration().getLimits().getUnsealedSenderNumber()));
+    this.unsealedIpLimiter     = new AtomicReference<>(createUnsealedIpLimiter(cacheCluster, newCacheCluster, dynamicConfig.getConfiguration().getLimits().getUnsealedSenderIp()));
   }
 
   public CardinalityRateLimiter getUnsealedSenderLimiter() {
@@ -152,7 +155,7 @@ public class RateLimiters {
       if (rateLimiter.hasConfiguration(currentConfiguration)) {
         return rateLimiter;
       } else {
-        return createUnsealedSenderLimiter(cacheCluster, currentConfiguration);
+        return createUnsealedSenderLimiter(cacheCluster, null, currentConfiguration);
       }
     });
   }
@@ -164,7 +167,7 @@ public class RateLimiters {
       if (rateLimiter.hasConfiguration(currentConfiguration)) {
         return rateLimiter;
       } else {
-        return createUnsealedIpLimiter(cacheCluster, currentConfiguration);
+        return createUnsealedIpLimiter(cacheCluster, newCacheCluster, currentConfiguration);
       }
     });
   }
@@ -249,18 +252,19 @@ public class RateLimiters {
     return sanctuaryLookupLimiter;
   }
 
-  private CardinalityRateLimiter createUnsealedSenderLimiter(FaultTolerantRedisCluster cacheCluster, CardinalityRateLimitConfiguration configuration) {
-    return new CardinalityRateLimiter(cacheCluster, "unsealedSender", configuration.getTtl(), configuration.getTtlJitter(), configuration.getMaxCardinality());
+  private CardinalityRateLimiter createUnsealedSenderLimiter(FaultTolerantRedisCluster cacheCluster, FaultTolerantRedisCluster secondaryCacheCluster, CardinalityRateLimitConfiguration configuration) {
+    return new CardinalityRateLimiter(cacheCluster, secondaryCacheCluster, "unsealedSender", configuration.getTtl(), configuration.getTtlJitter(), configuration.getMaxCardinality());
   }
 
   private RateLimiter createUnsealedIpLimiter(FaultTolerantRedisCluster cacheCluster,
+                                              @Nullable FaultTolerantRedisCluster secondaryCacheCluster,
                                               RateLimitConfiguration configuration)
   {
-    return createLimiter(cacheCluster, configuration, "unsealedIp");
+    return createLimiter(cacheCluster, secondaryCacheCluster, configuration, "unsealedIp");
   }
 
-  private RateLimiter createLimiter(FaultTolerantRedisCluster cacheCluster, RateLimitConfiguration configuration, String name) {
-    return new RateLimiter(cacheCluster, name,
+  private RateLimiter createLimiter(FaultTolerantRedisCluster cacheCluster, @Nullable FaultTolerantRedisCluster secondaryCacheCluster, RateLimitConfiguration configuration, String name) {
+    return new RateLimiter(cacheCluster, secondaryCacheCluster, name,
                            configuration.getBucketSize(),
                            configuration.getLeakRatePerMinute());
   }
