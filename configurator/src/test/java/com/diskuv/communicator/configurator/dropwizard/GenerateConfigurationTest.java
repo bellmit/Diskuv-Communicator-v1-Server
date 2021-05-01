@@ -11,8 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.diskuv.communicator.configurator;
+package com.diskuv.communicator.configurator.dropwizard;
 
+import com.diskuv.communicator.configurator.PemUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import io.dropwizard.configuration.ConfigurationException;
@@ -35,8 +36,8 @@ import java.security.InvalidKeyException;
 import java.util.Map;
 import java.util.Random;
 
-import static com.diskuv.communicator.configurator.ConfigurationUtils.convertToYaml;
-import static com.diskuv.communicator.configurator.ConfigurationUtils.createConfigurationBuilder;
+import static com.diskuv.communicator.configurator.dropwizard.ConfigurationUtils.convertToYaml;
+import static com.diskuv.communicator.configurator.dropwizard.ConfigurationUtils.createConfigurationBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.whispersystems.textsecuregcm.util.DiskuvKeyUtil.constructPublicKeyFromPrivateKey;
 
@@ -49,7 +50,7 @@ public class GenerateConfigurationTest {
       givenNoOptions__whenCreateWhisperServerConfiguration__thenValidWhisperServerConfiguration()
           throws InvalidKeyException, IllegalAccessException, IOException, ConfigurationException {
     // given: no options
-    Random random = new Random(77);
+    Random                random                = new Random(77);
     GenerateConfiguration generateConfiguration = new GenerateConfiguration(random);
     generateConfiguration.serverCertificateSigningKeyPairFile = new File(tempFolder.getRoot(), "unit-test-output.pem");
 
@@ -103,8 +104,8 @@ public class GenerateConfigurationTest {
             getClass().getResourceAsStream("serverCertificateSigningKeyPair.pem");
         PemReader reader =
             new PemReader(new InputStreamReader(signingKeyPairStream, StandardCharsets.UTF_8))) {
-      PemUtils.PublicPrivateKeyPair signingKeyPair = PemUtils.getKeyPair(reader);
-      ECPublicKey signingPublicKey = signingKeyPair.getPublicKey();
+      PemUtils.PublicPrivateKeyPair signingKeyPair   = PemUtils.getKeyPair(reader);
+      ECPublicKey                   signingPublicKey = signingKeyPair.getPublicKey();
       ECPrivateKey signingPrivateKey = signingKeyPair.getPrivateKey();
 
       // then: signing public key derives from signing private key (they are coherent)

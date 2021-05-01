@@ -11,12 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.diskuv.communicator.configurator;
+package com.diskuv.communicator.configurator.dropwizard;
 
+import com.diskuv.communicator.configurator.PemUtils;
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.whispersystems.textsecuregcm.WhisperServerConfiguration;
-import org.whispersystems.textsecuregcm.crypto.ECPrivateKey;
 import org.whispersystems.textsecuregcm.crypto.ECPublicKey;
 import org.whispersystems.textsecuregcm.util.Base64;
 import picocli.CommandLine;
@@ -25,7 +25,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.concurrent.Callable;
 
-import static com.diskuv.communicator.configurator.ConfigurationUtils.createConfigurationBuilder;
+import static com.diskuv.communicator.configurator.dropwizard.ConfigurationUtils.createConfigurationBuilder;
 
 /** Modifies an existing YAML file. */
 @CommandLine.Command(

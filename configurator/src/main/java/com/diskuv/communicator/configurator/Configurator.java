@@ -13,6 +13,9 @@
 // limitations under the License.
 package com.diskuv.communicator.configurator;
 
+import com.diskuv.communicator.configurator.dropwizard.GenerateConfiguration;
+import com.diskuv.communicator.configurator.dropwizard.ModifyConfiguration;
+import com.diskuv.communicator.configurator.dropwizard.ViewClientConfiguration;
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
 import picocli.CommandLine;
 

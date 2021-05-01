@@ -11,8 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.diskuv.communicator.configurator;
+package com.diskuv.communicator.configurator.dropwizard;
 
+import com.diskuv.communicator.configurator.PemUtils;
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
 import com.diskuv.communicatorservice.storage.configuration.DiskuvGroupsConfiguration;
 import com.google.common.annotations.VisibleForTesting;
@@ -56,8 +57,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
-import static com.diskuv.communicator.configurator.ConfigurationUtils.convertToYaml;
-import static com.diskuv.communicator.configurator.ConfigurationUtils.setField;
+import static com.diskuv.communicator.configurator.dropwizard.ConfigurationUtils.convertToYaml;
+import static com.diskuv.communicator.configurator.dropwizard.ConfigurationUtils.setField;
 
 /**
  * Prints a YAML file that has all of the fields necessary for the server. If there

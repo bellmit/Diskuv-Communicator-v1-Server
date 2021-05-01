@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.diskuv.communicator.configurator;
+package com.diskuv.communicator.configurator.dropwizard;
 
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
 import com.google.common.collect.ImmutableList;
@@ -26,7 +26,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
-import static com.diskuv.communicator.configurator.ConfigurationUtils.*;
+import static com.diskuv.communicator.configurator.dropwizard.ConfigurationUtils.*;
 
 /** Modifies an existing YAML file. */
 @CommandLine.Command(
