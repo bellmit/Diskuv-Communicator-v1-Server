@@ -1,8 +1,10 @@
 package org.whispersystems.textsecuregcm.tests.controllers;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.protobuf.ByteString;
 import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
 import io.dropwizard.testing.junit.ResourceTestRule;
+import org.apache.commons.codec.DecoderException;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -47,10 +49,15 @@ import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
 import org.whispersystems.textsecuregcm.util.Hex;
 import org.whispersystems.textsecuregcm.util.SystemMapper;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
@@ -216,7 +223,9 @@ public class AccountControllerTest {
     verify(gcmSender, times(1)).sendMessage(captor.capture());
     assertThat(captor.getValue().getGcmId()).isEqualTo("mytoken");
     assertThat(captor.getValue().getData().isPresent()).isTrue();
-    assertThat(captor.getValue().getData().get().length()).isEqualTo(32);
+    // Hex (2*). Nonce = 16. HMAC-SHA256=256/8.
+    assertThat(captor.getValue().getData().get().length()).isEqualTo(2 * (16 + 256/8));
+    validatePushChallengeAuthentication(captor.getValue().getData().get(), "mytoken", VALID_UUID);
 
     verifyNoMoreInteractions(apnSender);
   }
@@ -236,8 +245,11 @@ public class AccountControllerTest {
     verify(apnSender, times(1)).sendMessage(captor.capture());
     assertThat(captor.getValue().getApnId()).isEqualTo("mytoken");
     assertThat(captor.getValue().getChallengeData().isPresent()).isTrue();
-    assertThat(captor.getValue().getChallengeData().get().length()).isEqualTo(32);
+    // Hex (2*). Nonce = 16. HMAC-SHA256=256/8.
+    assertThat(captor.getValue().getChallengeData().get().length()).isEqualTo(2 * (16 + 256/8));
     assertThat(captor.getValue().getMessage()).contains("\"challenge\" : \"" + captor.getValue().getChallengeData().get() + "\"");
+    validatePushChallengeAuthentication(captor.getValue().getChallengeData().get(), "mytoken", VALID_UUID);
+
 
     verifyNoMoreInteractions(gcmSender);
   }
@@ -1043,4 +1055,34 @@ public class AccountControllerTest {
     assertThat(response.getStatus()).isEqualTo(401);
   }
 
+  private void validatePushChallengeAuthentication(String challenge, String pushToken, UUID accountUuid) {
+    // NONCE = RANDOM_BYTES(16)
+    byte[] nonce;
+    try {
+      nonce = org.apache.commons.codec.binary.Hex.decodeHex(challenge.substring(0, 32));
+    } catch (DecoderException e) {
+      throw new AssertionError("Received a non-hex encoded push challenge", e);
+    }
+
+    // SECRET = UTF8_BYTES(PUSH_TOKEN || ACCOUNT_UUID)
+    byte[] secret = (pushToken + accountUuid).getBytes(StandardCharsets.UTF_8);
+
+    // PUSH_CHALLENGE = HEX(NONCE || HMAC_SHA256(secret=SECRET, data=NONCE))
+    byte[] digestActual;
+    try {
+      digestActual = org.apache.commons.codec.binary.Hex.decodeHex(challenge.substring(32));
+    } catch (DecoderException e) {
+      throw new AssertionError("Received a non-hex encoded push challenge", e);
+    }
+    byte[] digestExpected;
+    try {
+      Mac mac = Mac.getInstance("HmacSHA256");
+      mac.init(new SecretKeySpec(secret, "HmacSHA256"));
+      digestExpected = mac.doFinal(nonce);
+    } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+      throw new AssertionError("Can't create a push challenge signature", e);
+    }
+
+    assertThat(ByteString.copyFrom(digestActual)).isEqualTo(ByteString.copyFrom(digestExpected));
+  }
 }
