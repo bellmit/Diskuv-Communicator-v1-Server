@@ -1,0 +1,25 @@
+name: Validate configuration in source code
+on:
+  # Uncomment the next line to allow manual execution from GitHub site
+  # workflow_dispatch: {}
+
+  schedule:
+    # Run at 19:37 UTC each day
+    - cron: '37 19 * * *'
+jobs:
+  validate-code-config:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout git repository
+        uses: actions/checkout@v2
+      - name: Install Java and Maven
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Build code
+        run: mvn package -DskipTests
+        env:
+          # For connection resets on GitHub per https://github.com/actions/virtual-environments/issues/1499#issuecomment-718396233
+          MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
+      - name: Validate configuration in source code
+        run: java -jar configurator/target/configurator-*.jar validate-code-config

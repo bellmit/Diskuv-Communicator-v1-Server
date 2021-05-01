@@ -104,6 +104,60 @@ The changes you will need to this project (Diskuv-Communicator-Server) are:
 
 ### Configuring Third-Party Vendors and Components
 
+#### OAuth2 Identity Provider: Auth0 or AWS Cognito
+
+Auth0 or AWS Cognito authenticates the Android/iOS/web users and provide an authenticated user with a
+JWT token containing signed claims. You have to configure the JWT public keys (something called a
+JSON Web Key Set) so that JWT signed claims from the users (Android/iOS/web) can be validated.
+
+AWS Cognito has been extensively tested, but Auth0 should work as well. In fact, some Auth0 libraries
+are used in the server.
+
+In the YAML file you will have:
+
+```yaml
+# JSON Web Key Set.
+# Needed to validate the OAuth2 (authentication) claims from the Android/iOS clients.
+# You need to onboard with an identity provider like Auth0, AWS Cognito, etc.
+jwtKeys:
+  # The JSON Web Key Set can be downloaded from:
+  # * Auth0: https://YOUR_DOMAIN/.well-known/jwks.json ; see https://auth0.com/docs/tokens/json-web-tokens/json-web-key-sets
+  # * Cognito: https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/jwks.json ; see https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-verifying-a-jwt.html
+  # The 'domain' is the URL before the '/.well-known/jwks.json' ending
+  domain: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_XXXXXXXXX
+  # The Android and iOS client ids for the Cognito User Pool.
+  # Use *none* if not Cognito. And do not specify any
+  # client ids that do not call this server.
+  appClientIds:
+    - fffffffffffffffffffffffff
+```
+
+Once you have edited your YAML file, run:
+
+```bash
+java -jar configurator/target/configurator-*.jar generate-code-config local.yml service/src/main/resources/jwtKeys/
+```
+
+to download the key set.
+
+Add the new public key files in `service/src/main/resources/jwtKeys/` to source control.
+
+---
+
+It is possible that the key sets will change. Periodically you run:
+
+```bash
+java -jar configurator/target/configurator-*.jar validate-code-config
+```
+
+to check that the key sets in source control are the latest from your OAuth2 service
+provider.
+
+You can do this every code commit, but it is better doing this check every day.
+If you use GitHub as your repository, the scheduled action
+at `.github/workflows/validate-code-config.yml` will automatically check on your
+behalf every day.
+
 #### Redis
 
 You are required to have a Redis server and at least one replica.
@@ -377,4 +431,11 @@ java -jar ./TextSecureServer-*.jar messagedb status var/conf/config.yml
 java -jar ./TextSecureServer-*.jar messagedb migrate var/conf/config.yml
 java -jar ./TextSecureServer-*.jar abusedb status var/conf/config.yml
 java -jar ./TextSecureServer-*.jar abusedb migrate var/conf/config.yml
+```
+
+And as part of your release to production procedures (or an automated pipeline),
+validate the configuration embedded in the source code:
+
+```bash
+java -jar configurator/target/configurator-*.jar validate-code-config
 ```

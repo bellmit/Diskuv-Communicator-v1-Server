@@ -13,9 +13,8 @@
 // limitations under the License.
 package com.diskuv.communicatorservice.auth;
 
-import com.auth0.jwk.GuavaCachedJwkProvider;
 import com.auth0.jwk.Jwk;
-import com.auth0.jwk.SigningKeyNotFoundException;
+import com.auth0.jwk.JwkException;
 import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
@@ -23,51 +22,51 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import com.google.common.base.Preconditions;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.hash.Hashing;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.configuration.JwtKeysConfiguration;
 
 import javax.annotation.Nonnull;
-import java.security.SecureRandom;
-import java.time.Duration;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Enumeration;
+import java.util.Map;
 
 public class JwtAuthentication {
-  /**
-   * Typically there are only 1 or 2 keys in a key set. One is active, and the other is there in
-   * case of fail-over.
-   */
-  private static final long MAX_CACHED_KEY_SET_ENTRIES = 5;
+  private final Logger log = LoggerFactory.getLogger(getClass());
+  private final Map<String, JWTVerifier> jwtVerifiers;
 
-  private final LoadingCache<String, JWTVerifier> jwtVerifierLoadingCache;
+  public JwtAuthentication(JwtKeysConfiguration jwtKeysConfiguration) throws IOException, JwkException {
+    ImmutableMap.Builder<String, JWTVerifier> jwtVerifierBuilder = ImmutableMap.builder();
 
-  public JwtAuthentication(JwtKeysConfiguration jwtKeys) {
-    // With jitter we refresh cache every 30-60 minutes.
-    int jitter = new SecureRandom().nextInt(30);
-    int expiresInMinutes = 30 + jitter;
+    // Construct the url hash
+    String sourceUrl  = jwtKeysConfiguration.getDomain() + "/.well-known/jwks.json";
+    String urlHashDir = Hashing.sha256().hashString(sourceUrl, StandardCharsets.UTF_8).toString();
 
-    // We cache the URL download of the key set
-    UrlJwkProvider http = new UrlJwkProvider(jwtKeys.getDomain());
-    GuavaCachedJwkProvider provider =
-        new GuavaCachedJwkProvider(
-            http, MAX_CACHED_KEY_SET_ENTRIES, expiresInMinutes, TimeUnit.MINUTES);
+    // Find the jwks.json in the classpath
+    String jwksJsonClasspathResource = "jwtKeys/" + urlHashDir + "/jwks.json";
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    Enumeration<URL> jwksJsons = classLoader.getResources(jwksJsonClasspathResource);
+    while (jwksJsons.hasMoreElements()) {
+      URL jwksJsonUrl = jwksJsons.nextElement();
+      log.info("Found JSON Web Key Set for {} at {}", jwtKeysConfiguration.getDomain(), jwksJsonUrl);
 
-    // But we also cache the Verifier since it is re-usable
-    this.jwtVerifierLoadingCache =
-        CacheBuilder.newBuilder()
-            .maximumSize(MAX_CACHED_KEY_SET_ENTRIES)
-            .expireAfterWrite(Duration.ofMinutes(expiresInMinutes))
-            .build(new JwtVerifierCacheLoader(provider, jwtKeys.getAppClientIds()));
-
-    // Load the cache right now (early detection of problems!)
-    try {
-      for (Jwk jwk : http.getAll()) {
-        jwtVerifierLoadingCache.get(jwk.getId());
+      // Grab all of the JWK material, keyed by the 'kid' identifier
+      UrlJwkProvider localFileJwkProvider = new UrlJwkProvider(jwksJsonUrl);
+      JwtVerifierCacheLoader verifierCacheLoader = new JwtVerifierCacheLoader(localFileJwkProvider, jwtKeysConfiguration.getAppClientIds());
+      for (Jwk jwk : localFileJwkProvider.getAll()) {
+        String kid = jwk.getId();
+        jwtVerifierBuilder.put(kid, verifierCacheLoader.load(kid));
       }
-    } catch (SigningKeyNotFoundException | ExecutionException e) {
-      throw new IllegalArgumentException(e);
     }
+
+    jwtVerifiers = jwtVerifierBuilder.build();
+    Preconditions.checkArgument(!jwtVerifiers.isEmpty(), "You have no JSON Web Key Sets, which were expected in the classpath at %s. Use configurator's generate-code-config and then check in the hashed files", jwksJsonClasspathResource);
   }
 
   /**
@@ -95,12 +94,7 @@ public class JwtAuthentication {
       throw new IllegalArgumentException(e);
     }
     String keyId = unverifiedJwt.getKeyId();
-    JWTVerifier jwtVerifier;
-    try {
-      jwtVerifier = jwtVerifierLoadingCache.get(keyId);
-    } catch (ExecutionException e) {
-      throw new IllegalArgumentException(e);
-    }
+    JWTVerifier jwtVerifier = jwtVerifiers.get(keyId);
 
     // 2. verify the signature
     // The following requirements are already part of JWTVerifier through JwtVerifierCacheLoader:

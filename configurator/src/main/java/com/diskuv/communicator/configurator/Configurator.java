@@ -13,6 +13,8 @@
 // limitations under the License.
 package com.diskuv.communicator.configurator;
 
+import com.diskuv.communicator.configurator.code.GenerateCodeConfiguration;
+import com.diskuv.communicator.configurator.code.ValidateCodeConfiguration;
 import com.diskuv.communicator.configurator.dropwizard.GenerateConfiguration;
 import com.diskuv.communicator.configurator.dropwizard.ModifyConfiguration;
 import com.diskuv.communicator.configurator.dropwizard.ViewClientConfiguration;
@@ -23,6 +25,8 @@ import picocli.CommandLine;
         GenerateConfiguration.class,
         ModifyConfiguration.class,
         ViewClientConfiguration.class,
+        GenerateCodeConfiguration.class,
+        ValidateCodeConfiguration.class
 })
 public class Configurator {
     public static void main(String... args) {
