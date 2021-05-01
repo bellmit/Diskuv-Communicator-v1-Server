@@ -22,6 +22,7 @@ import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.annotation.Timed;
 import com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader;
 import com.diskuv.communicatorservice.auth.JwtAuthentication;
+import org.apache.commons.codec.digest.HmacUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.*;
@@ -47,15 +48,22 @@ import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.storage.PendingAccountsManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
+import org.whispersystems.textsecuregcm.util.Base64;
+import org.whispersystems.textsecuregcm.util.ByteUtil;
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Hex;
 import org.whispersystems.textsecuregcm.util.Util;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
@@ -161,7 +169,7 @@ public class AccountController {
 
     AuthHeaderSupport.validateJwt(jwtAuthentication, authorizationHeader);
 
-    String                 pushChallenge          = generatePushChallenge();
+    String                 pushChallenge          = generatePushChallenge(accountUuid, pushToken);
     StoredVerificationCode storedVerificationCode = new StoredVerificationCode(null,
             System.currentTimeMillis(),
             pushChallenge);
@@ -530,12 +538,27 @@ public class AccountController {
     }
   }
 
-  private String generatePushChallenge() {
-    SecureRandom random    = new SecureRandom();
-    byte[]       challenge = new byte[16];
-    random.nextBytes(challenge);
+  private String generatePushChallenge(UUID accountUuid, String pushToken) {
+    // Docs: 2021-05-01-authenticated-push-challenge.md
 
-    return Hex.toStringCondensed(challenge);
+    // NONCE = RANDOM_BYTES(16)
+    SecureRandom random    = new SecureRandom();
+    byte[]       nonce = new byte[16];
+    random.nextBytes(nonce);
+
+    // SECRET = UTF8_BYTES(PUSH_TOKEN || ACCOUNT_UUID)
+    byte[] secret = (pushToken + accountUuid).getBytes(StandardCharsets.UTF_8);
+
+    // PUSH_CHALLENGE = HEX(NONCE || HMAC_SHA256(SECRET, NONCE))
+    Mac mac;
+    try {
+      mac = Mac.getInstance("HmacSHA256");
+      mac.init(new SecretKeySpec(secret, "HmacSHA256"));
+    } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+      throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+    }
+    byte[] digest = mac.doFinal(nonce);
+    return Hex.toStringCondensed(ByteUtil.combine(nonce, digest));
   }
 
   private static class CaptchaRequirement {
