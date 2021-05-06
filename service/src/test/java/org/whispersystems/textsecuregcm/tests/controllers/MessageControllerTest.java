@@ -1,5 +1,6 @@
 package org.whispersystems.textsecuregcm.tests.controllers;
 
+import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
@@ -64,6 +65,7 @@ public class MessageControllerTest {
   private  final ReceiptSender          receiptSender          = mock(ReceiptSender.class);
   private  final PossiblySyntheticAccountsManager        accountsManager        = mock(PossiblySyntheticAccountsManager.class);
   private  final MessagesManager        messagesManager        = mock(MessagesManager.class);
+  private  final JwtAuthentication      jwtAuthentication      = mock(JwtAuthentication.class);
   private  final RateLimiters           rateLimiters           = mock(RateLimiters.class          );
   private  final RateLimiter            rateLimiter            = mock(RateLimiter.class           );
   private  final ApnFallbackManager     apnFallbackManager     = mock(ApnFallbackManager.class);
@@ -75,7 +77,7 @@ public class MessageControllerTest {
                                                             .addProvider(AuthHelper.getAuthFilter())
                                                             .addProvider(new PolymorphicAuthValueFactoryProvider.Binder<>(ImmutableSet.of(Account.class, DisabledPermittedAccount.class)))
                                                             .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
-                                                            .addResource(new MessageController(rateLimiters, pushSender, receiptSender, accountsManager,
+                                                            .addResource(new MessageController(jwtAuthentication, rateLimiters, pushSender, receiptSender, accountsManager,
                                                                                                messagesManager, apnFallbackManager))
                                                             .build();
 
@@ -254,8 +256,8 @@ public class MessageControllerTest {
     final UUID sourceUuid     = UUID_ALICE;
 
     List<OutgoingMessageEntity> messages = new LinkedList<>() {{
-      add(new OutgoingMessageEntity(1L, false, messageGuidOne, Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, UUID_ALICE, 2, "hi there".getBytes(), null, 0));
-      add(new OutgoingMessageEntity(2L, false, null, Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, UUID_ALICE, 2, null, null, 0));
+      add(new OutgoingMessageEntity(1L, false, messageGuidOne, Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, UUID_ALICE, 2, "hi there".getBytes(), null, 0, null));
+      add(new OutgoingMessageEntity(2L, false, null, Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, UUID_ALICE, 2, null, null, 0, null));
     }};
 
     OutgoingMessageEntityList messagesList = new OutgoingMessageEntityList(messages, false);
@@ -292,8 +294,8 @@ public class MessageControllerTest {
     final long timestampTwo = 313388;
 
     List<OutgoingMessageEntity> messages = new LinkedList<OutgoingMessageEntity>() {{
-      add(new OutgoingMessageEntity(1L, false, UUID.randomUUID(), Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, UUID_ALICE, 2, "hi there".getBytes(), null, 0));
-      add(new OutgoingMessageEntity(2L, false, UUID.randomUUID(), Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, UUID_ALICE, 2, null, null, 0));
+      add(new OutgoingMessageEntity(1L, false, UUID.randomUUID(), Envelope.Type.CIPHERTEXT_VALUE, null, timestampOne, EMPTY_SOURCE, UUID_ALICE, 2, "hi there".getBytes(), null, 0, null));
+      add(new OutgoingMessageEntity(2L, false, UUID.randomUUID(), Envelope.Type.RECEIPT_VALUE, null, timestampTwo, EMPTY_SOURCE, UUID_ALICE, 2, null, null, 0, null));
     }};
 
     OutgoingMessageEntityList messagesList = new OutgoingMessageEntityList(messages, false);
@@ -320,13 +322,13 @@ public class MessageControllerTest {
         .thenReturn(Optional.of(new OutgoingMessageEntity(31337L, true, null,
                                                           Envelope.Type.CIPHERTEXT_VALUE,
                                                           null, timestamp,
-                                                          EMPTY_SOURCE, UUID_ALICE, 1, "hi".getBytes(), null, 0)));
+                                                          EMPTY_SOURCE, UUID_ALICE, 1, "hi".getBytes(), null, 0, null)));
 
     when(messagesManager.delete(AuthHelper.VALID_NUMBER, 1, UUID_ALICE_STRING, 31338))
         .thenReturn(Optional.of(new OutgoingMessageEntity(31337L, true, null,
                                                           Envelope.Type.RECEIPT_VALUE,
                                                           null, System.currentTimeMillis(),
-                                                          EMPTY_SOURCE, UUID_ALICE, 1, null, null, 0)));
+                                                          EMPTY_SOURCE, UUID_ALICE, 1, null, null, 0, null)));
 
 
     when(messagesManager.delete(AuthHelper.VALID_NUMBER, 1, UUID_ALICE_STRING, 31339))

@@ -214,7 +214,8 @@ public class MessagesCache implements Managed {
                                      envelope.getSourceDevice(),
                                      envelope.hasLegacyMessage() ? envelope.getLegacyMessage().toByteArray() : null,
                                      envelope.hasContent() ? envelope.getContent().toByteArray() : null,
-                                     envelope.hasServerTimestamp() ? envelope.getServerTimestamp() : 0);
+                                     envelope.hasServerTimestamp() ? envelope.getServerTimestamp() : 0,
+                                     envelope.hasServerOutdoorsSourceUuid() ? UUID.fromString(envelope.getServerOutdoorsSourceUuid()) : null);
   }
 
   private static class Key {

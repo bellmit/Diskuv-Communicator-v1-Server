@@ -143,6 +143,20 @@ public final class MessageProtos {
      * <code>optional uint64 server_timestamp = 10;</code>
      */
     long getServerTimestamp();
+
+    /**
+     * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+     */
+    boolean hasServerOutdoorsSourceUuid();
+    /**
+     * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+     */
+    java.lang.String getServerOutdoorsSourceUuid();
+    /**
+     * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+     */
+    com.google.protobuf.ByteString
+        getServerOutdoorsSourceUuidBytes();
   }
   /**
    * Protobuf type {@code textsecure.Envelope}
@@ -166,6 +180,7 @@ public final class MessageProtos {
       content_ = com.google.protobuf.ByteString.EMPTY;
       serverGuid_ = "";
       serverTimestamp_ = 0L;
+      serverOutdoorsSourceUuid_ = "";
     }
 
     @java.lang.Override
@@ -254,6 +269,12 @@ public final class MessageProtos {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
               sourceUuid_ = bs;
+              break;
+            }
+            case 16378: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000400;
+              serverOutdoorsSourceUuid_ = bs;
               break;
             }
           }
@@ -682,6 +703,48 @@ public final class MessageProtos {
       return serverTimestamp_;
     }
 
+    public static final int SERVEROUTDOORSSOURCEUUID_FIELD_NUMBER = 2047;
+    private volatile java.lang.Object serverOutdoorsSourceUuid_;
+    /**
+     * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+     */
+    public boolean hasServerOutdoorsSourceUuid() {
+      return ((bitField0_ & 0x00000400) == 0x00000400);
+    }
+    /**
+     * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+     */
+    public java.lang.String getServerOutdoorsSourceUuid() {
+      java.lang.Object ref = serverOutdoorsSourceUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          serverOutdoorsSourceUuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+     */
+    public com.google.protobuf.ByteString
+        getServerOutdoorsSourceUuidBytes() {
+      java.lang.Object ref = serverOutdoorsSourceUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b =
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        serverOutdoorsSourceUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -723,6 +786,9 @@ public final class MessageProtos {
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 11, sourceUuid_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2047, serverOutdoorsSourceUuid_);
       }
       unknownFields.writeTo(output);
     }
@@ -767,6 +833,9 @@ public final class MessageProtos {
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(11, sourceUuid_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2047, serverOutdoorsSourceUuid_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -834,6 +903,11 @@ public final class MessageProtos {
         result = result && (getServerTimestamp()
             == other.getServerTimestamp());
       }
+      result = result && (hasServerOutdoorsSourceUuid() == other.hasServerOutdoorsSourceUuid());
+      if (hasServerOutdoorsSourceUuid()) {
+        result = result && getServerOutdoorsSourceUuid()
+            .equals(other.getServerOutdoorsSourceUuid());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -886,6 +960,10 @@ public final class MessageProtos {
         hash = (37 * hash) + SERVER_TIMESTAMP_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
             getServerTimestamp());
+      }
+      if (hasServerOutdoorsSourceUuid()) {
+        hash = (37 * hash) + SERVEROUTDOORSSOURCEUUID_FIELD_NUMBER;
+        hash = (53 * hash) + getServerOutdoorsSourceUuid().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -1025,6 +1103,8 @@ public final class MessageProtos {
         bitField0_ = (bitField0_ & ~0x00000100);
         serverTimestamp_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000200);
+        serverOutdoorsSourceUuid_ = "";
+        bitField0_ = (bitField0_ & ~0x00000400);
         return this;
       }
 
@@ -1089,6 +1169,10 @@ public final class MessageProtos {
           to_bitField0_ |= 0x00000200;
         }
         result.serverTimestamp_ = serverTimestamp_;
+        if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+          to_bitField0_ |= 0x00000400;
+        }
+        result.serverOutdoorsSourceUuid_ = serverOutdoorsSourceUuid_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1168,6 +1252,11 @@ public final class MessageProtos {
         }
         if (other.hasServerTimestamp()) {
           setServerTimestamp(other.getServerTimestamp());
+        }
+        if (other.hasServerOutdoorsSourceUuid()) {
+          bitField0_ |= 0x00000400;
+          serverOutdoorsSourceUuid_ = other.serverOutdoorsSourceUuid_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -1731,6 +1820,82 @@ public final class MessageProtos {
       public Builder clearServerTimestamp() {
         bitField0_ = (bitField0_ & ~0x00000200);
         serverTimestamp_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object serverOutdoorsSourceUuid_ = "";
+      /**
+       * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+       */
+      public boolean hasServerOutdoorsSourceUuid() {
+        return ((bitField0_ & 0x00000400) == 0x00000400);
+      }
+      /**
+       * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+       */
+      public java.lang.String getServerOutdoorsSourceUuid() {
+        java.lang.Object ref = serverOutdoorsSourceUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            serverOutdoorsSourceUuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+       */
+      public com.google.protobuf.ByteString
+          getServerOutdoorsSourceUuidBytes() {
+        java.lang.Object ref = serverOutdoorsSourceUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b =
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          serverOutdoorsSourceUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+       */
+      public Builder setServerOutdoorsSourceUuid(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+        serverOutdoorsSourceUuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+       */
+      public Builder clearServerOutdoorsSourceUuid() {
+        bitField0_ = (bitField0_ & ~0x00000400);
+        serverOutdoorsSourceUuid_ = getDefaultInstance().getServerOutdoorsSourceUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string serverOutdoorsSourceUuid = 2047;</code>
+       */
+      public Builder setServerOutdoorsSourceUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+        serverOutdoorsSourceUuid_ = value;
         onChanged();
         return this;
       }
@@ -5213,26 +5378,27 @@ public final class MessageProtos {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\020TextSecure.proto\022\ntextsecure\"\325\002\n\010Envel" +
+      "\n\020TextSecure.proto\022\ntextsecure\"\370\002\n\010Envel" +
       "ope\022\'\n\004type\030\001 \001(\0162\031.textsecure.Envelope." +
       "Type\022\016\n\006source\030\002 \001(\t\022\022\n\nsourceUuid\030\013 \001(\t" +
       "\022\024\n\014sourceDevice\030\007 \001(\r\022\r\n\005relay\030\003 \001(\t\022\021\n" +
       "\ttimestamp\030\005 \001(\004\022\025\n\rlegacyMessage\030\006 \001(\014\022" +
       "\017\n\007content\030\010 \001(\014\022\022\n\nserverGuid\030\t \001(\t\022\030\n\020" +
-      "server_timestamp\030\n \001(\004\"n\n\004Type\022\013\n\007UNKNOW" +
-      "N\020\000\022\016\n\nCIPHERTEXT\020\001\022\020\n\014KEY_EXCHANGE\020\002\022\021\n" +
-      "\rPREKEY_BUNDLE\020\003\022\013\n\007RECEIPT\020\005\022\027\n\023UNIDENT" +
-      "IFIED_SENDER\020\006\" \n\020ProvisioningUuid\022\014\n\004uu",
-      "id\030\001 \001(\t\"c\n\021ServerCertificate\022\023\n\013certifi" +
-      "cate\030\001 \001(\014\022\021\n\tsignature\030\002 \001(\014\032&\n\013Certifi" +
-      "cate\022\n\n\002id\030\001 \001(\r\022\013\n\003key\030\002 \001(\014\"\332\001\n\021Sender" +
-      "Certificate\022\023\n\013certificate\030\001 \001(\014\022\021\n\tsign" +
-      "ature\030\002 \001(\014\032\234\001\n\013Certificate\022\016\n\006sender\030\001 " +
-      "\001(\t\022\022\n\nsenderUuid\030\006 \001(\t\022\024\n\014senderDevice\030" +
-      "\002 \001(\r\022\017\n\007expires\030\003 \001(\006\022\023\n\013identityKey\030\004 " +
-      "\001(\014\022-\n\006signer\030\005 \001(\0132\035.textsecure.ServerC" +
-      "ertificateB:\n)org.whispersystems.textsec" +
-      "uregcm.entitiesB\rMessageProtos"
+      "server_timestamp\030\n \001(\004\022!\n\030serverOutdoors" +
+      "SourceUuid\030\377\017 \001(\t\"n\n\004Type\022\013\n\007UNKNOWN\020\000\022\016" +
+      "\n\nCIPHERTEXT\020\001\022\020\n\014KEY_EXCHANGE\020\002\022\021\n\rPREK" +
+      "EY_BUNDLE\020\003\022\013\n\007RECEIPT\020\005\022\027\n\023UNIDENTIFIED",
+      "_SENDER\020\006\" \n\020ProvisioningUuid\022\014\n\004uuid\030\001 " +
+      "\001(\t\"c\n\021ServerCertificate\022\023\n\013certificate\030" +
+      "\001 \001(\014\022\021\n\tsignature\030\002 \001(\014\032&\n\013Certificate\022" +
+      "\n\n\002id\030\001 \001(\r\022\013\n\003key\030\002 \001(\014\"\332\001\n\021SenderCerti" +
+      "ficate\022\023\n\013certificate\030\001 \001(\014\022\021\n\tsignature" +
+      "\030\002 \001(\014\032\234\001\n\013Certificate\022\016\n\006sender\030\001 \001(\t\022\022" +
+      "\n\nsenderUuid\030\006 \001(\t\022\024\n\014senderDevice\030\002 \001(\r" +
+      "\022\017\n\007expires\030\003 \001(\006\022\023\n\013identityKey\030\004 \001(\014\022-" +
+      "\n\006signer\030\005 \001(\0132\035.textsecure.ServerCertif" +
+      "icateB:\n)org.whispersystems.textsecuregc",
+      "m.entitiesB\rMessageProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -5251,7 +5417,7 @@ public final class MessageProtos {
     internal_static_textsecure_Envelope_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_textsecure_Envelope_descriptor,
-        new java.lang.String[] { "Type", "Source", "SourceUuid", "SourceDevice", "Relay", "Timestamp", "LegacyMessage", "Content", "ServerGuid", "ServerTimestamp", });
+        new java.lang.String[] { "Type", "Source", "SourceUuid", "SourceDevice", "Relay", "Timestamp", "LegacyMessage", "Content", "ServerGuid", "ServerTimestamp", "ServerOutdoorsSourceUuid", });
     internal_static_textsecure_ProvisioningUuid_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_textsecure_ProvisioningUuid_fieldAccessorTable = new

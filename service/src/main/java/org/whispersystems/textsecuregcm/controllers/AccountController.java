@@ -102,7 +102,7 @@ public class AccountController {
 
 
   private final AccountsManager                    accounts;
-  private final JwtAuthentication jwtAuthentication;
+  private final JwtAuthentication                  jwtAuthentication;
   private final UsernamesManager                   usernames;
   private final AbusiveHostRules                   abusiveHostRules;
   private final RateLimiters                       rateLimiters;
@@ -203,6 +203,11 @@ public class AccountController {
     // account authentication
     UUID outdoorsUUID = AuthHeaderSupport.validateJwtAndGetOutdoorsUUID(jwtAuthentication, authorizationHeader);
 
+    // ensure the PIN is empty, since we'll use it for account takeover protection
+    if (!Util.isEmpty(accountAttributes.getPin())) {
+      throw new WebApplicationException(Response.Status.BAD_REQUEST);
+    }
+
     // device password to be used for subsequent device authentication
     final DeviceAuthorizationHeader deviceHeader;
     try {
@@ -242,9 +247,26 @@ public class AccountController {
       throw new WebApplicationException(402);
     }
 
+    // Throttle by the account ID _and_ the outdoors ID. The outdoors ID
+    // is a mitigation for a first-reservation attack on a sanctuary UUID.
     rateLimiters.getVerifyLimiter().validate(accountId);
+    if (diskuvUuidType == DiskuvUuidType.SANCTUARY_SPECIFIC) {
+      rateLimiters.getVerifyLimiter().validate(outdoorsUUID.toString());
+    }
 
     Optional<Account>                    existingAccount           = accounts.get(accountUuid);
+
+    // Provide account takeover protection
+    String existingPin = existingAccount.isEmpty() ? "" : existingAccount.get().getPin();
+    if (Util.isEmpty(existingPin)) {
+      // set the PIN to the outdoors UUID since no prior PIN
+      accountAttributes.setPin(outdoorsUUID.toString());
+    } else {
+      // match the PIN with the outdoors UUID
+      if (!existingPin.equals(outdoorsUUID.toString())) {
+        throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+      }
+    }
 
     Account account = createAccount(accountUuid, devicePassword, userAgent, accountAttributes);
 

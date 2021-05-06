@@ -127,4 +127,17 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="13+diskuv-1" author="jonah">
+        <addColumn tableName="messages">
+            <column name="source_outdoors_uuid" type="uuid">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- This will effectively make any existing persisted sanctuary messages invalid. This was only fine because we are at start of alpha -->
+        <sql>UPDATE messages SET source_outdoors_uuid=source_uuid WHERE source_outdoors_uuid is NULL</sql>
+
+        <addNotNullConstraint tableName="messages" columnName="source_outdoors_uuid" />
+    </changeSet>
+
 </databaseChangeLog>

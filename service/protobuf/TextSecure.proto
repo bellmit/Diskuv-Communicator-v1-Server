@@ -39,6 +39,12 @@ message Envelope {
   optional bytes  content          = 8; // Contains an encrypted Content
   optional string serverGuid       = 9;
   optional uint64 server_timestamp = 10;
+
+  // Diskuv fields (leave room for Signal to add its own fields).
+  // Start from 2047 (maximum value for 2 byte protobuf field) and add new Diskuv
+  // fields backwards (2047, 2046, 2045, ..., etc.).
+
+  optional string serverOutdoorsSourceUuid     = 2047;
 }
 
 message ProvisioningUuid {

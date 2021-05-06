@@ -178,7 +178,8 @@ public class WebSocketConnection implements DispatchChannel {
       Envelope.Builder      builder = Envelope.newBuilder()
                                               .setType(Envelope.Type.valueOf(message.getType()))
                                               .setTimestamp(message.getTimestamp())
-                                              .setServerTimestamp(message.getServerTimestamp());
+                                              .setServerTimestamp(message.getServerTimestamp())
+                                              .setServerOutdoorsSourceUuid(message.getServerOutdoorsSourceUuid() == null ? null : message.getServerOutdoorsSourceUuid().toString());
 
       // Contact by email address. Instead of message.getSource() which should be empty, use message.getSourceUuid()
       if (message.getSourceUuid() != null) {

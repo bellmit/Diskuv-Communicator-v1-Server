@@ -262,6 +262,10 @@ public class Account implements Principal, PossiblySyntheticAccount {
     this.avatarDigest = avatarDigest;
   }
 
+  public String getPin() {
+    return pin;
+  }
+
   public void setPin(String pin) {
     this.pin = pin;
   }

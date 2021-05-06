@@ -37,8 +37,10 @@ public class BaseDiskuvAccountAuthenticator {
       metricRegistry.meter(name(getClass(), "authentication", "invalidJwtToken"));
   private final Meter invalidAccountUuidMeter         =
           metricRegistry.meter(name(getClass(), "authentication", "invalidAccountUuid"));
-  private final Meter invalidOutdoorsAccountUuidMeter =
-          metricRegistry.meter(name(getClass(), "authentication", "invalidOutdoorsAccountUuid"));
+  private final Meter illegalOutdoorsAccountUuidMeter =
+          metricRegistry.meter(name(getClass(), "authentication", "illegalOutdoorsAccountUuid"));
+  private final Meter illegalSanctuaryAccountUuidMeter =
+          metricRegistry.meter(name(getClass(), "authentication", "illegalSanctuaryAccountUuid"));
   private final Meter invalidAuthHeaderMeter          =
       metricRegistry.meter(name(getClass(), "authentication", "invalidHeader"));
 
@@ -73,7 +75,7 @@ public class BaseDiskuvAccountAuthenticator {
 
     // validate UUID if Outdoors (which anybody with knowledge of the email address can reconstruct)
     if (diskuvUuidType == DiskuvUuidType.OUTDOORS && !outdoorsUUID.equals(accountUuid)) {
-      invalidOutdoorsAccountUuidMeter.mark();
+      illegalOutdoorsAccountUuidMeter.mark();
       return Optional.empty();
     }
 
@@ -83,6 +85,14 @@ public class BaseDiskuvAccountAuthenticator {
       if (account.isEmpty()) {
         noSuchAccountMeter.mark();
         return Optional.empty();
+      }
+
+      // validate UUID if Sanctuary
+      if (diskuvUuidType == DiskuvUuidType.SANCTUARY_SPECIFIC) {
+        if (!outdoorsUUID.toString().equals(account.get().getPin())) {
+          illegalSanctuaryAccountUuidMeter.mark();
+          return Optional.empty();
+        }
       }
 
       Optional<Device> device = account.get().getDevice(credentials.getDeviceId());

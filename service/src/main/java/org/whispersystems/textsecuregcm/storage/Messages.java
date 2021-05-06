@@ -31,6 +31,7 @@ public class Messages {
   public static final String DESTINATION_DEVICE = "destination_device";
   public static final String MESSAGE            = "message";
   public static final String CONTENT            = "content";
+  public static final String SOURCE_OUTDOORS_UUID = "source_outdoors_uuid";
 
   private final MetricRegistry metricRegistry      = SharedMetricRegistries.getOrCreate(Constants.METRICS_NAME);
   private final Timer          storeTimer          = metricRegistry.timer(name(Messages.class, "store"         ));
@@ -52,8 +53,8 @@ public class Messages {
   public void store(UUID guid, Envelope message, String destination, long destinationDevice) {
     database.use(jdbi ->jdbi.useHandle(handle -> {
       try (Timer.Context ignored = storeTimer.time()) {
-        handle.createUpdate("INSERT INTO messages (" + GUID + ", " + TYPE + ", " + RELAY + ", " + TIMESTAMP + ", " + SERVER_TIMESTAMP + ", " + SOURCE + ", " + SOURCE_UUID + ", " + SOURCE_DEVICE + ", " + DESTINATION + ", " + DESTINATION_DEVICE + ", " + MESSAGE + ", " + CONTENT + ") " +
-                                "VALUES (:guid, :type, :relay, :timestamp, :server_timestamp, :source, :source_uuid, :source_device, :destination, :destination_device, :message, :content)")
+        handle.createUpdate("INSERT INTO messages (" + GUID + ", " + TYPE + ", " + RELAY + ", " + TIMESTAMP + ", " + SERVER_TIMESTAMP + ", " + SOURCE + ", " + SOURCE_UUID + ", " + SOURCE_DEVICE + ", " + DESTINATION + ", " + DESTINATION_DEVICE + ", " + MESSAGE + ", " + CONTENT + ", " + SOURCE_OUTDOORS_UUID + ") " +
+                                "VALUES (:guid, :type, :relay, :timestamp, :server_timestamp, :source, :source_uuid, :source_device, :destination, :destination_device, :message, :content, :source_outdoors_uuid)")
               .bind("guid", guid)
               .bind("destination", destination)
               .bind("destination_device", destinationDevice)
@@ -66,6 +67,7 @@ public class Messages {
               .bind("source_device", message.hasSourceDevice() ? message.getSourceDevice() : null)
               .bind("message", message.hasLegacyMessage() ? message.getLegacyMessage().toByteArray() : null)
               .bind("content", message.hasContent() ? message.getContent().toByteArray() : null)
+              .bind("source_outdoors_uuid", message.hasServerOutdoorsSourceUuid() ? UUID.fromString(message.getServerOutdoorsSourceUuid()) : null)
               .execute();
       }
     }));

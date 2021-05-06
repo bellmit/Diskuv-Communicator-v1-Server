@@ -43,12 +43,16 @@ public class OutgoingMessageEntity {
   @JsonProperty
   private long serverTimestamp;
 
+  @JsonProperty
+  private UUID serverOutdoorsSourceUuid;
+
   public OutgoingMessageEntity() {}
 
   public OutgoingMessageEntity(long id, boolean cached,
                                UUID guid, int type, String relay, long timestamp,
                                String source, UUID sourceUuid, int sourceDevice,
-                               byte[] message, byte[] content, long serverTimestamp)
+                               byte[] message, byte[] content, long serverTimestamp,
+                               UUID serverOutdoorsSourceUuid)
   {
     this.id              = id;
     this.cached          = cached;
@@ -61,7 +65,8 @@ public class OutgoingMessageEntity {
     this.sourceDevice    = sourceDevice;
     this.message         = message;
     this.content         = content;
-    this.serverTimestamp = serverTimestamp;
+    this.serverTimestamp          = serverTimestamp;
+    this.serverOutdoorsSourceUuid = serverOutdoorsSourceUuid;
   }
 
   public UUID getGuid() {
@@ -114,4 +119,7 @@ public class OutgoingMessageEntity {
     return serverTimestamp;
   }
 
+  public UUID getServerOutdoorsSourceUuid() {
+    return serverOutdoorsSourceUuid;
+  }
 }

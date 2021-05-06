@@ -20,6 +20,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.annotation.Timed;
+import com.diskuv.communicatorservice.auth.JwtAuthentication;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,6 +85,7 @@ public class MessageController {
   private final Meter          unidentifiedMeter = metricRegistry.meter(name(getClass(), "delivery", "unidentified"));
   private final Meter          identifiedMeter   = metricRegistry.meter(name(getClass(), "delivery", "identified"  ));
 
+  private final JwtAuthentication      jwtAuthentication;
   private final RateLimiters           rateLimiters;
   private final PushSender             pushSender;
   private final ReceiptSender          receiptSender;
@@ -91,13 +93,15 @@ public class MessageController {
   private final MessagesManager        messagesManager;
   private final ApnFallbackManager     apnFallbackManager;
 
-  public MessageController(RateLimiters rateLimiters,
+  public MessageController(JwtAuthentication jwtAuthentication,
+                           RateLimiters rateLimiters,
                            PushSender pushSender,
                            ReceiptSender receiptSender,
                            PossiblySyntheticAccountsManager accountsManager,
                            MessagesManager messagesManager,
                            ApnFallbackManager apnFallbackManager)
   {
+    this.jwtAuthentication      = jwtAuthentication;
     this.rateLimiters           = rateLimiters;
     this.pushSender             = pushSender;
     this.receiptSender          = receiptSender;
@@ -112,6 +116,7 @@ public class MessageController {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public SendMessageResponse sendMessage(@Auth                                     Account             realSource,
+                                         @HeaderParam("Authorization")             String              authorizationHeader,
                                          @HeaderParam(OptionalAccess.UNIDENTIFIED) Optional<Anonymous> accessKey,
                                          @PathParam("destination")                 AmbiguousIdentifier destinationName,
                                          @Valid                                    IncomingMessageList messages)
@@ -123,6 +128,9 @@ public class MessageController {
     // recipient in the Envelope after we send a message ... is not present as long as the sender shows a valid
     // anonymous key.
     final Optional<Account> source = accessKey.isPresent() ? Optional.empty() : Optional.of(realSource);
+
+    // account authentication (@Auth does it, but we want the outdoors UUID)
+    UUID outdoorsUUID = AuthHeaderSupport.validateJwtAndGetOutdoorsUUID(jwtAuthentication, authorizationHeader);
 
     if (!source.isPresent() && !accessKey.isPresent()) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
@@ -160,7 +168,7 @@ public class MessageController {
           Optional<? extends PossiblySyntheticDevice> destinationDevice = destination.getDevice(incomingMessage.getDestinationDeviceId());
 
           if (destinationDevice.isPresent() && destinationDevice.get().getRealDevice().isPresent()) {
-            sendMessage(source, destination.getRealAccount().get(), destinationDevice.get().getRealDevice().get(), messages.getTimestamp(), messages.isOnline(), incomingMessage);
+            sendMessage(source, outdoorsUUID, destination.getRealAccount().get(), destinationDevice.get().getRealDevice().get(), messages.getTimestamp(), messages.isOnline(), incomingMessage);
           }
         }
       }
@@ -249,6 +257,7 @@ public class MessageController {
   }
 
   private void sendMessage(Optional<Account> source,
+                           UUID sourceOutdoorsUUID,
                            Account destinationAccount,
                            Device destinationDevice,
                            long timestamp,
@@ -263,7 +272,8 @@ public class MessageController {
 
       messageBuilder.setType(Envelope.Type.valueOf(incomingMessage.getType()))
                     .setTimestamp(timestamp == 0 ? System.currentTimeMillis() : timestamp)
-                    .setServerTimestamp(System.currentTimeMillis());
+                    .setServerTimestamp(System.currentTimeMillis())
+                    .setServerOutdoorsSourceUuid(sourceOutdoorsUUID.toString());
 
       if (source.isPresent()) {
         // Contact by email address. Not phone number.

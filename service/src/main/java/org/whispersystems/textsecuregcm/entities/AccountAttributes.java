@@ -89,6 +89,10 @@ public class AccountAttributes {
     return pin;
   }
 
+  public void setPin(String pin) {
+    this.pin = pin;
+  }
+
   public String getRegistrationLock() {
     return registrationLock;
   }
