@@ -9,6 +9,7 @@ import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.util.Constants;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidType;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Util;
 
@@ -34,9 +35,11 @@ public class BaseDiskuvAccountAuthenticator {
       metricRegistry.meter(name(getClass(), "authentication", "deviceDisabled"));
   private final Meter invalidJwtTokenMeter =
       metricRegistry.meter(name(getClass(), "authentication", "invalidJwtToken"));
-  private final Meter invalidAccountUuidMeter =
+  private final Meter invalidAccountUuidMeter         =
           metricRegistry.meter(name(getClass(), "authentication", "invalidAccountUuid"));
-  private final Meter invalidAuthHeaderMeter =
+  private final Meter invalidOutdoorsAccountUuidMeter =
+          metricRegistry.meter(name(getClass(), "authentication", "invalidOutdoorsAccountUuid"));
+  private final Meter invalidAuthHeaderMeter          =
       metricRegistry.meter(name(getClass(), "authentication", "invalidHeader"));
 
   private final AccountsManager accountsManager;
@@ -50,18 +53,27 @@ public class BaseDiskuvAccountAuthenticator {
 
   public Optional<Account> authenticate(
       DiskuvDeviceCredentials credentials, boolean enabledRequired) {
+    UUID outdoorsUUID;
     try {
-      jwtAuthentication.verifyBearerTokenAndGetEmailAddress(credentials.getBearerToken());
+      String emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(credentials.getBearerToken());
+      outdoorsUUID = DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress);
     } catch (IllegalArgumentException iae) {
       invalidJwtTokenMeter.mark();
       return Optional.empty();
     }
 
     final UUID accountUuid = credentials.getAccountUuid();
+    final DiskuvUuidType diskuvUuidType;
     try {
-      DiskuvUuidUtil.verifyDiskuvUuid(accountUuid.toString());
+      diskuvUuidType = DiskuvUuidUtil.verifyDiskuvUuid(accountUuid.toString());
     } catch (IllegalArgumentException iae) {
       invalidAccountUuidMeter.mark();
+      return Optional.empty();
+    }
+
+    // validate UUID if Outdoors (which anybody with knowledge of the email address can reconstruct)
+    if (diskuvUuidType == DiskuvUuidType.OUTDOORS && !outdoorsUUID.equals(accountUuid)) {
+      invalidOutdoorsAccountUuidMeter.mark();
       return Optional.empty();
     }
 

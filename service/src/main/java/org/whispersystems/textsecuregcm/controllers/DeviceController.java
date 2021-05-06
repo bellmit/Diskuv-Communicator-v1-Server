@@ -166,7 +166,7 @@ public class DeviceController {
       throws RateLimitExceededException, DeviceLimitExceededException
   {
     // account authentication
-    AuthHeaderSupport.validateJwt(jwtAuthentication, authorizationHeader);
+    AuthHeaderSupport.validateJwtAndGetOutdoorsUUID(jwtAuthentication, authorizationHeader);
 
     // device password to be used for subsequent device authentication.
     // ignore any device id from the device header though. we will create the "next" device id a bit later in this method

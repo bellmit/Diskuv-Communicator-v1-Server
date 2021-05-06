@@ -22,7 +22,6 @@ import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.annotation.Timed;
 import com.diskuv.communicatorservice.auth.DeviceAuthorizationHeader;
 import com.diskuv.communicatorservice.auth.JwtAuthentication;
-import org.apache.commons.codec.digest.HmacUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.textsecuregcm.auth.*;
@@ -48,9 +47,9 @@ import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.storage.PendingAccountsManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
-import org.whispersystems.textsecuregcm.util.Base64;
 import org.whispersystems.textsecuregcm.util.ByteUtil;
 import org.whispersystems.textsecuregcm.util.Constants;
+import org.whispersystems.textsecuregcm.util.DiskuvUuidType;
 import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Hex;
 import org.whispersystems.textsecuregcm.util.Util;
@@ -167,7 +166,7 @@ public class AccountController {
     }
     UUID accountUuid = UUID.fromString(accountId);
 
-    AuthHeaderSupport.validateJwt(jwtAuthentication, authorizationHeader);
+    AuthHeaderSupport.validateJwtAndGetOutdoorsUUID(jwtAuthentication, authorizationHeader);
 
     String                 pushChallenge          = generatePushChallenge(accountUuid, pushToken);
     StoredVerificationCode storedVerificationCode = new StoredVerificationCode(null,
@@ -202,7 +201,7 @@ public class AccountController {
       throws RateLimitExceededException
   {
     // account authentication
-    AuthHeaderSupport.validateJwt(jwtAuthentication, authorizationHeader);
+    UUID outdoorsUUID = AuthHeaderSupport.validateJwtAndGetOutdoorsUUID(jwtAuthentication, authorizationHeader);
 
     // device password to be used for subsequent device authentication
     final DeviceAuthorizationHeader deviceHeader;
@@ -214,6 +213,17 @@ public class AccountController {
     byte[] devicePassword = deviceHeader.getDevicePassword();
     UUID accountUuid = deviceHeader.getAccountId();
     String accountId = accountUuid.toString();
+
+    // validate UUID if Outdoors (which anybody with knowledge of the email address can reconstruct)
+    DiskuvUuidType diskuvUuidType;
+    try {
+      diskuvUuidType = DiskuvUuidUtil.verifyDiskuvUuid(accountId);
+    } catch (IllegalArgumentException e) {
+      throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+    }
+    if (diskuvUuidType == DiskuvUuidType.OUTDOORS && !outdoorsUUID.equals(accountUuid)) {
+      throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+    }
 
     String requester = Arrays.stream(forwardedFor.split(","))
             .map(String::trim)

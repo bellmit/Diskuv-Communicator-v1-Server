@@ -17,7 +17,13 @@ public final class AuthHeaderSupport {
     private AuthHeaderSupport() {
     }
 
-    public static void validateJwt(JwtAuthentication jwtAuthentication, String authorizationHeader) {
+    /**
+     *
+     * @param jwtAuthentication
+     * @param authorizationHeader
+     * @return the <strong>Outdoors</strong> UUID
+     */
+    public static UUID validateJwtAndGetOutdoorsUUID(JwtAuthentication jwtAuthentication, String authorizationHeader) {
         final String bearerToken;
         try {
             bearerToken = BearerTokenAuthorizationHeader.fromFullHeader(authorizationHeader);
@@ -25,11 +31,13 @@ public final class AuthHeaderSupport {
             LOGGER.info("Bad Authorization Header", e);
             throw new WebApplicationException(Response.status(401).build());
         }
+        final String emailAddress;
         try {
-            jwtAuthentication.verifyBearerTokenAndGetEmailAddress(bearerToken);
+            emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(bearerToken);
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(Response.status(401).build());
         }
+        return DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress);
     }
 
 }
