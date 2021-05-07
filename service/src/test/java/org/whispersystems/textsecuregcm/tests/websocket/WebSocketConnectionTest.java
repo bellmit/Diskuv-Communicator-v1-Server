@@ -357,11 +357,11 @@ public class WebSocketConnectionTest {
       add(new OutgoingMessageEntity(1, true, UUID.randomUUID(), firstMessage.getType().getNumber(), firstMessage.getRelay(),
                                     firstMessage.getTimestamp(), firstMessage.getSource(), UUID.fromString(firstMessage.getSourceUuid()),
                                     firstMessage.getSourceDevice(), firstMessage.getLegacyMessage().toByteArray(),
-                                    firstMessage.getContent().toByteArray(), 0, null));
+                                    firstMessage.getContent().toByteArray(), 0, UUID.fromString(firstMessage.getSourceUuid())));
       add(new OutgoingMessageEntity(2, false, UUID.randomUUID(), secondMessage.getType().getNumber(), secondMessage.getRelay(),
                                     secondMessage.getTimestamp(), secondMessage.getSource(), UUID.fromString(secondMessage.getSourceUuid()),
                                     secondMessage.getSourceDevice(), secondMessage.getLegacyMessage().toByteArray(),
-                                    secondMessage.getContent().toByteArray(), 0, null));
+                                    secondMessage.getContent().toByteArray(), 0, UUID.fromString(secondMessage.getSourceUuid())));
     }};
 
     OutgoingMessageEntityList   pendingMessagesList = new OutgoingMessageEntityList(pendingMessages, false);
@@ -426,7 +426,7 @@ public class WebSocketConnectionTest {
 
   private OutgoingMessageEntity createMessage(long id, boolean cached, String sender, UUID senderUuid, long timestamp, boolean receipt, String content) {
     return new OutgoingMessageEntity(id, cached, UUID.randomUUID(), receipt ? Envelope.Type.RECEIPT_VALUE : Envelope.Type.CIPHERTEXT_VALUE,
-                                     null, timestamp, sender, senderUuid, 1, content.getBytes(), null, 0, null);
+                                     null, timestamp, sender, senderUuid, 1, content.getBytes(), null, 0, senderUuid);
   }
 
 }
