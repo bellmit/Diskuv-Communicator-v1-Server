@@ -101,6 +101,9 @@ public class MessageControllerTest {
     when(accountsManager.get(eq(MULTI_DEVICE_UUID))).thenReturn(multiDeviceAccount);
 
     when(rateLimiters.getMessagesLimiter()).thenReturn(rateLimiter);
+
+    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(eq(AuthHelper.VALID_BEARER_TOKEN))).thenReturn(AuthHelper.VALID_EMAIL);
+    when(jwtAuthentication.verifyBearerTokenAndGetEmailAddress(eq(AuthHelper.VALID_BEARER_TOKEN_TWO))).thenReturn(AuthHelper.VALID_EMAIL_TWO);
   }
 
   @Test
