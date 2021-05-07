@@ -134,8 +134,11 @@
             </column>
         </addColumn>
 
-        <!-- This will effectively make any existing persisted sanctuary messages invalid. This was only fine because we are at start of alpha -->
-        <sql>UPDATE messages SET source_outdoors_uuid=source_uuid WHERE source_outdoors_uuid is NULL</sql>
+        <!-- This will effectively make any existing persisted sanctuary messages invalid. This was only fine because we are at start of alpha.
+        3c5437da-d904-497b-a61c-9227dbbad7e5 == trees@yahoo.com
+         -->
+        <sql>UPDATE messages SET source_outdoors_uuid=source_uuid WHERE source_outdoors_uuid is NULL AND source_uuid is not NULL</sql>
+        <sql>UPDATE messages SET source_outdoors_uuid='3c5437da-d904-497b-a61c-9227dbbad7e5' WHERE source_outdoors_uuid is NULL</sql>
 
         <addNotNullConstraint tableName="messages" columnName="source_outdoors_uuid" />
     </changeSet>
