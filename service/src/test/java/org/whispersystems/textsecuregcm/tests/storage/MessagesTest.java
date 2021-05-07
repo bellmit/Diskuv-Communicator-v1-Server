@@ -248,6 +248,7 @@ public class MessagesTest {
                    .setContent(ByteString.copyFrom(content))
                    .setType(Envelope.Type.CIPHERTEXT)
                    .setServerGuid(UUID.randomUUID().toString())
+                   .setServerOutdoorsSourceUuid(UUID.randomUUID().toString())
                    .build();
   }
 
