@@ -66,6 +66,7 @@ public class SyntheticAccountTest {
     assertThat(account.getAvatar()).isEqualTo(AVATAR1);
     assertThat(account.isEnabled()).isTrue();
     assertThat(account.isGroupsV2Supported()).isTrue();
+    assertThat(account.isGv1MigrationSupported()).isTrue();
     assertThat(account.isUnrestrictedUnidentifiedAccess()).isFalse();
     assertThat(account.getIdentityKey()).isEqualTo("BQcixKf7KQvA5DZ4szVqiy9cP41U5MTboJFv0l51mL0T");
 
@@ -95,7 +96,7 @@ public class SyntheticAccountTest {
   public void testStability2() {
     SyntheticAccount account =
         new SyntheticAccount(new byte[HmacDrbg.ENTROPY_INPUT_SIZE_BYTES], UUID2);
-    assertThat(account.getDevices()).hasSize(3);
+    assertThat(account.getDevices()).hasSize(1);
     assertThat(account.getProfileName())
         .isEqualTo(
             "dWFTKZe4Sp8F9xMGihXt9DC3SExBPkfWdRH4ks3j90lhW41hC7V6uIwb4RELSbr0jEAOXiDJozUkpgyefZkWqE8w49c/AplLSEzOcoBn6oqp6UNBSC9BAbnsB0etKKSGH+dW7YZsaQDeOkmuzUsSxNf81yMHhseu2i39gFfbAkXyzOS/7/tebRRXKSEcE7gZJD1ymOHHITiu8T/RnvYIaxIBduaHTN6sxpjMx8tEI47fN0HqPcwMNPkho8uW7V/g1m0eVpfsbzAydG0HxCiYSpLX8G03sSb+4ypA89xexRyffzkxw+ghZrW6qp5VEdkrEjc8DsqjqHlQkN8npVNy79CVe58RHdBNilR1iP0ckN+C4I5FglX4bcSZoGFa");
@@ -105,6 +106,7 @@ public class SyntheticAccountTest {
     assertThat(account.getAvatar()).isNull();
     assertThat(account.isEnabled()).isTrue();
     assertThat(account.isGroupsV2Supported()).isTrue();
+    assertThat(account.isGv1MigrationSupported()).isTrue();
     assertThat(account.isUnrestrictedUnidentifiedAccess()).isFalse();
     assertThat(account.getIdentityKey()).isEqualTo("BQt+VoFFW2txhdJ0PkVqGD/RALynEamUv6+sxhJ2m5Vz");
 
@@ -127,39 +129,5 @@ public class SyntheticAccountTest {
                                   "RdZw9G73A++m8s0e3ABk/0tR/u15PKru6NH6qfSM5jwePVJC3F4yu2nRf0UwEaEUEA5P3rE34kZrbTirooxvBw");
               softly.assertAll();
             });
-    assertThat(account.getDevices())
-        .filteredOn("id", 3L)
-        .hasOnlyOneElementSatisfying(
-            device -> {
-              SoftAssertions softly = new SoftAssertions();
-              softly.assertThat(device.getRegistrationId()).isEqualTo(10477);
-              softly.assertThat(device.getRealDevice()).isNotPresent();
-              softly.assertThat(device.getSignedPreKey().getKeyId()).isEqualTo(5723057L);
-              softly
-                  .assertThat(device.getSignedPreKey().getPublicKey())
-                  .isEqualTo("BS5JVDH9bGLizxoFNeOXq3W98GdB9uRUyx++TwEW8fdx");
-              softly
-                  .assertThat(device.getSignedPreKey().getSignature())
-                  .hasSameSizeAs( // The signature is NOT deterministic after a switch to signal-client-java's Curve, so this is not `isEqualTo`
-                      "+eVx89ysIx+Aw6XafdQ1n1WzOOihwIbPN1Qe7O49xOwPsOION4F/6/EBND+JQ+FEvv+RTrKqoigmPXFC1UCGjg");
-              softly.assertAll();
-            });
-    assertThat(account.getDevices())
-            .filteredOn("id", 2L)
-            .hasOnlyOneElementSatisfying(
-                    device -> {
-                      SoftAssertions softly = new SoftAssertions();
-                      softly.assertThat(device.getRegistrationId()).isEqualTo(2978);
-                      softly.assertThat(device.getRealDevice()).isNotPresent();
-                      softly.assertThat(device.getSignedPreKey().getKeyId()).isEqualTo(9347985L);
-                      softly
-                              .assertThat(device.getSignedPreKey().getPublicKey())
-                              .isEqualTo("BTrHcUD8SFLylkQhQc11yQk0dn5MmnVasKLGaY+KPBNP");
-                      softly
-                              .assertThat(device.getSignedPreKey().getSignature())
-                              .hasSameSizeAs( // The signature is NOT deterministic after a switch to signal-client-java's Curve, so this is not `isEqualTo`
-                                      "IeDFZEweN5quXNRo5WDHon+MKKp3r6S9n7BTH2zeCHArDhbdxaXYbrK4H2UTvIfEubMuFPD5epwbPnGeZbVBig");
-                      softly.assertAll();
-                    });
   }
 }

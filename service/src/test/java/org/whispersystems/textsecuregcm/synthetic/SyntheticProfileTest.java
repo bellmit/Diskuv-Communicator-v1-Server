@@ -15,6 +15,8 @@ public class SyntheticProfileTest {
     assertThat(profile.getName()).isEqualTo(NAME1);
     assertThat(profile.getEmailAddress()).isEqualTo(EMAIL1);
     assertThat(profile.getAvatar()).isEqualTo(AVATAR1);
+    assertThat(profile.getAbout()).isEqualTo(ABOUT1);
+    assertThat(profile.getAboutEmoji()).isEqualTo(ABOUTEMOJI1);
     assertThat(profile.getCommitment()).containsExactly(COMMITMENT1);
   }
 }
