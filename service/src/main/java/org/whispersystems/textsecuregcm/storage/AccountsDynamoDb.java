@@ -99,7 +99,7 @@ public class AccountsDynamoDb extends AbstractDynamoDbStore implements AccountSt
         TransactWriteItem accountPut = buildPutWriteItemForAccount(account, account.getUuid());
 
         final TransactWriteItemsRequest request = new TransactWriteItemsRequest()
-            .withTransactItems(phoneNumberConstraintPut, accountPut);
+            .withTransactItems(/* No phone number in Diskuv. phoneNumberConstraintPut, */ accountPut);
 
         try {
           client.transactWriteItems(request);
@@ -152,6 +152,9 @@ public class AccountsDynamoDb extends AbstractDynamoDbStore implements AccountSt
   }
 
   private TransactWriteItem buildPutWriteItemForPhoneNumberConstraint(Account account, UUID uuid) {
+    // No phone number table in Diskuv
+    return null;
+    /*
     return new TransactWriteItem()
         .withPut(
             new Put()
@@ -167,6 +170,7 @@ public class AccountsDynamoDb extends AbstractDynamoDbStore implements AccountSt
                 .withExpressionAttributeValues(
                     Map.of(":uuid", new AttributeValue().withB(UUIDUtil.toByteBuffer(uuid))))
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD));
+     */
   }
 
   @Override
@@ -195,7 +199,9 @@ public class AccountsDynamoDb extends AbstractDynamoDbStore implements AccountSt
 
   @Override
   public Optional<Account> get(String number) {
-
+    // No phone number table in Diskuv
+    return Optional.empty();
+    /*
     return GET_BY_NUMBER_TIMER.record(() -> {
 
       final GetItemResult phoneNumberAndUuid = client.getItem(phoneNumbersTableName,
@@ -208,6 +214,7 @@ public class AccountsDynamoDb extends AbstractDynamoDbStore implements AccountSt
               .withConsistentRead(true)))
           .map(AccountsDynamoDb::fromItem);
     });
+    */
   }
 
   @Override
@@ -238,10 +245,13 @@ public class AccountsDynamoDb extends AbstractDynamoDbStore implements AccountSt
 
     maybeAccount.ifPresent(account -> {
 
+      // No phone number table in Diskuv
+      /*
       TransactWriteItem phoneNumberDelete = new TransactWriteItem()
           .withDelete(new Delete()
               .withTableName(phoneNumbersTableName)
               .withKey(Map.of(ATTR_ACCOUNT_E164, new AttributeValue(account.getNumber()))));
+       */
 
       TransactWriteItem accountDelete = new TransactWriteItem().withDelete(
           new Delete()
@@ -249,7 +259,7 @@ public class AccountsDynamoDb extends AbstractDynamoDbStore implements AccountSt
               .withKey(Map.of(KEY_ACCOUNT_UUID, new AttributeValue().withB(UUIDUtil.toByteBuffer(uuid)))));
 
       TransactWriteItemsRequest request = new TransactWriteItemsRequest()
-          .withTransactItems(phoneNumberDelete, accountDelete);
+          .withTransactItems(/* No phone number in Diskuv. phoneNumberDelete, */ accountDelete);
 
       client.transactWriteItems(request);
     });
@@ -310,7 +320,7 @@ public class AccountsDynamoDb extends AbstractDynamoDbStore implements AccountSt
               Map.of(":version", new AttributeValue().withN(String.valueOf(account.getDynamoDbMigrationVersion()))));
 
       final TransactWriteItemsRequest request = new TransactWriteItemsRequest()
-          .withTransactItems(phoneNumberConstraintPut, accountPut);
+          .withTransactItems(/* No phone number in Diskuv. phoneNumberConstraintPut, */accountPut);
 
       final CompletableFuture<Boolean> resultFuture = new CompletableFuture<>();
 
