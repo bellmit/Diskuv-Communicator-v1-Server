@@ -438,16 +438,7 @@ public class WhisperServerConfiguration extends Configuration {
   @JsonProperty
   @Valid
   @NotNull
-  private org.signal.storageservice.configuration.BigTableConfiguration bigtable;
-
-  @JsonProperty
-  @Valid
-  @NotNull
   private org.signal.storageservice.configuration.GroupConfiguration group;
-
-  public org.signal.storageservice.configuration.BigTableConfiguration getBigTableConfiguration() {
-    return bigtable;
-  }
 
   public org.signal.storageservice.configuration.GroupConfiguration getGroupConfiguration() {
     return group;
