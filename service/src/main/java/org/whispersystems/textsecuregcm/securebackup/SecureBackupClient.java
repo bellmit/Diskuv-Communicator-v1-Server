@@ -51,6 +51,9 @@ public class SecureBackupClient {
     }
 
     public CompletableFuture<Void> deleteBackups(final UUID accountUuid) {
+        // Diskuv does not use a Signal secure backup service
+        return CompletableFuture.completedFuture(null);
+        /*
         final ExternalServiceCredentials credentials = secureBackupCredentialGenerator.generateFor(accountUuid.toString());
 
         final HttpRequest request = HttpRequest.newBuilder()
@@ -67,5 +70,6 @@ public class SecureBackupClient {
 
             throw new SecureBackupException("Failed to delete backup: " + response.statusCode());
         });
+        */
     }
 }

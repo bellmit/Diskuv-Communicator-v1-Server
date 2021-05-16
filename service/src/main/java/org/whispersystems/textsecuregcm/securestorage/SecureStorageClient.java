@@ -52,6 +52,9 @@ public class SecureStorageClient {
     }
 
     public CompletableFuture<Void> deleteStoredData(final UUID accountUuid) {
+        // Diskuv does not use a Signal secure backup service
+        return CompletableFuture.completedFuture(null);
+        /*
         final ExternalServiceCredentials credentials = storageServiceCredentialGenerator.generateFor(accountUuid.toString());
 
         final HttpRequest request = HttpRequest.newBuilder()
@@ -68,5 +71,6 @@ public class SecureStorageClient {
 
             throw new SecureStorageException("Failed to delete storage service data: " + response.statusCode());
         });
+        */
     }
 }

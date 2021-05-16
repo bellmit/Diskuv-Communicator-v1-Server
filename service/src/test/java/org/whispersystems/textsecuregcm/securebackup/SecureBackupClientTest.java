@@ -96,6 +96,7 @@ public class SecureBackupClientTest {
     secureStorageClient.deleteBackups(accountUuid).join();
   }
 
+  @org.junit.Ignore("Diskuv does not use Signal secure backup services")
   @Test
   public void deleteStoredDataFailure() {
     final String username = RandomStringUtils.randomAlphabetic(16);
