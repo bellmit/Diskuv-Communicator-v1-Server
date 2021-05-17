@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class DynamicConfigurationManager {
 
+  private final boolean         skipAppConfig;
   private final String          application;
   private final String          environment;
   private final String          configurationName;
@@ -42,8 +43,10 @@ public class DynamicConfigurationManager {
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
       .registerModule(new JavaTimeModule());
 
-  public DynamicConfigurationManager(String application, String environment, String configurationName) {
-    this(AmazonAppConfigClient.builder()
+  public DynamicConfigurationManager(boolean skipAppConfig, String application, String environment, String configurationName) {
+    this(skipAppConfig,
+         skipAppConfig ? null :
+         AmazonAppConfigClient.builder()
                               .withClientConfiguration(new ClientConfiguration().withClientExecutionTimeout(10000).withRequestTimeout(10000))
                               .withCredentials(InstanceProfileCredentialsProvider.getInstance())
                               .build(),
@@ -52,6 +55,11 @@ public class DynamicConfigurationManager {
 
   @VisibleForTesting
   public DynamicConfigurationManager(AmazonAppConfig appConfigClient, String application, String environment, String configurationName, String clientId) {
+    this(false, appConfigClient, application, environment, configurationName, clientId);
+  }
+
+  private DynamicConfigurationManager(boolean skipAppConfig, AmazonAppConfig appConfigClient, String application, String environment, String configurationName, String clientId) {
+    this.skipAppConfig     = skipAppConfig;
     this.appConfigClient   = appConfigClient;
     this.application       = application;
     this.environment       = environment;
@@ -68,6 +76,16 @@ public class DynamicConfigurationManager {
   }
 
   public void start() {
+    // quick exit if we skip
+    if (skipAppConfig) {
+      configuration.set(new DynamicConfiguration());
+      synchronized (this) {
+        this.initialized = true;
+        this.notifyAll();
+      }
+      return;
+    }
+
     configuration.set(retrieveInitialDynamicConfiguration());
 
     synchronized (this) {

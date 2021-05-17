@@ -7,6 +7,9 @@ import javax.validation.constraints.NotEmpty;
 public class AppConfigConfiguration {
 
   @JsonProperty
+  private boolean skipAppConfig = false;
+
+  @JsonProperty
   @NotEmpty
   private String application;
 
@@ -17,6 +20,10 @@ public class AppConfigConfiguration {
   @JsonProperty
   @NotEmpty
   private String configuration;
+
+  public boolean isSkipAppConfig() {
+    return skipAppConfig;
+  }
 
   public String getApplication() {
     return application;
