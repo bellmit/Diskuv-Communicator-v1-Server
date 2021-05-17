@@ -281,7 +281,7 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
       }
     };
 
-    if (config.getMicrometerConfiguration() != null) {
+    if (config.getMicrometerConfiguration() != null && !org.whispersystems.textsecuregcm.util.Util.isEmpty(config.getMicrometerConfiguration().getUri())) {
     Metrics.addRegistry(new WavefrontMeterRegistry(wavefrontConfig, Clock.SYSTEM) {
       @Override
       protected DistributionStatisticConfig defaultHistogramConfig() {
