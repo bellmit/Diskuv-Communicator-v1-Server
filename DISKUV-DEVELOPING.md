@@ -175,9 +175,18 @@ appConfig:
 
 #### Redis
 
-You are required to have a Redis server and at least one replica.
+You are required to have a Redis non-clustered server with at least one replica. You are *also* required to have a Redis Cluster.
 
-You are *also* required to have a Redis Cluster.
+You also need to have [notifications enabled](https://redis.io/topics/notifications) in both your Redis non-clustered
+server and Redis Cluster. Notifications are typically disabled by default, but are necessary to deliver messages
+quickly ("ephemerally", which for Signal Server is under first 10 seconds). Each letter of the `notify-keyspace-events` config option controls notifications; the
+value `KA` should work for Signal Server:
+* `K` - Keyspace events, published with `__keyspace@<db>__` prefix.
+* `A` - Alias for "g$lshztxed", so that the "AKE" string means all the events except "m".
+
+If you are using AWS ElastiCache, you **must** follow
+[How do I implement Redis keyspace notifications in ElastiCache?](https://aws.amazon.com/premiumsupport/knowledge-center/elasticache-redis-keyspace-notifications/)
+to enable the notifications.
 
 For clarity, this section documents local Ubuntu instructions. Cloud Redis servers need to be provisioned using
 their web consoles or CLIs.
@@ -190,14 +199,14 @@ In one terminal, run the following to start a Redis server:
 
 ```bash
 install -d /tmp/redis-server/primary
-redis-server --dir /tmp/redis-server/primary --maxclients 100 --port 6379
+redis-server --dir /tmp/redis-server/primary --maxclients 100 --port 6379 --notify-keyspace-events KA
 ```
 
 In another terminal, run:
 
 ```bash
 install -d /tmp/redis-server/replica
-redis-server --dir /tmp/redis-server/replica --maxclients 100 --port 7777 --replicaof 127.0.0.1 6379
+redis-server --dir /tmp/redis-server/replica --maxclients 100 --port 7777 --notify-keyspace-events KA --replicaof 127.0.0.1 6379
 ```
 
 ---
@@ -208,21 +217,21 @@ In your first "Cluster" terminal, run:
 
 ```bash
 install -d /tmp/redis-server/cluster/7000
-redis-server --dir /tmp/redis-server/cluster/7000 --port 7000 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+redis-server --dir /tmp/redis-server/cluster/7000 --port 7000 --notify-keyspace-events KA --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
 ```
 
 In your second "Cluster" terminal, run:
 
 ```bash
 install -d /tmp/redis-server/cluster/7001
-redis-server --dir /tmp/redis-server/cluster/7001 --port 7001 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+redis-server --dir /tmp/redis-server/cluster/7001 --port 7001 --notify-keyspace-events KA --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
 ```
 
 In your third "Cluster" terminal, run:
 
 ```bash
 install -d /tmp/redis-server/cluster/7002
-redis-server --dir /tmp/redis-server/cluster/7002 --port 7002 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+redis-server --dir /tmp/redis-server/cluster/7002 --port 7002 --notify-keyspace-events KA --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
 ```
 
 In your last (fourth) "Cluster" terminal, run:
@@ -269,16 +278,17 @@ messageCache:
     persistDelayMinutes: 10
     cluster:
         urls:
-            - redis://localhost:7000?database=6
-            - redis://localhost:7001?database=6
-            - redis://localhost:7002?database=6
+            # messages are hardcoded to database 0 through Redis pubsub __keyspace@0__
+            - redis://localhost:7000?database=0
+            - redis://localhost:7001?database=0
+            - redis://localhost:7002?database=0
 
 clientPresenceCluster:
     urls:
-        - redis://localhost:7000?database=7
-        - redis://localhost:7001?database=7
-        - redis://localhost:7002?database=7
-        - redis://localhost:6379?database=5
+        # client presence is hardcoded to database 0 through Redis pubsub __keyspace@0__
+        - redis://localhost:7000?database=0
+        - redis://localhost:7001?database=0
+        - redis://localhost:7002?database=0
 ```
 
 #### DynamoDB
