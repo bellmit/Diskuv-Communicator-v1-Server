@@ -11,13 +11,43 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import java.time.Duration;
 
-public class DynamoDbConfiguration {
+public class DynamoDbConfiguration implements com.diskuv.communicatorservice.storage.configuration.DiskuvDynamoDBConfiguration {
+
+    private com.diskuv.communicatorservice.storage.configuration.DiskuvAwsCredentialsType credentialsType = com.diskuv.communicatorservice.storage.configuration.DiskuvAwsCredentialsType.INSTANCE_PROFILE;
+    private String endpointOverride;
+    private String accessKey;
+    private String secretKey;
+
+    @Override
+    @JsonProperty
+    public com.diskuv.communicatorservice.storage.configuration.DiskuvAwsCredentialsType getCredentialsType() {
+      return credentialsType;
+    }
+
+    @Override
+    @JsonProperty
+    public String getEndpointOverride() {
+      return endpointOverride;
+    }
+
+    @Override
+    @JsonProperty
+    public String getAccessKey() {
+      return accessKey;
+    }
+
+    @Override
+    @JsonProperty
+    public String getSecretKey() {
+      return secretKey;
+    }
 
     private String   region;
     private String   tableName;
     private Duration clientExecutionTimeout = Duration.ofSeconds(30);
     private Duration clientRequestTimeout   = Duration.ofSeconds(10);
 
+    @Override
     @Valid
     @NotEmpty
     @JsonProperty

@@ -1,5 +1,6 @@
 package com.diskuv.communicatorservice.storage.command;
 
+import com.diskuv.communicatorservice.storage.configuration.DiskuvAwsCredentialsType;
 import com.diskuv.communicatorservice.storage.configuration.DiskuvGroupsConfiguration;
 import io.dropwizard.cli.ConfiguredCommand;
 import net.sourceforge.argparse4j.impl.Arguments;
@@ -33,7 +34,7 @@ public abstract class BaseCreateTableCommand extends ConfiguredCommand<WhisperSe
     // setup config
     DiskuvGroupsConfiguration config = configuration.getDiskuvGroupsConfiguration();
     if (awsDefault) {
-      config.setCredentialsType(DiskuvGroupsConfiguration.CredentialsType.DEFAULT);
+      config.setCredentialsType(DiskuvAwsCredentialsType.DEFAULT);
     }
     return config;
   }

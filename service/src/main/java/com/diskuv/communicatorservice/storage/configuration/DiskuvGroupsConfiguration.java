@@ -22,13 +22,8 @@ import javax.annotation.Nonnull;
 import java.util.LinkedList;
 import java.util.List;
 
-public class DiskuvGroupsConfiguration {
+public class DiskuvGroupsConfiguration implements DiskuvDynamoDBConfiguration {
   public static final int CHECKSUM_SHARED_KEY_SIZE = 16;
-
-  public enum CredentialsType {
-    BASIC,
-    DEFAULT
-  }
 
   @JsonProperty(required = true)
   private String region;
@@ -39,6 +34,7 @@ public class DiskuvGroupsConfiguration {
 
   @JsonProperty private String sanctuariesTableName = "Sanctuaries";
 
+  @Override
   public String getRegion() {
     return region;
   }
@@ -97,7 +93,7 @@ public class DiskuvGroupsConfiguration {
   }
 
   @JsonProperty(required = true)
-  private CredentialsType credentialsType;
+  private DiskuvAwsCredentialsType credentialsType;
 
   @JsonProperty private String endpointOverride;
 
@@ -105,22 +101,26 @@ public class DiskuvGroupsConfiguration {
 
   @JsonProperty private String secretKey;
 
-  public CredentialsType getCredentialsType() {
+  @Override
+  public DiskuvAwsCredentialsType getCredentialsType() {
     return credentialsType;
   }
 
-  public void setCredentialsType(CredentialsType credentialsType) {
+  public void setCredentialsType(DiskuvAwsCredentialsType credentialsType) {
     this.credentialsType = credentialsType;
   }
 
+  @Override
   public String getEndpointOverride() {
     return endpointOverride;
   }
 
+  @Override
   public String getAccessKey() {
     return accessKey;
   }
 
+  @Override
   public String getSecretKey() {
     return secretKey;
   }

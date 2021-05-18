@@ -304,51 +304,38 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     FaultTolerantDatabase accountDatabase = new FaultTolerantDatabase("accounts_database", accountJdbi, config.getAccountsDatabaseConfiguration().getCircuitBreakerConfiguration());
     FaultTolerantDatabase abuseDatabase   = new FaultTolerantDatabase("abuse_database", abuseJdbi, config.getAbuseDatabaseConfiguration().getCircuitBreakerConfiguration());
 
-    AmazonDynamoDBClientBuilder messageDynamoDbClientBuilder = AmazonDynamoDBClientBuilder
-            .standard()
-            .withRegion(config.getMessageDynamoDbConfiguration().getRegion())
+    AmazonDynamoDBClientBuilder messageDynamoDbClientBuilder = new com.diskuv.communicatorservice.storage.clients.AwsClientFactory(config.getMessageDynamoDbConfiguration()).getAmazonDynamoDBClientBuilder()
             .withClientConfiguration(new ClientConfiguration().withClientExecutionTimeout(((int) config.getMessageDynamoDbConfiguration().getClientExecutionTimeout().toMillis()))
                                                               .withRequestTimeout((int) config.getMessageDynamoDbConfiguration().getClientRequestTimeout().toMillis()))
-            .withCredentials(InstanceProfileCredentialsProvider.getInstance());
+            ;
 
-    AmazonDynamoDBClientBuilder keysDynamoDbClientBuilder = AmazonDynamoDBClientBuilder
-            .standard()
-            .withRegion(config.getKeysDynamoDbConfiguration().getRegion())
+    AmazonDynamoDBClientBuilder keysDynamoDbClientBuilder = new com.diskuv.communicatorservice.storage.clients.AwsClientFactory(config.getKeysDynamoDbConfiguration()).getAmazonDynamoDBClientBuilder()
             .withClientConfiguration(new ClientConfiguration().withClientExecutionTimeout(((int) config.getKeysDynamoDbConfiguration().getClientExecutionTimeout().toMillis()))
                                                               .withRequestTimeout((int) config.getKeysDynamoDbConfiguration().getClientRequestTimeout().toMillis()))
-            .withCredentials(InstanceProfileCredentialsProvider.getInstance());
+            ;
 
-    AmazonDynamoDBClientBuilder accountsDynamoDbClientBuilder = AmazonDynamoDBClientBuilder
-        .standard()
-        .withRegion(config.getAccountsDynamoDbConfiguration().getRegion())
+    AmazonDynamoDBClientBuilder accountsDynamoDbClientBuilder = new com.diskuv.communicatorservice.storage.clients.AwsClientFactory(config.getAccountsDynamoDbConfiguration()).getAmazonDynamoDBClientBuilder()
         .withClientConfiguration(new ClientConfiguration().withClientExecutionTimeout(((int) config.getAccountsDynamoDbConfiguration().getClientExecutionTimeout().toMillis()))
             .withRequestTimeout((int) config.getAccountsDynamoDbConfiguration().getClientRequestTimeout().toMillis()))
-        .withCredentials(InstanceProfileCredentialsProvider.getInstance());
+        ;
 
     // The thread pool core & max sizes are set via dynamic configuration within AccountsDynamoDb
     ThreadPoolExecutor accountsDynamoDbMigrationThreadPool = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
         new LinkedBlockingDeque<>());
 
-    AmazonDynamoDBAsyncClientBuilder accountsDynamoDbAsyncClientBuilder = AmazonDynamoDBAsyncClientBuilder
-        .standard()
-        .withRegion(accountsDynamoDbClientBuilder.getRegion())
+    AmazonDynamoDBAsyncClientBuilder accountsDynamoDbAsyncClientBuilder = new com.diskuv.communicatorservice.storage.clients.AwsClientFactory(config.getAccountsDynamoDbConfiguration()).getAmazonDynamoDBAsyncClientBuilder()
         .withClientConfiguration(accountsDynamoDbClientBuilder.getClientConfiguration())
-        .withCredentials(accountsDynamoDbClientBuilder.getCredentials())
         .withExecutorFactory(() -> accountsDynamoDbMigrationThreadPool);
 
-    AmazonDynamoDBClientBuilder migrationDeletedAccountsDynamoDbClientBuilder = AmazonDynamoDBClientBuilder
-        .standard()
-        .withRegion(config.getMigrationDeletedAccountsDynamoDbConfiguration().getRegion())
+    AmazonDynamoDBClientBuilder migrationDeletedAccountsDynamoDbClientBuilder = new com.diskuv.communicatorservice.storage.clients.AwsClientFactory(config.getMigrationDeletedAccountsDynamoDbConfiguration()).getAmazonDynamoDBClientBuilder()
         .withClientConfiguration(new ClientConfiguration().withClientExecutionTimeout(((int) config.getMigrationDeletedAccountsDynamoDbConfiguration().getClientExecutionTimeout().toMillis()))
             .withRequestTimeout((int) config.getMigrationDeletedAccountsDynamoDbConfiguration().getClientRequestTimeout().toMillis()))
-        .withCredentials(InstanceProfileCredentialsProvider.getInstance());
+        ;
 
-    AmazonDynamoDBClientBuilder migrationRetryAccountsDynamoDbClientBuilder = AmazonDynamoDBClientBuilder
-        .standard()
-        .withRegion(config.getMigrationRetryAccountsDynamoDbConfiguration().getRegion())
+    AmazonDynamoDBClientBuilder migrationRetryAccountsDynamoDbClientBuilder = new com.diskuv.communicatorservice.storage.clients.AwsClientFactory(config.getMigrationRetryAccountsDynamoDbConfiguration()).getAmazonDynamoDBClientBuilder()
         .withClientConfiguration(new ClientConfiguration().withClientExecutionTimeout(((int) config.getMigrationRetryAccountsDynamoDbConfiguration().getClientExecutionTimeout().toMillis()))
             .withRequestTimeout((int) config.getMigrationRetryAccountsDynamoDbConfiguration().getClientRequestTimeout().toMillis()))
-        .withCredentials(InstanceProfileCredentialsProvider.getInstance());
+        ;
 
     DynamoDB messageDynamoDb = new DynamoDB(messageDynamoDbClientBuilder.build());
     DynamoDB preKeyDynamoDb = new DynamoDB(keysDynamoDbClientBuilder.build());
@@ -597,13 +584,13 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     environment.metrics().register(name(FileDescriptorGauge.class, "fd_count"), new FileDescriptorGauge());
 
     // [Diskuv Change] Groups setup custom to Diskuv
-    DynamoDbAsyncClient dbAsyncClient    = new AwsClientFactory(config.getDiskuvGroupsConfiguration()).getDynamoDbAsyncClient();
-    GroupChangeCache    groupChangeCache = new org.whispersystems.textsecuregcm.storage.RedisBackedGroupChangeCache(cacheCluster, config.getDiskuvGroupsConfiguration().getNumberOfGroupCacheCheckingThreads());
-    GroupsDao           groupsDao        = new GroupsDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupsTableName(), config.getDiskuvGroupsConfiguration().getChecksumSharedKey());
-    GroupLogDao         groupLogDao      = new GroupLogDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupLogTableName(), Optional.of(groupChangeCache));
+    DynamoDbAsyncClient groupsDbAsyncClient = new AwsClientFactory(config.getDiskuvGroupsConfiguration()).getDynamoDbAsyncClient();
+    GroupChangeCache    groupChangeCache    = new org.whispersystems.textsecuregcm.storage.RedisBackedGroupChangeCache(cacheCluster, config.getDiskuvGroupsConfiguration().getNumberOfGroupCacheCheckingThreads());
+    GroupsDao           groupsDao           = new GroupsDao(groupsDbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupsTableName(), config.getDiskuvGroupsConfiguration().getChecksumSharedKey());
+    GroupLogDao         groupLogDao         = new GroupLogDao(groupsDbAsyncClient, config.getDiskuvGroupsConfiguration().getGroupLogTableName(), Optional.of(groupChangeCache));
 
     // [Diskuv Change] Diskuv Sanctuaries
-    SanctuariesDao sanctuariesDao = new SanctuariesDao(dbAsyncClient, config.getDiskuvGroupsConfiguration().getSanctuariesTableName());
+    SanctuariesDao sanctuariesDao = new SanctuariesDao(groupsDbAsyncClient, config.getDiskuvGroupsConfiguration().getSanctuariesTableName());
     environment.jersey().register(new SanctuaryController(sanctuariesDao, config.getDiskuvGroupsConfiguration(), rateLimiters));
 
     // [Diskuv Change] Probe backends at startup. NEVER probe backends using a same machine probe (ie. internal health check) because
