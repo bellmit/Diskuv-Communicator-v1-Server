@@ -153,6 +153,7 @@ public class DiskuvCreateDynamoDbTableCommand extends ConfiguredCommand<WhisperS
     // check if already exists
     try {
       client.describeTable(tableName);
+      logger.info("{}. The table exists", tableName);
       return;
     } catch (com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException e) {
       // expected!

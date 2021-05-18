@@ -76,9 +76,10 @@ public class DynamicConfigurationManager {
   }
 
   public void start() {
-    // quick exit if we skip
+    // use Diskuv defaults if we skip
     if (skipAppConfig) {
-      configuration.set(new DynamicConfiguration());
+      DynamicConfiguration dynamicConfiguration = org.whispersystems.textsecuregcm.configuration.dynamic.DiskuvDynamicConfigurations.getDefault();
+      configuration.set(dynamicConfiguration);
       synchronized (this) {
         this.initialized = true;
         this.notifyAll();

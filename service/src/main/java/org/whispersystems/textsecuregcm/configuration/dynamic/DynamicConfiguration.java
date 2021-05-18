@@ -14,6 +14,10 @@ public class DynamicConfiguration {
   @Valid
   private Map<String, DynamicExperimentEnrollmentConfiguration> experiments = Collections.emptyMap();
 
+  public void setExperiments(final Map<String, DynamicExperimentEnrollmentConfiguration> experiments) {
+    this.experiments = experiments;
+  }
+
   @JsonProperty
   @Valid
   private Map<String, DynamicPreRegistrationExperimentEnrollmentConfiguration> preRegistrationExperiments = Collections.emptyMap();
@@ -88,6 +92,11 @@ public class DynamicConfiguration {
 
   public DynamicSignupCaptchaConfiguration getSignupCaptchaConfiguration() {
     return signupCaptcha;
+  }
+
+  public void setAccountsDynamoDbMigration(
+      final DynamicAccountsDynamoDbMigrationConfiguration accountsDynamoDbMigration) {
+    this.accountsDynamoDbMigration = accountsDynamoDbMigration;
   }
 
   public DynamicAccountsDynamoDbMigrationConfiguration getAccountsDynamoDbMigrationConfiguration() {

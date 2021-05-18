@@ -30,6 +30,11 @@ public class DynamicExperimentEnrollmentConfiguration {
         return enrolledUuids;
     }
 
+    public DynamicExperimentEnrollmentConfiguration setEnrollmentPercentage(final int enrollmentPercentage) {
+      this.enrollmentPercentage = enrollmentPercentage;
+      return this;
+    }
+
     public int getEnrollmentPercentage() {
         return enrollmentPercentage;
     }
