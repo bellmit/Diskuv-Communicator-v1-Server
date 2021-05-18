@@ -35,7 +35,6 @@ import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.Device.DeviceCapabilities;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.storage.PendingDevicesManager;
-import org.whispersystems.textsecuregcm.util.DiskuvUuidUtil;
 import org.whispersystems.textsecuregcm.util.Util;
 import org.whispersystems.textsecuregcm.util.VerificationCode;
 import org.whispersystems.textsecuregcm.util.ua.UnrecognizedUserAgentException;
@@ -232,23 +231,6 @@ public class DeviceController {
     assert(account.getAuthenticatedDevice().isPresent());
     account.getAuthenticatedDevice().get().setCapabilities(capabilities);
     accounts.update(account);
-  }
-
-  private UUID getAndValidateAccountUuid(String authorizationHeader) {
-    final String bearerToken;
-    try {
-      bearerToken = com.diskuv.communicatorservice.auth.BearerTokenAuthorizationHeader.fromFullHeader(authorizationHeader);
-    } catch (InvalidAuthorizationHeaderException e) {
-      logger.info("Bad Authorization Header", e);
-      throw new WebApplicationException(Response.status(401).build());
-    }
-    final String emailAddress;
-    try {
-      emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(bearerToken);
-    } catch (IllegalArgumentException e) {
-      throw new WebApplicationException(Response.status(401).build());
-    }
-    return DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress);
   }
 
   @VisibleForTesting protected VerificationCode generateVerificationCode() {

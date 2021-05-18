@@ -75,10 +75,10 @@ public class BaseDiskuvAccountAuthenticator {
   }
 
   public Optional<Account> authenticate(DiskuvDeviceCredentials credentials, boolean enabledRequired) {
-    final java.util.UUID outdoorsUUID;
+    final java.util.UUID authenticatedOutdoorsUuid;
     try {
       String emailAddress = jwtAuthentication.verifyBearerTokenAndGetEmailAddress(credentials.getBearerToken());
-      outdoorsUUID = DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress);
+      authenticatedOutdoorsUuid = DiskuvUuidUtil.uuidForOutdoorEmailAddress(emailAddress);
     } catch (IllegalArgumentException iae) {
       invalidJwtTokenMeter.mark();
       return Optional.empty();
@@ -94,7 +94,7 @@ public class BaseDiskuvAccountAuthenticator {
     }
 
     // validate UUID if Outdoors (which anybody with knowledge of the email address can reconstruct)
-    if (diskuvUuidType == DiskuvUuidType.OUTDOORS && !outdoorsUUID.equals(accountUuid)) {
+    if (diskuvUuidType == DiskuvUuidType.OUTDOORS && !authenticatedOutdoorsUuid.equals(accountUuid)) {
       illegalOutdoorsAccountUuidMeter.mark();
       return Optional.empty();
     }
@@ -109,7 +109,7 @@ public class BaseDiskuvAccountAuthenticator {
 
       // validate UUID if Sanctuary
       if (diskuvUuidType == DiskuvUuidType.SANCTUARY_SPECIFIC) {
-        if (!outdoorsUUID.toString().equals(account.get().getPin())) {
+        if (!authenticatedOutdoorsUuid.toString().equals(account.get().getPin())) {
           illegalSanctuaryAccountUuidMeter.mark();
           return Optional.empty();
         }
@@ -137,6 +137,7 @@ public class BaseDiskuvAccountAuthenticator {
       if (device.get().getAuthenticationCredentials().verify(credentials.getDevicePassword())) {
         authenticationSucceededMeter.mark();
         account.get().setAuthenticatedDevice(device.get());
+        account.get().setAuthenticatedOutdoorsUuid(authenticatedOutdoorsUuid);
         updateLastSeen(account.get(), device.get());
         return account;
       }

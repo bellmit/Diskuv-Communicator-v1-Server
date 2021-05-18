@@ -80,6 +80,9 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
   @JsonIgnore
   private Device authenticatedDevice;
 
+  @JsonIgnore
+  private UUID authenticatedOutdoorsUuid;
+
   public Account() {}
 
   @VisibleForTesting
@@ -109,6 +112,14 @@ public class Account implements Principal, org.whispersystems.textsecuregcm.synt
 
   public void setAuthenticatedDevice(Device device) {
     this.authenticatedDevice = device;
+  }
+
+  public UUID getAuthenticatedOutdoorsUuid() {
+    return authenticatedOutdoorsUuid;
+  }
+
+  public void setAuthenticatedOutdoorsUuid(final UUID authenticatedOutdoorsUuid) {
+    this.authenticatedOutdoorsUuid = authenticatedOutdoorsUuid;
   }
 
   public UUID getUuid() {

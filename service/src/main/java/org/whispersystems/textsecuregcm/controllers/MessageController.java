@@ -165,7 +165,6 @@ public class MessageController {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response sendMessage(@Auth                                     Account             realSource,
-                              @HeaderParam("Authorization")             String              authorizationHeader,
                               @HeaderParam(OptionalAccess.UNIDENTIFIED) Optional<Anonymous> accessKey,
                               @HeaderParam("User-Agent")                String userAgent,
                               @HeaderParam("X-Forwarded-For")           String forwardedFor,
@@ -183,8 +182,8 @@ public class MessageController {
       throw new WebApplicationException(Response.Status.BAD_REQUEST);
     }
 
-    // account authentication (@Auth does it, but we want the outdoors UUID)
-    UUID outdoorsUUID = AuthHeaderSupport.validateJwtAndGetOutdoorsUUID(jwtAuthentication, authorizationHeader);
+    // outdoors UUID
+    UUID authenticatedOutdoorsUuid = realSource.getAuthenticatedOutdoorsUuid();
 
     if (source.isEmpty() && accessKey.isEmpty()) {
       throw new WebApplicationException(Response.Status.UNAUTHORIZED);
@@ -286,7 +285,7 @@ public class MessageController {
 
         if (destinationDevice.isPresent()) {
           Metrics.counter(SENT_MESSAGE_COUNTER_NAME, tags).increment();
-          sendMessage(source, outdoorsUUID, destination.get().getRealAccount().get(), destinationDevice.get(), messages.getTimestamp(), online, incomingMessage);
+          sendMessage(source, authenticatedOutdoorsUuid, destination.get().getRealAccount().get(), destinationDevice.get(), messages.getTimestamp(), online, incomingMessage);
         }
       }
 
