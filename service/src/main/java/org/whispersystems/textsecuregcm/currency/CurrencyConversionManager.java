@@ -28,6 +28,7 @@ public class CurrencyConversionManager implements Managed {
   private final FixerClient  fixerClient;
   private final FtxClient    ftxClient;
   private final List<String> currencies;
+  private final boolean      enabled;
 
   private AtomicReference<CurrencyConversionEntityList> cached = new AtomicReference<>(null);
 
@@ -38,9 +39,14 @@ public class CurrencyConversionManager implements Managed {
   private Map<String, Double> cachedFtxValues;
 
   public CurrencyConversionManager(FixerClient fixerClient, FtxClient ftxClient, List<String> currencies) {
+    this(fixerClient, ftxClient, currencies, true);
+  }
+
+  public CurrencyConversionManager(FixerClient fixerClient, FtxClient ftxClient, List<String> currencies, boolean enabled) {
     this.fixerClient = fixerClient;
     this.ftxClient   = ftxClient;
     this.currencies  = currencies;
+    this.enabled     = enabled;
   }
 
   public Optional<CurrencyConversionEntityList> getCurrencyConversions() {
@@ -49,6 +55,7 @@ public class CurrencyConversionManager implements Managed {
 
   @Override
   public void start() throws Exception {
+    if (!enabled) return;
     new Thread(() -> {
       for (;;) {
         try {

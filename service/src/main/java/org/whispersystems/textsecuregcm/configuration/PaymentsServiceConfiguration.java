@@ -9,6 +9,9 @@ import java.util.List;
 
 public class PaymentsServiceConfiguration {
 
+  @JsonProperty
+  private boolean enabled = true;
+
   @NotEmpty
   @JsonProperty
   private String userAuthenticationTokenSharedSecret;
@@ -27,6 +30,10 @@ public class PaymentsServiceConfiguration {
 
   public String getFixerApiKey() {
     return fixerApiKey;
+  }
+
+  public boolean isEnabled() {
+    return enabled;
   }
 
   public List<String> getPaymentCurrencies() {
