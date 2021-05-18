@@ -13,12 +13,12 @@
 // limitations under the License.
 package com.diskuv.communicator.configurator.dropwizard;
 
+import static com.diskuv.communicator.configurator.dropwizard.ConfigurationUtils.convertToYaml;
+import static com.diskuv.communicator.configurator.dropwizard.ConfigurationUtils.createConfigurationBuilder;
+import static com.diskuv.communicator.configurator.dropwizard.ConfigurationUtils.setField;
+
 import com.diskuv.communicator.configurator.errors.PrintExceptionMessageHandler;
 import com.google.common.collect.ImmutableList;
-import org.whispersystems.textsecuregcm.WhisperServerConfiguration;
-import org.whispersystems.textsecuregcm.configuration.*;
-import picocli.CommandLine;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,8 +27,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
-
-import static com.diskuv.communicator.configurator.dropwizard.ConfigurationUtils.*;
+import org.whispersystems.textsecuregcm.WhisperServerConfiguration;
+import org.whispersystems.textsecuregcm.configuration.AwsAttachmentsConfiguration;
+import org.whispersystems.textsecuregcm.configuration.CdnConfiguration;
+import org.whispersystems.textsecuregcm.configuration.DatabaseConfiguration;
+import org.whispersystems.textsecuregcm.configuration.DynamoDbConfiguration;
+import org.whispersystems.textsecuregcm.configuration.MessageCacheConfiguration;
+import org.whispersystems.textsecuregcm.configuration.MessageDynamoDbConfiguration;
+import org.whispersystems.textsecuregcm.configuration.RedisClusterConfiguration;
+import org.whispersystems.textsecuregcm.configuration.RedisConfiguration;
+import org.whispersystems.textsecuregcm.configuration.TwilioConfiguration;
+import org.whispersystems.textsecuregcm.configuration.VoiceVerificationConfiguration;
+import picocli.CommandLine;
 
 /** Modifies an existing YAML file. */
 @CommandLine.Command(
@@ -90,6 +100,15 @@ public class ModifyConfiguration implements Callable<Integer> {
   protected String databaseHostAndPerhapsPort;
 
   @CommandLine.Option(
+      names = {"--redis-cluster-url"},
+      split = ",",
+      description =
+          "URL (redis://...) of each Redis cluster master node, "
+              + "specified with comma-separated values or repeating the --redis-cluster-url option. "
+              + "Format: https://lettuce.io/core/release/api/io/lettuce/core/RedisURI.html")
+  protected String[] redisClusterUrls;
+
+  @CommandLine.Option(
       names = {"--redis-primary-host"},
       description =
           "Hostname of Redis cluster or primary Redis host. "
@@ -111,17 +130,10 @@ public class ModifyConfiguration implements Callable<Integer> {
   protected String[] redisReplicaHosts;
 
   @CommandLine.Option(
-      names = {"--redis-distinct-databases"},
-      description =
-          "If enabled, each of the 5 types of cache data will go into its own distinct redis database. "
-              + "See https://kb.objectrocket.com/redis/guide-on-the-redis-databases-1451 for more details")
-  protected boolean redisDistinctDatabases;
-
-  @CommandLine.Option(
       names = {"--redis-replica-url"},
       split = ",",
       description =
-          "URL (redis://...) of each Redis replica, "
+          "URL (redis://...) of each Redis readonly replica, "
               + "specified with comma-separated values or repeating the --redis-replica-url option")
   protected String[] redisReplicaUrls;
 
@@ -156,16 +168,18 @@ public class ModifyConfiguration implements Callable<Integer> {
     awsAttachments(config);
     cdn(config);
     twilio(config);
-    voiceVerification(config);
+    cacheCluster(config);
+    pubsub(config);
+    metricsCluster(config);
+    rateLimitersCluster(config);
+    pushSchedulerCluster(config);
+    messageCache(config);
+    clientPresenceCluster(config);
     messageDynamoDb(config);
     keysDynamoDb(config);
     abuseDatabase(config);
     accountsDatabase(config);
-    cacheCluster(config);
-    pubsub(config);
-    metricsCluster(config);
-    pushSchedulerCluster(config);
-    messageCache(config);
+    voiceVerification(config);
 
     // write configuration
     String configYaml = convertToYaml(config);
@@ -202,11 +216,40 @@ public class ModifyConfiguration implements Callable<Integer> {
     }
   }
 
-  public void voiceVerification(WhisperServerConfiguration config) throws IllegalAccessException {
-    VoiceVerificationConfiguration value = config.getVoiceVerificationConfiguration();
-    if (voiceVerificationUrl != null) {
-      setField(value, "url", voiceVerificationUrl);
-    }
+  public void cacheCluster(WhisperServerConfiguration config) throws IllegalAccessException {
+    RedisClusterConfiguration value = config.getCacheClusterConfiguration();
+    setRedisClusterUrls(value);
+  }
+
+  public void pubsub(WhisperServerConfiguration config) throws IllegalAccessException {
+    RedisConfiguration value = config.getPubsubCacheConfiguration();
+    setRedisUrlAndReplicas(value);
+  }
+
+  public void metricsCluster(WhisperServerConfiguration config) throws IllegalAccessException {
+    RedisClusterConfiguration value = config.getMetricsClusterConfiguration();
+    setRedisClusterUrls(value);
+  }
+
+  public void pushSchedulerCluster(WhisperServerConfiguration config) throws IllegalAccessException {
+    RedisClusterConfiguration value = config.getPushSchedulerCluster();
+    setRedisClusterUrls(value);
+  }
+
+  public void rateLimitersCluster(WhisperServerConfiguration config) throws IllegalAccessException {
+    RedisClusterConfiguration value = config.getRateLimitersCluster();
+    setRedisClusterUrls(value);
+  }
+
+  public void messageCache(WhisperServerConfiguration config) throws IllegalAccessException {
+    MessageCacheConfiguration value = config.getMessageCacheConfiguration();
+    RedisClusterConfiguration redis = value.getRedisClusterConfiguration();
+    setRedisClusterUrls(redis);
+  }
+
+  public void clientPresenceCluster(WhisperServerConfiguration config) throws IllegalAccessException {
+    RedisClusterConfiguration value = config.getClientPresenceClusterConfiguration();
+    setRedisClusterUrls(value);
   }
 
   public void messageDynamoDb(WhisperServerConfiguration config) throws IllegalAccessException {
@@ -229,46 +272,17 @@ public class ModifyConfiguration implements Callable<Integer> {
     setDatabaseUrl(value, "signal_account");
   }
 
-  public void cacheCluster(WhisperServerConfiguration config) throws IllegalAccessException {
-    RedisClusterConfiguration value = config.getCacheClusterConfiguration();
-    setRedisUrls(value);
-  }
-
-  public void pubsub(WhisperServerConfiguration config) throws IllegalAccessException {
-    RedisConfiguration value = config.getPubsubCacheConfiguration();
-    setRedisUrlAndReplicas(value);
-  }
-
-  public void metricsCluster(WhisperServerConfiguration config) throws IllegalAccessException {
-    RedisClusterConfiguration value = config.getMetricsClusterConfiguration();
-    setRedisUrls(value);
-  }
-
-  public void pushSchedulerCluster(WhisperServerConfiguration config) throws IllegalAccessException {
-    RedisClusterConfiguration value = config.getPushSchedulerCluster();
-    setRedisUrls(value);
-  }
-
-  public void messageCache(WhisperServerConfiguration config) throws IllegalAccessException {
-    MessageCacheConfiguration value = config.getMessageCacheConfiguration();
-    RedisClusterConfiguration redis = value.getRedisClusterConfiguration();
-    setRedisUrls(redis);
-  }
-
-  private void setRedisUrls(RedisClusterConfiguration value) throws IllegalAccessException {
-    List<String> urls = new ArrayList<>();
-    if (redisPrimaryUrl != null) {
-      urls.add(redisPrimaryUrl);
-    } else if (redisPrimaryHost != null) {
-      urls.add("redis://" + redisPrimaryHost + ":6379");
+  public void voiceVerification(WhisperServerConfiguration config) throws IllegalAccessException {
+    VoiceVerificationConfiguration value = config.getVoiceVerificationConfiguration();
+    if (voiceVerificationUrl != null) {
+      setField(value, "url", voiceVerificationUrl);
     }
-    if (redisReplicaUrls != null && redisReplicaUrls.length > 0) {
-      urls.addAll(ImmutableList.copyOf(redisReplicaUrls));
-    } else if (redisReplicaHosts != null && redisReplicaHosts.length > 0) {
-      urls.addAll(
-          Arrays.stream(redisReplicaHosts)
-              .map(hostname -> "redis://" + hostname + ":6379")
-              .collect(ImmutableList.toImmutableList()));
+  }
+
+  private void setRedisClusterUrls(RedisClusterConfiguration value) throws IllegalAccessException {
+    List<String> urls = new ArrayList<>();
+    if (redisClusterUrls != null && redisClusterUrls.length > 0) {
+      urls.addAll(ImmutableList.copyOf(redisClusterUrls));
     }
     setField(value, "urls", ImmutableList.copyOf(urls));
   }

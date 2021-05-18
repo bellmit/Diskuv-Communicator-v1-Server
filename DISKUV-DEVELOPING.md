@@ -8,9 +8,10 @@ FIRST, install the following if you do not have them:
   It has been tested with Maven 3.6.3
 * Install JDK 11. It has been tested with [Amazon Coretto](https://aws.amazon.com/corretto/)
 * Install [Redis](https://redis.io/topics/quickstart), or have a Redis server accessible
-  from your local network (including cloud instances)
+  from your local network (which can include locally-connected cloud instances). You will need
+  both a standalone Redis instance and a Redis Cluster.
 * Install [PostgreSQL 9.4](https://www.postgresql.org/download/), or have a PostgreSQL server accessible
-  from your local network (including cloud instances). *Optional*: Versions later than 9.4
+  from your local network (which can include locally-connected cloud instances). *Optional*: Versions later than 9.4
   will likely work, but it is safest to use the PostgreSQL version
   that matches the JDBC driver in `service/pom.xml`. *Advanced*:
   [OpenTable Embedded PostgreSQL](https://github.com/opentable/otj-pg-embedded)
@@ -158,12 +159,32 @@ If you use GitHub as your repository, the scheduled action
 at `.github/workflows/validate-code-config.yml` will automatically check on your
 behalf every day.
 
+#### AWS AppConfig
+
+Diskuv doesn't use this, but the official Signal server does.
+
+We suggest you disable this with the following in your YAML config:
+
+```yaml
+appConfig:
+  skipAppConfig: true
+  application: DiskuvCommunicator
+  environment: GenericEnvironment
+  configuration: GenericConfig
+```
+
 #### Redis
 
 You are required to have a Redis server and at least one replica.
 
+You are *also* required to have a Redis Cluster.
+
 For clarity, this section documents local Ubuntu instructions. Cloud Redis servers need to be provisioned using
 their web consoles or CLIs.
+
+---
+
+> The following will start up a Redis server with one replica
 
 In one terminal, run the following to start a Redis server:
 
@@ -179,25 +200,85 @@ install -d /tmp/redis-server/replica
 redis-server --dir /tmp/redis-server/replica --maxclients 100 --port 7777 --replicaof 127.0.0.1 6379
 ```
 
-After those Redis servers are started, use the following YAML configuration:
+---
+
+> The following will start up a Redis Cluster with 3 master nodes (shards), each having no replicas
+
+In your first "Cluster" terminal, run:
+
+```bash
+install -d /tmp/redis-server/cluster/7000
+redis-server --dir /tmp/redis-server/cluster/7000 --port 7000 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+```
+
+In your second "Cluster" terminal, run:
+
+```bash
+install -d /tmp/redis-server/cluster/7001
+redis-server --dir /tmp/redis-server/cluster/7001 --port 7001 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+```
+
+In your third "Cluster" terminal, run:
+
+```bash
+install -d /tmp/redis-server/cluster/7002
+redis-server --dir /tmp/redis-server/cluster/7002 --port 7002 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+```
+
+In your last (fourth) "Cluster" terminal, run:
+
+```bash
+redis-cli --cluster create --cluster-yes 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 --cluster-replicas 0
+```
+
+---
+
+After the Redis Cluster and Redis standalone servers are started, use the following YAML configuration:
 
 ```yaml
-cache:
-  url: localhost:6379
-  replicaUrls:
-    - localhost:7777
+cacheCluster:
+    urls:
+        - redis://localhost:7000?database=1
+        - redis://localhost:7001?database=1
+        - redis://localhost:7002?database=1
 
-directory:
-  redis:
-    url: localhost:6379
+pubsub:
+    url: redis://localhost:6379#2
     replicaUrls:
-      - localhost:7777
+        - redis://localhost:7777#2
+
+metricsCluster:
+    urls:
+        - redis://localhost:7000?database=3
+        - redis://localhost:7001?database=3
+        - redis://localhost:7002?database=3
+
+pushSchedulerCluster:
+    urls:
+        - redis://localhost:7000?database=4
+        - redis://localhost:7001?database=4
+        - redis://localhost:7002?database=4
+
+rateLimitersCluster:
+    urls:
+        - redis://localhost:7000?database=5
+        - redis://localhost:7001?database=5
+        - redis://localhost:7002?database=5
 
 messageCache:
-  redis:
-    url: localhost:6379
-    replicaUrls:
-      - localhost:7777
+    persistDelayMinutes: 10
+    cluster:
+        urls:
+            - redis://localhost:7000?database=6
+            - redis://localhost:7001?database=6
+            - redis://localhost:7002?database=6
+
+clientPresenceCluster:
+    urls:
+        - redis://localhost:7000?database=7
+        - redis://localhost:7001?database=7
+        - redis://localhost:7002?database=7
+        - redis://localhost:6379?database=5
 ```
 
 #### DynamoDB
@@ -268,16 +349,13 @@ and then executing the following SQL commands:
 ```sql
 CREATE USER signal_abuse_user WITH PASSWORD 'pick a password';
 CREATE USER signal_account_user WITH PASSWORD 'pick another password';
-CREATE USER signal_message_user WITH PASSWORD 'pick yet another password';
 
 -- Give yourself permissions to use these new users (mandatory for PostgreSQL 11; not mandatory PostgreSQL 9; other versions untested)
 GRANT signal_abuse_user TO current_user;
 GRANT signal_account_user TO current_user;
-GRANT signal_message_user TO current_user;
 
 CREATE DATABASE signal_abuse WITH OWNER signal_abuse_user ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8' TEMPLATE 'template0';
 CREATE DATABASE signal_account WITH OWNER signal_account_user ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8' TEMPLATE 'template0';
-CREATE DATABASE signal_message WITH OWNER signal_message_user ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' LC_CTYPE 'en_US.UTF-8' TEMPLATE 'template0';
 ```
 
 After the databases are created, change the YAML configuration to look like:
@@ -294,12 +372,6 @@ accountsDatabase:
   user: signal_account_user
   password: 'your chosen password'
   url: jdbc:postgresql://localhost:5432/signal_account
-
-messageStore:
-  driverClass: org.postgresql.Driver
-  user: signal_message_user
-  password: 'your chosen password'
-  url: jdbc:postgresql://localhost:5432/signal_message
 ```
 
 Change the URLs if you are using a cloud or network database, and change the passwords of course.
@@ -410,8 +482,6 @@ Then run:
 # Setup and/or upgrade the database tables
 java -jar service/target/TextSecureServer-*.jar accountdb status local.yml
 java -jar service/target/TextSecureServer-*.jar accountdb migrate local.yml
-java -jar service/target/TextSecureServer-*.jar messagedb status local.yml
-java -jar service/target/TextSecureServer-*.jar messagedb migrate local.yml
 java -jar service/target/TextSecureServer-*.jar abusedb status local.yml
 java -jar service/target/TextSecureServer-*.jar abusedb migrate local.yml
 
@@ -427,8 +497,6 @@ on one server host (your deployment paths will likely be different):
 ```bash
 java -jar ./TextSecureServer-*.jar accountdb status var/conf/config.yml
 java -jar ./TextSecureServer-*.jar accountdb migrate var/conf/config.yml
-java -jar ./TextSecureServer-*.jar messagedb status var/conf/config.yml
-java -jar ./TextSecureServer-*.jar messagedb migrate var/conf/config.yml
 java -jar ./TextSecureServer-*.jar abusedb status var/conf/config.yml
 java -jar ./TextSecureServer-*.jar abusedb migrate var/conf/config.yml
 ```
