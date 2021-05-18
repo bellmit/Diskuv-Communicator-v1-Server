@@ -16,7 +16,7 @@ public class MigrationDeletedAccounts extends AbstractDynamoDbStore {
 
   private final Table table;
 
-  static final String KEY_UUID = "U";
+  public static final String KEY_UUID = "U";
 
   public MigrationDeletedAccounts(DynamoDB dynamoDb, String tableName) {
     super(dynamoDb);

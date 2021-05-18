@@ -34,9 +34,9 @@ public class KeysDynamoDb extends AbstractDynamoDbStore {
 
     private final Table table;
 
-    static final String KEY_ACCOUNT_UUID = "U";
-    static final String KEY_DEVICE_ID_KEY_ID = "DK";
-    static final String KEY_PUBLIC_KEY = "P";
+    public static final String KEY_ACCOUNT_UUID = "U";
+    public static final String KEY_DEVICE_ID_KEY_ID = "DK";
+    public static final String KEY_PUBLIC_KEY = "P";
 
     private static final Timer               STORE_KEYS_TIMER              = Metrics.timer(name(KeysDynamoDb.class, "storeKeys"));
     private static final Timer               TAKE_KEY_FOR_DEVICE_TIMER     = Metrics.timer(name(KeysDynamoDb.class, "takeKeyForDevice"));

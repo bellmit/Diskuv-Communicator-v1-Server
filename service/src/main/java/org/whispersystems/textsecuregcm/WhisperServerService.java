@@ -23,7 +23,6 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsyncClientBuilder;
@@ -44,9 +43,6 @@ import com.diskuv.communicatorservice.storage.GroupLogDao;
 import com.diskuv.communicatorservice.storage.GroupsDao;
 import com.diskuv.communicatorservice.storage.SanctuariesDao;
 import com.diskuv.communicatorservice.storage.clients.AwsClientFactory;
-import com.diskuv.communicatorservice.storage.command.CreateTableGroupLogCommand;
-import com.diskuv.communicatorservice.storage.command.CreateTableGroupsCommand;
-import com.diskuv.communicatorservice.storage.command.CreateTableSanctuariesCommand;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -211,6 +207,7 @@ import org.whispersystems.textsecuregcm.websocket.ProvisioningConnectListener;
 import org.whispersystems.textsecuregcm.websocket.WebSocketAccountAuthenticator;
 import org.whispersystems.textsecuregcm.workers.CertificateCommand;
 import org.whispersystems.textsecuregcm.workers.DeleteUserCommand;
+import org.whispersystems.textsecuregcm.workers.DiskuvCreateDynamoDbTableCommand;
 import org.whispersystems.textsecuregcm.workers.GetRedisCommandStatsCommand;
 import org.whispersystems.textsecuregcm.workers.GetRedisSlowlogCommand;
 import org.whispersystems.textsecuregcm.workers.SetCrawlerAccelerationTask;
@@ -248,9 +245,10 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
     });
 
     // [Diskuv Change] Add command to create DynamoDB tables
-    bootstrap.addCommand(new CreateTableGroupsCommand());
-    bootstrap.addCommand(new CreateTableGroupLogCommand());
-    bootstrap.addCommand(new CreateTableSanctuariesCommand());
+    bootstrap.addCommand(new com.diskuv.communicatorservice.storage.command.CreateTableGroupsCommand());
+    bootstrap.addCommand(new com.diskuv.communicatorservice.storage.command.CreateTableGroupLogCommand());
+    bootstrap.addCommand(new com.diskuv.communicatorservice.storage.command.CreateTableSanctuariesCommand());
+    bootstrap.addCommand(new org.whispersystems.textsecuregcm.workers.DiskuvCreateDynamoDbTableCommand());
   }
 
   @Override

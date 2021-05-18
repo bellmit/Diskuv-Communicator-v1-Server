@@ -106,6 +106,7 @@ public class DiskuvGroupsConfiguration implements DiskuvDynamoDBConfiguration {
     return credentialsType;
   }
 
+  @Override
   public void setCredentialsType(DiskuvAwsCredentialsType credentialsType) {
     this.credentialsType = credentialsType;
   }

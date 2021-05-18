@@ -5,6 +5,7 @@
 
 package org.whispersystems.textsecuregcm.configuration;
 
+import com.diskuv.communicatorservice.storage.configuration.DiskuvAwsCredentialsType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.Valid;
@@ -13,15 +14,20 @@ import java.time.Duration;
 
 public class DynamoDbConfiguration implements com.diskuv.communicatorservice.storage.configuration.DiskuvDynamoDBConfiguration {
 
-    private com.diskuv.communicatorservice.storage.configuration.DiskuvAwsCredentialsType credentialsType = com.diskuv.communicatorservice.storage.configuration.DiskuvAwsCredentialsType.INSTANCE_PROFILE;
+    private com.diskuv.communicatorservice.storage.configuration.DiskuvAwsCredentialsType credentialsType;
     private String endpointOverride;
     private String accessKey;
     private String secretKey;
 
     @Override
-    @JsonProperty
+    @JsonProperty(defaultValue = "INSTANCE_PROFILE")
     public com.diskuv.communicatorservice.storage.configuration.DiskuvAwsCredentialsType getCredentialsType() {
       return credentialsType;
+    }
+
+    @Override
+    public void setCredentialsType(final DiskuvAwsCredentialsType credentialsType) {
+      this.credentialsType = credentialsType;
     }
 
     @Override

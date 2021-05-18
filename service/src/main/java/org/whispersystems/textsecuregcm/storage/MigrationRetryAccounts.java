@@ -17,7 +17,7 @@ public class MigrationRetryAccounts extends AbstractDynamoDbStore {
 
   private final Table table;
 
-  static final String KEY_UUID = "U";
+  public static final String KEY_UUID = "U";
 
   public MigrationRetryAccounts(DynamoDB dynamoDb, String tableName) {
     super(dynamoDb);

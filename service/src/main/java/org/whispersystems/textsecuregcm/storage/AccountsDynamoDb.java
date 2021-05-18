@@ -43,7 +43,7 @@ import org.whispersystems.textsecuregcm.util.UUIDUtil;
 public class AccountsDynamoDb extends AbstractDynamoDbStore implements AccountStore {
 
   // uuid, primary key
-  static final String KEY_ACCOUNT_UUID = "U";
+  public static final String KEY_ACCOUNT_UUID = "U";
   // phone number
   static final String ATTR_ACCOUNT_E164 = "P";
   // account, serialized to JSON

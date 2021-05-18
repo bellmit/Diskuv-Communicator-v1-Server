@@ -35,10 +35,10 @@ import org.whispersystems.textsecuregcm.util.UUIDUtil;
 
 public class MessagesDynamoDb extends AbstractDynamoDbStore {
 
-  private static final String KEY_PARTITION = "H";
-  private static final String KEY_SORT = "S";
-  private static final String LOCAL_INDEX_MESSAGE_UUID_NAME = "Message_UUID_Index";
-  private static final String LOCAL_INDEX_MESSAGE_UUID_KEY_SORT = "U";
+  public static final String KEY_PARTITION = "H";
+  public static final String KEY_SORT = "S";
+  public static final String LOCAL_INDEX_MESSAGE_UUID_NAME = "Message_UUID_Index";
+  public static final String LOCAL_INDEX_MESSAGE_UUID_KEY_SORT = "U";
 
   private static final String KEY_TYPE = "T";
   private static final String KEY_RELAY = "R";

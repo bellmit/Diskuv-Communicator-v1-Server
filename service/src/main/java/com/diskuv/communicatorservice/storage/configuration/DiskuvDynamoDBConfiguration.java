@@ -6,6 +6,8 @@ public interface DiskuvDynamoDBConfiguration {
 
   DiskuvAwsCredentialsType getCredentialsType();
 
+  void setCredentialsType(DiskuvAwsCredentialsType credentialsType);
+
   String getEndpointOverride();
 
   String getAccessKey();
