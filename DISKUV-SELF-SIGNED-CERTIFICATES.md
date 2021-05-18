@@ -26,6 +26,11 @@
 
 2. Edit that configuration so that your CN and IP.1 are your IP address.
    Do not use your loopback adapter address (127.0.0.1).
+   A quick way to use `eth0` is (assuming you named the file in Step 1 as `/tmp/req.template.conf`):
+
+   ```bash
+   awk -v IP=$(ifconfig eth0 | awk '$1=="inet"{print $2}') ' $1=="CN"||$1=="IP.1" {$NF=IP} {print}' /tmp/req.template.conf > /tmp/req.conf`
+   ```
 
    Alternative: We don't recommend this option, but you can use DNS.1 instead of IP.1.
    You have to figure out yourself how to get your Android/iOS client to recognize your
