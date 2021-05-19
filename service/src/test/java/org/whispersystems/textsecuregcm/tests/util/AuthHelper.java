@@ -170,6 +170,12 @@ public class AuthHelper {
     when(VALID_ACCOUNT.getRealAccount()).thenReturn(Optional.of(VALID_ACCOUNT));
     when(VALID_ACCOUNT_TWO.getRealAccount()).thenReturn(Optional.of(VALID_ACCOUNT_TWO));
     when(DISABLED_ACCOUNT.getRealAccount()).thenReturn(Optional.of(DISABLED_ACCOUNT));
+    when(UNDISCOVERABLE_ACCOUNT.getRealAccount()).thenReturn(Optional.of(UNDISCOVERABLE_ACCOUNT));
+
+    when(VALID_ACCOUNT.getAuthenticatedOutdoorsUuid()).thenReturn(VALID_UUID);
+    when(VALID_ACCOUNT_TWO.getAuthenticatedOutdoorsUuid()).thenReturn(VALID_UUID_TWO);
+    when(DISABLED_ACCOUNT.getAuthenticatedOutdoorsUuid()).thenReturn(DISABLED_UUID);
+    when(UNDISCOVERABLE_ACCOUNT.getAuthenticatedOutdoorsUuid()).thenReturn(UNDISCOVERABLE_UUID);
 
     when(VALID_ACCOUNT.getIdentityKey()).thenReturn(VALID_IDENTITY);
 
