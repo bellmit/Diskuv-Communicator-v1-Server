@@ -16,21 +16,20 @@
  */
 package org.whispersystems.textsecuregcm.push;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
+
 import io.dropwizard.lifecycle.Managed;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
+import java.util.List;
+import java.util.Optional;
 import org.whispersystems.textsecuregcm.metrics.PushLatencyManager;
 import org.whispersystems.textsecuregcm.redis.RedisOperation;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.util.Util;
-
-import java.util.List;
-import java.util.Optional;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 
 /**
  * A MessageSender sends Signal messages to destination devices. Messages may be "normal" user-to-user messages,
@@ -132,7 +131,7 @@ public class MessageSender implements Managed {
 
   private void sendGcmNotification(Account account, Device device) {
     GcmMessage gcmMessage = new GcmMessage(device.getGcmId(), account.getNumber(),
-                                           (int)device.getId(), GcmMessage.Type.NOTIFICATION, Optional.empty());
+                                           (int)device.getId(), GcmMessage.Type.NOTIFICATION, Optional.of(generateAuthenticatedNotification(account.getUuid(), device.getGcmId())));
 
     gcmSender.sendMessage(gcmMessage);
 
@@ -143,15 +142,38 @@ public class MessageSender implements Managed {
     ApnMessage apnMessage;
 
     if (!Util.isEmpty(device.getVoipApnId())) {
-      apnMessage = new ApnMessage(device.getVoipApnId(), account.getNumber(), device.getId(), true, Optional.empty());
+      apnMessage = new ApnMessage(device.getVoipApnId(), account.getNumber(), device.getId(), true, Optional.of(generateAuthenticatedNotification(account.getUuid(), device.getVoipApnId())));
       RedisOperation.unchecked(() -> apnFallbackManager.schedule(account, device));
     } else {
-      apnMessage = new ApnMessage(device.getApnId(), account.getNumber(), device.getId(), false, Optional.empty());
+      apnMessage = new ApnMessage(device.getApnId(), account.getNumber(), device.getId(), false, Optional.of(generateAuthenticatedNotification(account.getUuid(), device.getApnId())));
     }
 
     apnSender.sendMessage(apnMessage);
 
     RedisOperation.unchecked(() -> pushLatencyManager.recordPushSent(account.getUuid(), device.getId()));
+  }
+
+  private String generateAuthenticatedNotification(java.util.UUID accountUuid, String devicePassword) {
+    // Docs: 2021-05-18-authenticated-notification.md
+
+    // IV = RANDOM_BYTES(16)
+    java.security.SecureRandom random    = new java.security.SecureRandom();
+    byte[]       iv = new byte[16];
+    random.nextBytes(iv);
+
+    // SECRET = UTF8_BYTES(DEVICE_PASSWORD || ACCOUNT_UUID)
+    byte[] secret = (devicePassword + accountUuid).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+    // NOTIFICATION = HEX(IV || HMAC_SHA256(SECRET, IV))
+    javax.crypto.Mac mac;
+    try {
+      mac = javax.crypto.Mac.getInstance("HmacSHA256");
+      mac.init(new javax.crypto.spec.SecretKeySpec(secret, "HmacSHA256"));
+    } catch (java.security.NoSuchAlgorithmException | java.security.InvalidKeyException e) {
+      throw new AssertionError(e);
+    }
+    byte[] digest = mac.doFinal(iv);
+    return org.whispersystems.textsecuregcm.util.Hex.toStringCondensed(org.whispersystems.textsecuregcm.util.ByteUtil.combine(iv, digest));
   }
 
   @Override

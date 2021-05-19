@@ -80,10 +80,8 @@ import org.whispersystems.textsecuregcm.storage.DynamicConfigurationManager;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
 import org.whispersystems.textsecuregcm.storage.PendingAccountsManager;
 import org.whispersystems.textsecuregcm.storage.UsernamesManager;
-import org.whispersystems.textsecuregcm.util.ByteUtil;
 import org.whispersystems.textsecuregcm.util.Constants;
 import org.whispersystems.textsecuregcm.util.ForwardedIpUtil;
-import org.whispersystems.textsecuregcm.util.Hex;
 import org.whispersystems.textsecuregcm.util.Util;
 
 /**
@@ -199,7 +197,7 @@ public class AccountController {
 
     AuthHeaderSupport.validateJwtAndGetOutdoorsUUID(jwtAuthentication, authorizationHeader);
 
-    String                 pushChallenge          = generatePushChallenge(accountUuid, pushToken);
+    String                 pushChallenge          = generateAuthenticatedPushChallenge(accountUuid, pushToken);
     StoredVerificationCode storedVerificationCode = new StoredVerificationCode(null,
             System.currentTimeMillis(),
             pushChallenge);
@@ -746,18 +744,18 @@ public class AccountController {
     }
   }
 
-  private String generatePushChallenge(UUID accountUuid, String pushToken) {
+  private String generateAuthenticatedPushChallenge(UUID accountUuid, String pushToken) {
     // Docs: 2021-05-01-authenticated-push-challenge.md
 
-    // NONCE = RANDOM_BYTES(16)
+    // IV = RANDOM_BYTES(16)
     SecureRandom random    = new SecureRandom();
-    byte[]       nonce = new byte[16];
-    random.nextBytes(nonce);
+    byte[]       iv = new byte[16];
+    random.nextBytes(iv);
 
     // SECRET = UTF8_BYTES(PUSH_TOKEN || ACCOUNT_UUID)
     byte[] secret = (pushToken + accountUuid).getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
-    // PUSH_CHALLENGE = HEX(NONCE || HMAC_SHA256(SECRET, NONCE))
+    // PUSH_CHALLENGE = HEX(IV || HMAC_SHA256(SECRET, IV))
     javax.crypto.Mac mac;
     try {
       mac = javax.crypto.Mac.getInstance("HmacSHA256");
@@ -765,8 +763,8 @@ public class AccountController {
     } catch (java.security.NoSuchAlgorithmException | java.security.InvalidKeyException e) {
       throw new WebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
     }
-    byte[] digest = mac.doFinal(nonce);
-    return Hex.toStringCondensed(ByteUtil.combine(nonce, digest));
+    byte[] digest = mac.doFinal(iv);
+    return org.whispersystems.textsecuregcm.util.Hex.toStringCondensed(org.whispersystems.textsecuregcm.util.ByteUtil.combine(iv, digest));
   }
 
   private static class CaptchaRequirement {
