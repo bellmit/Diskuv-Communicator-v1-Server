@@ -35,7 +35,6 @@ import org.whispersystems.textsecuregcm.configuration.CdnConfiguration;
 import org.whispersystems.textsecuregcm.configuration.DatabaseConfiguration;
 import org.whispersystems.textsecuregcm.configuration.DynamoDbConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MessageCacheConfiguration;
-import org.whispersystems.textsecuregcm.configuration.MessageDynamoDbConfiguration;
 import org.whispersystems.textsecuregcm.configuration.RedisClusterConfiguration;
 import org.whispersystems.textsecuregcm.configuration.RedisConfiguration;
 import org.whispersystems.textsecuregcm.configuration.TwilioConfiguration;
@@ -149,20 +148,6 @@ public class ModifyConfiguration implements Callable<Integer> {
               + "specified with comma-separated values or repeating the --redis-replica-url option")
   protected String[] redisReplicaUrls;
 
-  @CommandLine.Option(
-      names = {"--message-ddb-table-name"},
-      description = "Name of the DynamoDB table for messages",
-      defaultValue = "Message"
-  )
-  protected String messageDynamoDbTableName;
-
-  @CommandLine.Option(
-      names = {"--keys-ddb-table-name"},
-      description = "Name of the DynamoDB table for keys",
-      defaultValue = "Keys"
-  )
-  protected String keysDynamoDbTableName;
-
   public static void main(String... args) {
     int exitCode =
         new CommandLine(new ModifyConfiguration())
@@ -187,8 +172,6 @@ public class ModifyConfiguration implements Callable<Integer> {
     pushSchedulerCluster(config);
     messageCache(config);
     clientPresenceCluster(config);
-    messageDynamoDb(config);
-    keysDynamoDb(config);
     abuseDatabase(config);
     accountsDatabase(config);
     voiceVerification(config);
@@ -262,16 +245,6 @@ public class ModifyConfiguration implements Callable<Integer> {
   public void clientPresenceCluster(WhisperServerConfiguration config) throws IllegalAccessException {
     RedisClusterConfiguration value = config.getClientPresenceClusterConfiguration();
     setRedisClusterUrls(value);
-  }
-
-  public void messageDynamoDb(WhisperServerConfiguration config) throws IllegalAccessException {
-    MessageDynamoDbConfiguration value = config.getMessageDynamoDbConfiguration();
-    setDynamoDbConfiguration(value, messageDynamoDbTableName);
-  }
-
-  public void keysDynamoDb(WhisperServerConfiguration config) throws IllegalAccessException {
-    DynamoDbConfiguration value = config.getKeysDynamoDbConfiguration();
-    setDynamoDbConfiguration(value, keysDynamoDbTableName);
   }
 
   public void abuseDatabase(WhisperServerConfiguration config) throws IllegalAccessException {
